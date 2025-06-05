@@ -5,7 +5,6 @@ import sys
 from .logger import app_logger
 from typing import Dict, List, Any
 
-# Try to import mcp with error handling
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
@@ -15,7 +14,6 @@ except ImportError as e:
     print(f"Current Python path: {sys.path}")
     sys.exit(1)
 
-# Import tool registry
 from .tools.tool_registry import get_all_tools, get_all_handlers
 
 async def serve() -> None:
@@ -37,7 +35,6 @@ async def serve() -> None:
         result = ""
         handlers = get_all_handlers()
 
-        # Execute the corresponding handler or return an error if the command is not found
         if name in handlers:
             try:
                 result = handlers[name](arguments)
