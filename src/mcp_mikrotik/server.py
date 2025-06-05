@@ -1,8 +1,8 @@
 import sys
 import logging
-from .logger import app_logger
-from .serve import serve
-from .settings.configuration import mikrotik_config
+from mcp_mikrotik.logger import app_logger
+from mcp_mikrotik.serve import serve
+from mcp_mikrotik.settings.configuration import mikrotik_config
 
 def main():
     """
