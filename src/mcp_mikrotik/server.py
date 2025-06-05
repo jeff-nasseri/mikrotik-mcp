@@ -11,7 +11,6 @@ def main():
     import asyncio
     import argparse
 
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description='MCP MikroTik Server')
     parser.add_argument('--host', type=str, help='MikroTik device IP/hostname')
     parser.add_argument('--username', type=str, help='SSH username')
@@ -20,7 +19,6 @@ def main():
     
     args = parser.parse_args()
     
-    # Update configuration from command line arguments
     if args.host:
         mikrotik_config["host"] = args.host
     if args.username:
