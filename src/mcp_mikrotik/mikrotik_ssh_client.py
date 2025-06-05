@@ -25,7 +25,6 @@ class MikroTikSSHClient:
                 look_for_keys=False,
                 allow_agent=False
             )
-            # Use the exec_command method instead of shell for MikroTik
             return True
         except Exception as e:
             app_logger.error(f"Failed to connect to MikroTik: {e}")
@@ -37,10 +36,8 @@ class MikroTikSSHClient:
             raise Exception("Not connected to MikroTik device")
         
         try:
-            # Use exec_command for better compatibility with MikroTik
             stdin, stdout, stderr = self.client.exec_command(command)
             
-            # Read the output
             output = stdout.read().decode('utf-8')
             error = stderr.read().decode('utf-8')
             
