@@ -1,52 +1,47 @@
 mode: ContinuousDelivery
 tag-prefix: '[vV]'
 major-version-bump-message: '\+semver:\s?(breaking|major)'
-minor-version-bump-message: '\+semver:\s?(feature|minor)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)|^feat(\(.+\))?:|^fix(\(.+\))?:|^refactor(\(.+\))?:|^perf(\(.+\))?:|^style(\(.+\))?:|^docs(\(.+\))?:|^test(\(.+\))?:|^chore(\(.+\))?:'
 patch-version-bump-message: '\+semver:\s?(fix|patch)'
 no-bump-message: '\+semver:\s?(none|skip)'
 branches:
   main:
     regex: ^master$|^main$
     mode: ContinuousDelivery
-    tag: ''
-    increment: Patch
-    prevent-increment-of-merged-branch-version: true
+    label: ''
+    increment: Minor
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
   develop:
     regex: ^dev(elop)?(ment)?$
     mode: ContinuousDeployment
-    tag: alpha
+    label: alpha
     increment: Minor
-    prevent-increment-of-merged-branch-version: false
     track-merge-target: true
     tracks-release-branches: true
     is-release-branch: false
   release:
     regex: ^releases?[/-]
     mode: ContinuousDelivery
-    tag: beta
+    label: beta
     increment: Patch
-    prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: true
   feature:
     regex: ^features?[/-]
     mode: ContinuousDelivery
-    tag: useBranchName
+    label: useBranchName
     increment: Inherit
-    prevent-increment-of-merged-branch-version: false
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
   hotfix:
     regex: ^hotfix(es)?[/-]
     mode: ContinuousDelivery
-    tag: beta
+    label: beta
     increment: Patch
-    prevent-increment-of-merged-branch-version: false
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
