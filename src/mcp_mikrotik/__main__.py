@@ -1,16 +1,23 @@
 import sys
 import logging
+import asyncio
+import argparse
+
 from .logger import app_logger
-from .serve import serve
 from .settings.configuration import mikrotik_config
+
+def serve():
+    """
+    Your serve function implementation goes here
+    """
+    # If you have a serve function elsewhere, call it here
+    # Or implement your server logic directly
+    pass
 
 def main():
     """
     Entry point for the MCP MikroTik server when run as a command-line program.
     """
-    import asyncio
-    import argparse
-
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='MCP MikroTik Server')
     parser.add_argument('--host', type=str, help='MikroTik device IP/hostname')
