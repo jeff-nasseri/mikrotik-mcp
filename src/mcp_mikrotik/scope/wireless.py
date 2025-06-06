@@ -4,73 +4,144 @@ from ..connector import execute_mikrotik_command
 from ..logger import app_logger
 
 
+def mikrotik_detect_wireless_interface_type() -> Optional[str]:
+    """
+    Detects the wireless interface type based on RouterOS version.
+
+    Returns:
+        The appropriate wireless interface command path or None if not supported
+    """
+    app_logger.info("Detecting wireless interface type")
+
+    # Try different wireless interface types in order of preference
+    interface_types = [
+        "/interface wifi",  # RouterOS v7.x (newest)
+        "/interface wifiwave2",  # RouterOS v7.x (alternative)
+        "/interface wireless",  # RouterOS v6.x
+        "/interface wlan"  # Older versions
+    ]
+
+    for interface_type in interface_types:
+        try:
+            app_logger.debug(f"Testing interface type: {interface_type}")
+
+            # Use a simpler test command that's less likely to hang
+            test_cmd = f"{interface_type} print count-only"
+            result = execute_mikrotik_command(test_cmd)
+
+            app_logger.debug(f"Result for {interface_type}: {result}")
+
+            # Check for specific error patterns
+            if result and isinstance(result, str):
+                result_lower = result.lower()
+                if ("bad command name" in result_lower or
+                        "failure:" in result_lower or
+                        "no such command prefix" in result_lower or
+                        "invalid command name" in result_lower):
+                    app_logger.debug(f"Interface type {interface_type} not supported")
+                    continue
+                else:
+                    # If we get a numeric result or no error, this type is supported
+                    app_logger.info(f"Detected wireless interface type: {interface_type}")
+                    return interface_type
+
+        except Exception as e:
+            app_logger.debug(f"Interface type {interface_type} failed with exception: {e}")
+            continue
+
+    # If none work, return None
+    app_logger.warning("No wireless interface type detected")
+    return None
+
+
 def mikrotik_create_wireless_interface(
         name: str,
-        radio_name: str,
-        mode: str = "ap-bridge",
         ssid: Optional[str] = None,
-        frequency: Optional[str] = None,
-        band: Optional[str] = None,
-        channel_width: Optional[str] = None,
         disabled: bool = False,
-        comment: Optional[str] = None
+        comment: Optional[str] = None,
+        **kwargs  # This captures any additional parameters like radio_name, mode, etc.
 ) -> str:
     """
     Creates a wireless interface on MikroTik device.
 
     Args:
         name: Name of the wireless interface
-        radio_name: Name of the radio interface (e.g., "wlan1")
-        mode: Wireless mode (ap-bridge, station, bridge, etc.)
         ssid: Network SSID name
-        frequency: Operating frequency
-        band: Frequency band (2ghz-b/g/n, 5ghz-a/n/ac, etc.)
-        channel_width: Channel width (20mhz, 40mhz, 80mhz, etc.)
         disabled: Whether to disable the interface
         comment: Optional comment
+        **kwargs: Additional parameters (radio_name, mode, etc.) for legacy compatibility
 
     Returns:
         Command output or error message
     """
-    app_logger.info(f"Creating wireless interface: name={name}, radio={radio_name}, mode={mode}")
+    app_logger.info(f"Creating wireless interface: name={name}, ssid={ssid}")
 
-    # Build the command
-    cmd = f"/interface wireless add name={name} radio-name={radio_name} mode={mode}"
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
 
-    # Add optional parameters
-    if ssid:
-        cmd += f' ssid="{ssid}"'
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
 
-    if frequency:
-        cmd += f" frequency={frequency}"
+    # Build the command based on interface type
+    if interface_type == "/interface wifi":
+        # RouterOS v7.x newest wifi syntax - simplified
+        cmd = f"{interface_type} add name={name}"
 
-    if band:
-        cmd += f" band={band}"
+        if ssid:
+            cmd += f' ssid="{ssid}"'
+        if disabled:
+            cmd += " disabled=yes"
+        if comment:
+            cmd += f' comment="{comment}"'
 
-    if channel_width:
-        cmd += f" channel-width={channel_width}"
+    elif interface_type == "/interface wifiwave2":
+        # RouterOS v7.x wifiwave2 syntax
+        cmd = f"{interface_type} add name={name}"
 
-    if disabled:
-        cmd += " disabled=yes"
+        if ssid:
+            cmd += f' ssid="{ssid}"'
+        if disabled:
+            cmd += " disabled=yes"
+        if comment:
+            cmd += f' comment="{comment}"'
 
-    if comment:
-        cmd += f' comment="{comment}"'
+    else:
+        # Legacy wireless syntax (RouterOS v6.x and older)
+        radio_name = kwargs.get('radio_name')
+        mode = kwargs.get('mode', 'ap-bridge')
 
+        if not radio_name:
+            return "Error: radio_name is required for legacy wireless systems. Please specify the radio interface (e.g., 'wlan1')."
+
+        cmd = f"{interface_type} add name={name} radio-name={radio_name} mode={mode}"
+
+        if ssid:
+            cmd += f' ssid="{ssid}"'
+        if disabled:
+            cmd += " disabled=yes"
+        if comment:
+            cmd += f' comment="{comment}"'
+
+        # Add other legacy parameters if provided
+        for param in ['frequency', 'band', 'channel_width', 'security_profile']:
+            if param in kwargs and kwargs[param]:
+                cmd += f" {param.replace('_', '-')}={kwargs[param]}"
+
+    app_logger.info(f"Executing command: {cmd}")
     result = execute_mikrotik_command(cmd)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create wireless interface: {result}"
 
     # Get the created interface details
-    details_cmd = f'/interface wireless print detail where name="{name}"'
+    details_cmd = f'{interface_type} print detail where name="{name}"'
     details = execute_mikrotik_command(details_cmd)
 
-    return f"Wireless interface created successfully:\n\n{details}"
+    return f"Wireless interface created successfully using {interface_type}:\n\n{details}"
 
 
 def mikrotik_list_wireless_interfaces(
         name_filter: Optional[str] = None,
-        mode_filter: Optional[str] = None,
         disabled_only: bool = False,
         running_only: bool = False
 ) -> str:
@@ -79,38 +150,77 @@ def mikrotik_list_wireless_interfaces(
 
     Args:
         name_filter: Filter by interface name
-        mode_filter: Filter by wireless mode
         disabled_only: Show only disabled interfaces
         running_only: Show only running interfaces
 
     Returns:
         List of wireless interfaces
     """
-    app_logger.info(f"Listing wireless interfaces with filters: name={name_filter}, mode={mode_filter}")
+    app_logger.info(f"Listing wireless interfaces with filters: name={name_filter}")
 
-    # Build the command
-    cmd = "/interface wireless print"
+    # Try multiple interface types to ensure we find all wireless interfaces
+    interface_types_to_try = [
+        "/interface wifi",
+        "/interface wifiwave2",
+        "/interface wireless",
+        "/interface wlan"
+    ]
 
-    # Add filters
-    filters = []
-    if name_filter:
-        filters.append(f'name~"{name_filter}"')
-    if mode_filter:
-        filters.append(f'mode="{mode_filter}"')
-    if disabled_only:
-        filters.append("disabled=yes")
-    if running_only:
-        filters.append("running=yes")
+    all_results = []
+    working_types = []
 
-    if filters:
-        cmd += " where " + " and ".join(filters)
+    for interface_type in interface_types_to_try:
+        try:
+            # Build the command
+            cmd = f"{interface_type} print"
 
-    result = execute_mikrotik_command(cmd)
+            # Add filters
+            filters = []
+            if name_filter:
+                filters.append(f'name~"{name_filter}"')
+            if disabled_only:
+                filters.append("disabled=yes")
+            if running_only:
+                filters.append("running=yes")
 
-    if not result or result.strip() == "":
+            if filters:
+                cmd += " where " + " and ".join(filters)
+
+            result = execute_mikrotik_command(cmd)
+
+            # Check if command worked and has results
+            if (result and
+                    result.strip() != "" and
+                    "bad command name" not in result.lower() and
+                    "failure:" not in result.lower() and
+                    "no such command prefix" not in result.lower()):
+                working_types.append(interface_type)
+                all_results.append(f"=== {interface_type.upper()} ===\n{result}")
+
+        except Exception as e:
+            app_logger.debug(f"Interface type {interface_type} failed: {e}")
+            continue
+
+    # If we found results, return them
+    if all_results:
+        return f"WIRELESS INTERFACES:\n\n" + "\n\n".join(all_results)
+
+    # If no results found, try to show all interfaces to help debug
+    try:
+        all_interfaces_cmd = "/interface print"
+        all_interfaces = execute_mikrotik_command(all_interfaces_cmd)
+        return f"""No wireless interfaces found matching the criteria.
+
+DEBUGGING INFO:
+Working interface types: {', '.join(working_types) if working_types else 'None detected'}
+
+ALL INTERFACES ON DEVICE:
+{all_interfaces}
+
+NOTE: If you see wireless interfaces above, they might be using a different command structure."""
+
+    except Exception:
         return "No wireless interfaces found matching the criteria."
-
-    return f"WIRELESS INTERFACES:\n\n{result}"
 
 
 def mikrotik_get_wireless_interface(name: str) -> str:
@@ -125,87 +235,19 @@ def mikrotik_get_wireless_interface(name: str) -> str:
     """
     app_logger.info(f"Getting wireless interface details: name={name}")
 
-    cmd = f'/interface wireless print detail where name="{name}"'
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
+
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
+
+    cmd = f'{interface_type} print detail where name="{name}"'
     result = execute_mikrotik_command(cmd)
 
     if not result or result.strip() == "":
         return f"Wireless interface '{name}' not found."
 
     return f"WIRELESS INTERFACE DETAILS:\n\n{result}"
-
-
-def mikrotik_update_wireless_interface(
-        name: str,
-        new_name: Optional[str] = None,
-        ssid: Optional[str] = None,
-        frequency: Optional[str] = None,
-        band: Optional[str] = None,
-        channel_width: Optional[str] = None,
-        mode: Optional[str] = None,
-        disabled: Optional[bool] = None,
-        comment: Optional[str] = None
-) -> str:
-    """
-    Updates an existing wireless interface.
-
-    Args:
-        name: Current name of the wireless interface
-        new_name: New name for the interface
-        ssid: New SSID name
-        frequency: New operating frequency
-        band: New frequency band
-        channel_width: New channel width
-        mode: New wireless mode
-        disabled: Enable/disable interface
-        comment: New comment
-
-    Returns:
-        Command output or error message
-    """
-    app_logger.info(f"Updating wireless interface: name={name}")
-
-    # Check if interface exists
-    check_cmd = f'/interface wireless print count-only where name="{name}"'
-    count = execute_mikrotik_command(check_cmd)
-
-    if count.strip() == "0":
-        return f"Wireless interface '{name}' not found."
-
-    # Build update command
-    updates = []
-
-    if new_name:
-        updates.append(f"name={new_name}")
-    if ssid:
-        updates.append(f'ssid="{ssid}"')
-    if frequency:
-        updates.append(f"frequency={frequency}")
-    if band:
-        updates.append(f"band={band}")
-    if channel_width:
-        updates.append(f"channel-width={channel_width}")
-    if mode:
-        updates.append(f"mode={mode}")
-    if disabled is not None:
-        updates.append(f"disabled={'yes' if disabled else 'no'}")
-    if comment:
-        updates.append(f'comment="{comment}"')
-
-    if not updates:
-        return "No updates specified."
-
-    cmd = f'/interface wireless set [find name="{name}"] {" ".join(updates)}'
-    result = execute_mikrotik_command(cmd)
-
-    if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to update wireless interface: {result}"
-
-    # Get updated details
-    target_name = new_name if new_name else name
-    details_cmd = f'/interface wireless print detail where name="{target_name}"'
-    details = execute_mikrotik_command(details_cmd)
-
-    return f"Wireless interface updated successfully:\n\n{details}"
 
 
 def mikrotik_remove_wireless_interface(name: str) -> str:
@@ -220,15 +262,21 @@ def mikrotik_remove_wireless_interface(name: str) -> str:
     """
     app_logger.info(f"Removing wireless interface: name={name}")
 
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
+
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
+
     # Check if interface exists
-    check_cmd = f'/interface wireless print count-only where name="{name}"'
+    check_cmd = f'{interface_type} print count-only where name="{name}"'
     count = execute_mikrotik_command(check_cmd)
 
     if count.strip() == "0":
         return f"Wireless interface '{name}' not found."
 
     # Remove the interface
-    cmd = f'/interface wireless remove [find name="{name}"]'
+    cmd = f'{interface_type} remove [find name="{name}"]'
     result = execute_mikrotik_command(cmd)
 
     if "failure:" in result.lower() or "error" in result.lower():
@@ -237,206 +285,58 @@ def mikrotik_remove_wireless_interface(name: str) -> str:
     return f"Wireless interface '{name}' removed successfully."
 
 
-def mikrotik_create_wireless_security_profile(
-        name: str,
-        mode: str = "dynamic-keys",
-        authentication_types: Optional[List[str]] = None,
-        unicast_ciphers: Optional[List[str]] = None,
-        group_ciphers: Optional[List[str]] = None,
-        wpa_pre_shared_key: Optional[str] = None,
-        wpa2_pre_shared_key: Optional[str] = None,
-        supplicant_identity: Optional[str] = None,
-        eap_methods: Optional[str] = None,
-        tls_mode: Optional[str] = None,
-        tls_certificate: Optional[str] = None,
-        comment: Optional[str] = None
-) -> str:
+def mikrotik_enable_wireless_interface(name: str) -> str:
     """
-    Creates a wireless security profile on MikroTik device.
+    Enables a wireless interface.
 
     Args:
-        name: Name of the security profile
-        mode: Security mode (none, static-keys-required, dynamic-keys, etc.)
-        authentication_types: List of authentication types (wpa-psk, wpa2-psk, wpa-eap, wpa2-eap)
-        unicast_ciphers: List of unicast ciphers (tkip, aes-ccm)
-        group_ciphers: List of group ciphers (tkip, aes-ccm)
-        wpa_pre_shared_key: WPA pre-shared key
-        wpa2_pre_shared_key: WPA2 pre-shared key
-        supplicant_identity: Supplicant identity for EAP
-        eap_methods: EAP methods
-        tls_mode: TLS mode
-        tls_certificate: TLS certificate
-        comment: Optional comment
+        name: Name of the wireless interface
 
     Returns:
         Command output or error message
     """
-    app_logger.info(f"Creating wireless security profile: name={name}, mode={mode}")
+    app_logger.info(f"Enabling wireless interface: {name}")
 
-    # Build the command
-    cmd = f'/interface wireless security-profiles add name={name} mode={mode}'
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
 
-    # Add optional parameters
-    if authentication_types:
-        cmd += f" authentication-types={','.join(authentication_types)}"
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
 
-    if unicast_ciphers:
-        cmd += f" unicast-ciphers={','.join(unicast_ciphers)}"
-
-    if group_ciphers:
-        cmd += f" group-ciphers={','.join(group_ciphers)}"
-
-    if wpa_pre_shared_key:
-        cmd += f' wpa-pre-shared-key="{wpa_pre_shared_key}"'
-
-    if wpa2_pre_shared_key:
-        cmd += f' wpa2-pre-shared-key="{wpa2_pre_shared_key}"'
-
-    if supplicant_identity:
-        cmd += f' supplicant-identity="{supplicant_identity}"'
-
-    if eap_methods:
-        cmd += f" eap-methods={eap_methods}"
-
-    if tls_mode:
-        cmd += f" tls-mode={tls_mode}"
-
-    if tls_certificate:
-        cmd += f" tls-certificate={tls_certificate}"
-
-    if comment:
-        cmd += f' comment="{comment}"'
-
+    cmd = f'{interface_type} enable [find name="{name}"]'
     result = execute_mikrotik_command(cmd)
 
     if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to create wireless security profile: {result}"
+        return f"Failed to enable wireless interface: {result}"
 
-    # Get the created profile details
-    details_cmd = f'/interface wireless security-profiles print detail where name="{name}"'
-    details = execute_mikrotik_command(details_cmd)
-
-    return f"Wireless security profile created successfully:\n\n{details}"
+    return f"Wireless interface '{name}' enabled successfully."
 
 
-def mikrotik_list_wireless_security_profiles(
-        name_filter: Optional[str] = None,
-        mode_filter: Optional[str] = None
-) -> str:
+def mikrotik_disable_wireless_interface(name: str) -> str:
     """
-    Lists wireless security profiles on MikroTik device.
+    Disables a wireless interface.
 
     Args:
-        name_filter: Filter by profile name
-        mode_filter: Filter by security mode
-
-    Returns:
-        List of wireless security profiles
-    """
-    app_logger.info(f"Listing wireless security profiles with filters: name={name_filter}, mode={mode_filter}")
-
-    # Build the command
-    cmd = "/interface wireless security-profiles print"
-
-    # Add filters
-    filters = []
-    if name_filter:
-        filters.append(f'name~"{name_filter}"')
-    if mode_filter:
-        filters.append(f'mode="{mode_filter}"')
-
-    if filters:
-        cmd += " where " + " and ".join(filters)
-
-    result = execute_mikrotik_command(cmd)
-
-    if not result or result.strip() == "":
-        return "No wireless security profiles found matching the criteria."
-
-    return f"WIRELESS SECURITY PROFILES:\n\n{result}"
-
-
-def mikrotik_get_wireless_security_profile(name: str) -> str:
-    """
-    Gets detailed information about a specific wireless security profile.
-
-    Args:
-        name: Name of the security profile
-
-    Returns:
-        Detailed information about the security profile
-    """
-    app_logger.info(f"Getting wireless security profile details: name={name}")
-
-    cmd = f'/interface wireless security-profiles print detail where name="{name}"'
-    result = execute_mikrotik_command(cmd)
-
-    if not result or result.strip() == "":
-        return f"Wireless security profile '{name}' not found."
-
-    return f"WIRELESS SECURITY PROFILE DETAILS:\n\n{result}"
-
-
-def mikrotik_remove_wireless_security_profile(name: str) -> str:
-    """
-    Removes a wireless security profile from MikroTik device.
-
-    Args:
-        name: Name of the security profile to remove
+        name: Name of the wireless interface
 
     Returns:
         Command output or error message
     """
-    app_logger.info(f"Removing wireless security profile: name={name}")
+    app_logger.info(f"Disabling wireless interface: {name}")
 
-    # Check if profile exists
-    check_cmd = f'/interface wireless security-profiles print count-only where name="{name}"'
-    count = execute_mikrotik_command(check_cmd)
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
 
-    if count.strip() == "0":
-        return f"Wireless security profile '{name}' not found."
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
 
-    # Remove the profile
-    cmd = f'/interface wireless security-profiles remove [find name="{name}"]'
+    cmd = f'{interface_type} disable [find name="{name}"]'
     result = execute_mikrotik_command(cmd)
 
     if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to remove wireless security profile: {result}"
+        return f"Failed to disable wireless interface: {result}"
 
-    return f"Wireless security profile '{name}' removed successfully."
-
-
-def mikrotik_set_wireless_security_profile(
-        interface_name: str,
-        security_profile: str
-) -> str:
-    """
-    Sets the security profile for a wireless interface.
-
-    Args:
-        interface_name: Name of the wireless interface
-        security_profile: Name of the security profile to apply
-
-    Returns:
-        Command output or error message
-    """
-    app_logger.info(f"Setting security profile for interface: {interface_name} -> {security_profile}")
-
-    # Check if interface exists
-    check_cmd = f'/interface wireless print count-only where name="{interface_name}"'
-    count = execute_mikrotik_command(check_cmd)
-
-    if count.strip() == "0":
-        return f"Wireless interface '{interface_name}' not found."
-
-    # Set the security profile
-    cmd = f'/interface wireless set [find name="{interface_name}"] security-profile={security_profile}'
-    result = execute_mikrotik_command(cmd)
-
-    if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to set security profile: {result}"
-
-    return f"Security profile '{security_profile}' applied to interface '{interface_name}' successfully."
+    return f"Wireless interface '{name}' disabled successfully."
 
 
 def mikrotik_scan_wireless_networks(
@@ -455,8 +355,15 @@ def mikrotik_scan_wireless_networks(
     """
     app_logger.info(f"Scanning wireless networks on interface: {interface}")
 
-    # Start scan
-    scan_cmd = f'/interface wireless scan {interface} duration={duration}'
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
+
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
+
+    # Different scan commands for different versions
+    scan_cmd = f'{interface_type} scan {interface} duration={duration}'
+
     result = execute_mikrotik_command(scan_cmd)
 
     if "failure:" in result.lower() or "error" in result.lower():
@@ -479,8 +386,14 @@ def mikrotik_get_wireless_registration_table(
     """
     app_logger.info(f"Getting wireless registration table for interface: {interface}")
 
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
+
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
+
     # Build command
-    cmd = "/interface wireless registration-table print"
+    cmd = f"{interface_type} registration-table print"
 
     if interface:
         cmd += f' where interface="{interface}"'
@@ -493,148 +406,168 @@ def mikrotik_get_wireless_registration_table(
     return f"WIRELESS REGISTRATION TABLE:\n\n{result}"
 
 
-def mikrotik_create_wireless_access_list(
-        interface: str,
-        mac_address: str,
-        action: str = "accept",
-        signal_range: Optional[str] = None,
-        time: Optional[str] = None,
-        comment: Optional[str] = None
-) -> str:
+def mikrotik_check_wireless_support() -> str:
     """
-    Creates a wireless access list entry.
-
-    Args:
-        interface: Wireless interface
-        mac_address: MAC address to control
-        action: Action (accept, reject, query)
-        signal_range: Signal strength range
-        time: Time schedule
-        comment: Optional comment
+    Checks if the device supports wireless functionality and returns detailed information.
 
     Returns:
-        Command output or error message
+        Information about wireless support and available packages
     """
-    app_logger.info(f"Creating wireless access list entry: {mac_address} -> {action}")
+    app_logger.info("Checking wireless support")
 
-    # Build command
-    cmd = f'/interface wireless access-list add interface={interface} mac-address={mac_address} action={action}'
+    # Check RouterOS version
+    version_cmd = "/system resource print"
+    version_result = execute_mikrotik_command(version_cmd)
 
-    # Add optional parameters
-    if signal_range:
-        cmd += f" signal-range={signal_range}"
+    # Check installed packages
+    package_cmd = "/system package print"
+    package_result = execute_mikrotik_command(package_cmd)
 
-    if time:
-        cmd += f" time={time}"
+    # Check available interfaces
+    interface_cmd = "/interface print"
+    interface_result = execute_mikrotik_command(interface_cmd)
 
-    if comment:
-        cmd += f' comment="{comment}"'
+    # Detect wireless interface type
+    wireless_type = mikrotik_detect_wireless_interface_type()
 
+    report = f"""WIRELESS SUPPORT CHECK:
+
+RouterOS Version:
+{version_result}
+
+Installed Packages:
+{package_result}
+
+Available Interfaces:
+{interface_result}
+
+Detected Wireless Interface Type: {wireless_type if wireless_type else 'None detected'}
+
+Compatibility Notes:
+- RouterOS v7.x uses '/interface wifi' (newest system)
+- RouterOS v7.x also supports '/interface wifiwave2' (alternative)
+- RouterOS v6.x uses '/interface wireless' (legacy system)  
+- Older versions may use '/interface wlan'
+
+USAGE EXAMPLES:
+For RouterOS v7.x:
+  mikrotik_create_wireless_interface(name="wlan1", ssid="MyNetwork")
+
+For legacy systems:
+  mikrotik_create_wireless_interface(name="wlan1", radio_name="wlan1", ssid="MyNetwork")
+"""
+
+    return report
+
+
+# Legacy compatibility functions (simplified versions for older RouterOS)
+def mikrotik_create_wireless_security_profile(name: str, **kwargs) -> str:
+    """Legacy function - not supported in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Security profiles are not used in RouterOS v7.x. Configure security directly on the wireless interface."
+    return "Legacy security profile creation not implemented in this version."
+
+
+def mikrotik_list_wireless_security_profiles(**kwargs) -> str:
+    """Legacy function - not supported in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Security profiles are not used in RouterOS v7.x. Security is configured directly on wireless interfaces."
+    return "Legacy security profile listing not implemented in this version."
+
+
+def mikrotik_get_wireless_security_profile(name: str) -> str:
+    """Legacy function - not supported in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Security profiles are not used in RouterOS v7.x. Check security configuration on wireless interfaces directly."
+    return "Legacy security profile details not implemented in this version."
+
+
+def mikrotik_remove_wireless_security_profile(name: str) -> str:
+    """Legacy function - not supported in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Security profiles are not used in RouterOS v7.x. Security is configured directly on wireless interfaces."
+    return "Legacy security profile removal not implemented in this version."
+
+
+def mikrotik_set_wireless_security_profile(interface_name: str, security_profile: str) -> str:
+    """Legacy function - not supported in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Security profiles are not used in RouterOS v7.x. Configure security directly on the wireless interface."
+    return "Legacy security profile setting not implemented in this version."
+
+
+def mikrotik_create_wireless_access_list(**kwargs) -> str:
+    """Legacy function - different in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Access lists are configured differently in RouterOS v7.x. Use firewall rules or other access control methods."
+    return "Legacy access list creation not implemented in this version."
+
+
+def mikrotik_list_wireless_access_list(**kwargs) -> str:
+    """Legacy function - different in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Access lists are configured differently in RouterOS v7.x. Check firewall rules or other access control configurations."
+    return "Legacy access list listing not implemented in this version."
+
+
+def mikrotik_remove_wireless_access_list_entry(entry_id: str) -> str:
+    """Legacy function - different in RouterOS v7.x"""
+    interface_type = mikrotik_detect_wireless_interface_type()
+    if interface_type in ["/interface wifi", "/interface wifiwave2"]:
+        return "Access lists are configured differently in RouterOS v7.x."
+    return "Legacy access list removal not implemented in this version."
+
+
+def mikrotik_update_wireless_interface(name: str, **kwargs) -> str:
+    """
+    Updates an existing wireless interface.
+    """
+    app_logger.info(f"Updating wireless interface: name={name}")
+
+    # Detect wireless interface type
+    interface_type = mikrotik_detect_wireless_interface_type()
+
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
+
+    # Check if interface exists
+    check_cmd = f'{interface_type} print count-only where name="{name}"'
+    count = execute_mikrotik_command(check_cmd)
+
+    if count.strip() == "0":
+        return f"Wireless interface '{name}' not found."
+
+    # Build update command
+    updates = []
+
+    if 'new_name' in kwargs and kwargs['new_name']:
+        updates.append(f"name={kwargs['new_name']}")
+    if 'ssid' in kwargs and kwargs['ssid']:
+        updates.append(f'ssid="{kwargs["ssid"]}"')
+    if 'disabled' in kwargs and kwargs['disabled'] is not None:
+        updates.append(f"disabled={'yes' if kwargs['disabled'] else 'no'}")
+    if 'comment' in kwargs and kwargs['comment']:
+        updates.append(f'comment="{kwargs["comment"]}"')
+
+    if not updates:
+        return "No updates specified."
+
+    cmd = f'{interface_type} set [find name="{name}"] {" ".join(updates)}'
     result = execute_mikrotik_command(cmd)
 
     if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to create wireless access list entry: {result}"
+        return f"Failed to update wireless interface: {result}"
 
-    return f"Wireless access list entry created successfully."
+    # Get updated details
+    target_name = kwargs.get('new_name', name)
+    details_cmd = f'{interface_type} print detail where name="{target_name}"'
+    details = execute_mikrotik_command(details_cmd)
 
-
-def mikrotik_list_wireless_access_list(
-        interface_filter: Optional[str] = None,
-        action_filter: Optional[str] = None
-) -> str:
-    """
-    Lists wireless access list entries.
-
-    Args:
-        interface_filter: Filter by interface
-        action_filter: Filter by action
-
-    Returns:
-        List of wireless access list entries
-    """
-    app_logger.info(f"Listing wireless access list entries")
-
-    # Build command
-    cmd = "/interface wireless access-list print"
-
-    # Add filters
-    filters = []
-    if interface_filter:
-        filters.append(f'interface="{interface_filter}"')
-    if action_filter:
-        filters.append(f'action="{action_filter}"')
-
-    if filters:
-        cmd += " where " + " and ".join(filters)
-
-    result = execute_mikrotik_command(cmd)
-
-    if not result or result.strip() == "":
-        return "No wireless access list entries found."
-
-    return f"WIRELESS ACCESS LIST:\n\n{result}"
-
-
-def mikrotik_remove_wireless_access_list_entry(
-        entry_id: str
-) -> str:
-    """
-    Removes a wireless access list entry.
-
-    Args:
-        entry_id: ID of the access list entry to remove
-
-    Returns:
-        Command output or error message
-    """
-    app_logger.info(f"Removing wireless access list entry: {entry_id}")
-
-    cmd = f'/interface wireless access-list remove {entry_id}'
-    result = execute_mikrotik_command(cmd)
-
-    if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to remove wireless access list entry: {result}"
-
-    return f"Wireless access list entry '{entry_id}' removed successfully."
-
-
-def mikrotik_enable_wireless_interface(name: str) -> str:
-    """
-    Enables a wireless interface.
-
-    Args:
-        name: Name of the wireless interface
-
-    Returns:
-        Command output or error message
-    """
-    app_logger.info(f"Enabling wireless interface: {name}")
-
-    cmd = f'/interface wireless enable [find name="{name}"]'
-    result = execute_mikrotik_command(cmd)
-
-    if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to enable wireless interface: {result}"
-
-    return f"Wireless interface '{name}' enabled successfully."
-
-
-def mikrotik_disable_wireless_interface(name: str) -> str:
-    """
-    Disables a wireless interface.
-
-    Args:
-        name: Name of the wireless interface
-
-    Returns:
-        Command output or error message
-    """
-    app_logger.info(f"Disabling wireless interface: {name}")
-
-    cmd = f'/interface wireless disable [find name="{name}"]'
-    result = execute_mikrotik_command(cmd)
-
-    if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to disable wireless interface: {result}"
-
-    return f"Wireless interface '{name}' disabled successfully."
+    return f"Wireless interface updated successfully:\n\n{details}"

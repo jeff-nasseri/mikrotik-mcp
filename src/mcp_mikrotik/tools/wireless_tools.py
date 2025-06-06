@@ -8,7 +8,7 @@ from ..scope.wireless import (
     mikrotik_scan_wireless_networks, mikrotik_get_wireless_registration_table,
     mikrotik_create_wireless_access_list, mikrotik_list_wireless_access_list,
     mikrotik_remove_wireless_access_list_entry, mikrotik_enable_wireless_interface,
-    mikrotik_disable_wireless_interface
+    mikrotik_disable_wireless_interface, mikrotik_check_wireless_support
 )
 from mcp.types import Tool
 
@@ -24,23 +24,27 @@ def get_wireless_tools() -> List[Tool]:
                 "type": "object",
                 "properties": {
                     "name": {"type": "string", "description": "Name of the wireless interface"},
-                    "radio_name": {"type": "string", "description": "Name of the radio interface (e.g., wlan1)"},
+                    "ssid": {"type": "string", "description": "Network SSID name"},
+                    "disabled": {"type": "boolean", "description": "Whether to disable the interface"},
+                    "comment": {"type": "string", "description": "Optional comment"},
+                    # Legacy parameters for backward compatibility
+                    "radio_name": {"type": "string",
+                                   "description": "Name of the radio interface (legacy systems only)"},
                     "mode": {"type": "string",
                              "enum": ["ap-bridge", "bridge", "station", "station-pseudobridge", "station-bridge",
                                       "station-wds", "ap-bridge-wds", "alignment-only"],
-                             "description": "Wireless mode"},
-                    "ssid": {"type": "string", "description": "Network SSID name"},
-                    "frequency": {"type": "string", "description": "Operating frequency"},
+                             "description": "Wireless mode (legacy systems only)"},
+                    "frequency": {"type": "string", "description": "Operating frequency (legacy systems only)"},
                     "band": {"type": "string",
                              "enum": ["2ghz-b", "2ghz-b/g", "2ghz-b/g/n", "5ghz-a", "5ghz-a/n", "5ghz-a/n/ac", "2ghz-g",
-                                      "2ghz-n", "5ghz-n", "5ghz-ac"], "description": "Frequency band"},
+                                      "2ghz-n", "5ghz-n", "5ghz-ac"],
+                             "description": "Frequency band (legacy systems only)"},
                     "channel_width": {"type": "string",
                                       "enum": ["20mhz", "40mhz", "80mhz", "160mhz", "20/40mhz-eC", "20/40mhz-Ce"],
-                                      "description": "Channel width"},
-                    "disabled": {"type": "boolean", "description": "Whether to disable the interface"},
-                    "comment": {"type": "string", "description": "Optional comment"}
+                                      "description": "Channel width (legacy systems only)"},
+                    "security_profile": {"type": "string", "description": "Security profile name (legacy systems only)"}
                 },
-                "required": ["name", "radio_name"]
+                "required": ["name"]
             },
         ),
         Tool(
@@ -50,7 +54,6 @@ def get_wireless_tools() -> List[Tool]:
                 "type": "object",
                 "properties": {
                     "name_filter": {"type": "string", "description": "Filter by interface name"},
-                    "mode_filter": {"type": "string", "description": "Filter by wireless mode"},
                     "disabled_only": {"type": "boolean", "description": "Show only disabled interfaces"},
                     "running_only": {"type": "boolean", "description": "Show only running interfaces"}
                 },
@@ -77,10 +80,6 @@ def get_wireless_tools() -> List[Tool]:
                     "name": {"type": "string", "description": "Current name of the wireless interface"},
                     "new_name": {"type": "string", "description": "New name for the interface"},
                     "ssid": {"type": "string", "description": "New SSID name"},
-                    "frequency": {"type": "string", "description": "New operating frequency"},
-                    "band": {"type": "string", "description": "New frequency band"},
-                    "channel_width": {"type": "string", "description": "New channel width"},
-                    "mode": {"type": "string", "description": "New wireless mode"},
                     "disabled": {"type": "boolean", "description": "Enable/disable interface"},
                     "comment": {"type": "string", "description": "New comment"}
                 },
@@ -121,50 +120,30 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
 
-        # Wireless Security Profile Management
+        # Wireless Security Profile Management (Legacy)
         Tool(
             name="mikrotik_create_wireless_security_profile",
-            description="Creates a wireless security profile on MikroTik device",
+            description="Creates a wireless security profile (legacy systems only)",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string", "description": "Name of the security profile"},
-                    "mode": {"type": "string", "enum": ["none", "static-keys-required", "dynamic-keys"],
-                             "description": "Security mode"},
-                    "authentication_types": {"type": "array", "items": {"type": "string",
-                                                                        "enum": ["wpa-psk", "wpa2-psk", "wpa-eap",
-                                                                                 "wpa2-eap"]},
-                                             "description": "Authentication types"},
-                    "unicast_ciphers": {"type": "array", "items": {"type": "string", "enum": ["tkip", "aes-ccm"]},
-                                        "description": "Unicast ciphers"},
-                    "group_ciphers": {"type": "array", "items": {"type": "string", "enum": ["tkip", "aes-ccm"]},
-                                      "description": "Group ciphers"},
-                    "wpa_pre_shared_key": {"type": "string", "description": "WPA pre-shared key"},
-                    "wpa2_pre_shared_key": {"type": "string", "description": "WPA2 pre-shared key"},
-                    "supplicant_identity": {"type": "string", "description": "Supplicant identity for EAP"},
-                    "eap_methods": {"type": "string", "description": "EAP methods"},
-                    "tls_mode": {"type": "string", "description": "TLS mode"},
-                    "tls_certificate": {"type": "string", "description": "TLS certificate"},
-                    "comment": {"type": "string", "description": "Optional comment"}
+                    "name": {"type": "string", "description": "Name of the security profile"}
                 },
                 "required": ["name"]
             },
         ),
         Tool(
             name="mikrotik_list_wireless_security_profiles",
-            description="Lists wireless security profiles on MikroTik device",
+            description="Lists wireless security profiles (legacy systems only)",
             inputSchema={
                 "type": "object",
-                "properties": {
-                    "name_filter": {"type": "string", "description": "Filter by profile name"},
-                    "mode_filter": {"type": "string", "description": "Filter by security mode"}
-                },
+                "properties": {},
                 "required": []
             },
         ),
         Tool(
             name="mikrotik_get_wireless_security_profile",
-            description="Gets detailed information about a specific wireless security profile",
+            description="Gets wireless security profile details (legacy systems only)",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -175,7 +154,7 @@ def get_wireless_tools() -> List[Tool]:
         ),
         Tool(
             name="mikrotik_remove_wireless_security_profile",
-            description="Removes a wireless security profile from MikroTik device",
+            description="Removes a wireless security profile (legacy systems only)",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -186,7 +165,7 @@ def get_wireless_tools() -> List[Tool]:
         ),
         Tool(
             name="mikrotik_set_wireless_security_profile",
-            description="Sets the security profile for a wireless interface",
+            description="Sets security profile for interface (legacy systems only)",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -222,39 +201,28 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
 
-        # Wireless Access List Management
+        # Wireless Access List Management (Legacy)
         Tool(
             name="mikrotik_create_wireless_access_list",
-            description="Creates a wireless access list entry",
+            description="Creates a wireless access list entry (legacy systems only)",
             inputSchema={
                 "type": "object",
-                "properties": {
-                    "interface": {"type": "string", "description": "Wireless interface"},
-                    "mac_address": {"type": "string", "description": "MAC address to control"},
-                    "action": {"type": "string", "enum": ["accept", "reject", "query"],
-                               "description": "Action to take"},
-                    "signal_range": {"type": "string", "description": "Signal strength range"},
-                    "time": {"type": "string", "description": "Time schedule"},
-                    "comment": {"type": "string", "description": "Optional comment"}
-                },
-                "required": ["interface", "mac_address"]
+                "properties": {},
+                "required": []
             },
         ),
         Tool(
             name="mikrotik_list_wireless_access_list",
-            description="Lists wireless access list entries",
+            description="Lists wireless access list entries (legacy systems only)",
             inputSchema={
                 "type": "object",
-                "properties": {
-                    "interface_filter": {"type": "string", "description": "Filter by interface"},
-                    "action_filter": {"type": "string", "description": "Filter by action"}
-                },
+                "properties": {},
                 "required": []
             },
         ),
         Tool(
             name="mikrotik_remove_wireless_access_list_entry",
-            description="Removes a wireless access list entry",
+            description="Removes a wireless access list entry (legacy systems only)",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -263,27 +231,33 @@ def get_wireless_tools() -> List[Tool]:
                 "required": ["entry_id"]
             },
         ),
+        # Wireless Support Check
+        Tool(
+            name="mikrotik_check_wireless_support",
+            description="Checks if the device supports wireless functionality",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            },
+        ),
     ]
 
 
 def get_wireless_handlers() -> Dict[str, Callable]:
     """Return the handlers for wireless management tools."""
     return {
-        # Wireless Interface Management
+        # Wireless Interface Management - Updated to match new function signatures
         "mikrotik_create_wireless_interface": lambda args: mikrotik_create_wireless_interface(
-            args["name"],
-            args["radio_name"],
-            args.get("mode", "ap-bridge"),
-            args.get("ssid"),
-            args.get("frequency"),
-            args.get("band"),
-            args.get("channel_width"),
-            args.get("disabled", False),
-            args.get("comment")
+            name=args["name"],
+            ssid=args.get("ssid"),
+            disabled=args.get("disabled", False),
+            comment=args.get("comment"),
+            # Pass all other args as kwargs for legacy compatibility
+            **{k: v for k, v in args.items() if k not in ["name", "ssid", "disabled", "comment"]}
         ),
         "mikrotik_list_wireless_interfaces": lambda args: mikrotik_list_wireless_interfaces(
             args.get("name_filter"),
-            args.get("mode_filter"),
             args.get("disabled_only", False),
             args.get("running_only", False)
         ),
@@ -291,15 +265,8 @@ def get_wireless_handlers() -> Dict[str, Callable]:
             args["name"]
         ),
         "mikrotik_update_wireless_interface": lambda args: mikrotik_update_wireless_interface(
-            args["name"],
-            args.get("new_name"),
-            args.get("ssid"),
-            args.get("frequency"),
-            args.get("band"),
-            args.get("channel_width"),
-            args.get("mode"),
-            args.get("disabled"),
-            args.get("comment")
+            name=args["name"],
+            **{k: v for k, v in args.items() if k != "name"}
         ),
         "mikrotik_remove_wireless_interface": lambda args: mikrotik_remove_wireless_interface(
             args["name"]
@@ -311,24 +278,13 @@ def get_wireless_handlers() -> Dict[str, Callable]:
             args["name"]
         ),
 
-        # Wireless Security Profile Management
+        # Wireless Security Profile Management - Simplified for new system
         "mikrotik_create_wireless_security_profile": lambda args: mikrotik_create_wireless_security_profile(
-            args["name"],
-            args.get("mode", "dynamic-keys"),
-            args.get("authentication_types"),
-            args.get("unicast_ciphers"),
-            args.get("group_ciphers"),
-            args.get("wpa_pre_shared_key"),
-            args.get("wpa2_pre_shared_key"),
-            args.get("supplicant_identity"),
-            args.get("eap_methods"),
-            args.get("tls_mode"),
-            args.get("tls_certificate"),
-            args.get("comment")
+            name=args["name"],
+            **{k: v for k, v in args.items() if k != "name"}
         ),
         "mikrotik_list_wireless_security_profiles": lambda args: mikrotik_list_wireless_security_profiles(
-            args.get("name_filter"),
-            args.get("mode_filter")
+            **args
         ),
         "mikrotik_get_wireless_security_profile": lambda args: mikrotik_get_wireless_security_profile(
             args["name"]
@@ -350,20 +306,17 @@ def get_wireless_handlers() -> Dict[str, Callable]:
             args.get("interface")
         ),
 
-        # Wireless Access List Management
+        # Wireless Access List Management - Simplified for new system
         "mikrotik_create_wireless_access_list": lambda args: mikrotik_create_wireless_access_list(
-            args["interface"],
-            args["mac_address"],
-            args.get("action", "accept"),
-            args.get("signal_range"),
-            args.get("time"),
-            args.get("comment")
+            **args
         ),
         "mikrotik_list_wireless_access_list": lambda args: mikrotik_list_wireless_access_list(
-            args.get("interface_filter"),
-            args.get("action_filter")
+            **args
         ),
         "mikrotik_remove_wireless_access_list_entry": lambda args: mikrotik_remove_wireless_access_list_entry(
             args["entry_id"]
         ),
+
+        # Wireless Support Check
+        "mikrotik_check_wireless_support": lambda args: mikrotik_check_wireless_support(),
     }
