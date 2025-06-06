@@ -331,3 +331,5 @@ _build/
 _static/
 _templates/
 .aider*
+
+mcp-config.json
