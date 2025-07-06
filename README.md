@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jeff-nasseri-mikrotik-mcp-badge.png)](https://mseep.ai/app/jeff-nasseri-mikrotik-mcp)
+
 ## Overview
 
 MikroTik MCP provides a bridge between AI assistants and MikroTik RouterOS devices. It allows AI assistants to interact with MikroTik routers through natural language requests, executing commands like managing VLANs, configuring firewall rules, handling DNS settings, and more.
