@@ -13,6 +13,7 @@ def execute_mikrotik_command(command: str) -> str:
         host=mikrotik_config["host"],
         username=mikrotik_config["username"],
         password=mikrotik_config["password"],
+        key_filename=mikrotik_config["key_filename"],
         port=mikrotik_config["port"]
     )
     
