@@ -1274,7 +1274,7 @@ npx @modelcontextprotocol/inspector uvx mcp-server-mikrotik --host <HOST> --user
 npm install -g @modelcontextprotocol/inspector
 cp mcp-config.json.example mcp-config.json
 nano mcp-config.json # Edit the values
-mcp-inspector --config mcp-config.json --server my-python-server
+mcp-inspector --config mcp-config.json --server mikrotik-mcp-server
 ```
 
 ## UV
@@ -1891,7 +1891,7 @@ Create a `mcp-config.json` file in your project directory:
 ```json
 {
   "mcpServers": {
-    "my-python-server": {
+    "mikrotik-mcp-server": {
       "command": "python",
       "args": [
         "src/mcp_mikrotik/server.py",
@@ -1926,7 +1926,7 @@ The server will start and display:
 
 **List IP Addresses:**
 ```bash
-curl -X POST http://localhost:8000/my-python-server/mikrotik_list_ip_addresses \
+curl -X POST http://localhost:8000/mikrotik-mcp-server/mikrotik_list_ip_addresses \
   -H "Authorization: Bearer your-secret-key" \
   -H "Content-Type: application/json" \
   -d '{}'

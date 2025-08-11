@@ -1,3 +1,8 @@
 # MCP MikroTik Server Requirements
 mcp>=0.1.0
 paramiko>=3.0.0
+pytest>=7.0.0
+pytest-mock>=3.10.0
+pytest-timeout>=2.1.0
+testcontainers[compose]>=3.7.0
+PyYAML>=6.0
