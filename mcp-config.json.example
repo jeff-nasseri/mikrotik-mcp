@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "my-python-server": {
+    "mikrotik-mcp-server": {
       "command": "${PATH_TO_PYTHON_EXECUTE_ABLE_FILE}:-python",
       "args": [
           "${PATH_TO_SERVER_PY}:-mikrotik-mcp/src/mcp_mikrotik/server.py",
