@@ -9,6 +9,7 @@ services:
     restart: ${RESTART_POLICY:-unless-stopped}
     platform: ${PLATFORM:-linux/amd64}
 
+    # Healthcheck configuration
     healthcheck:
       # Try netcat first (preferred)
       test: ["CMD-SHELL", "nc -z 127.0.0.1 ${API_PORT:-8728} || exit 1"]

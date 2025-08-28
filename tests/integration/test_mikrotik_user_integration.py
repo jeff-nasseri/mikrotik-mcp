@@ -42,8 +42,6 @@ def mikrotik_container():
                     'container_name': container_name,
                     'hostname': container_name,
                     'platform': 'linux/amd64',
-                    'container_name': 'routeros-test',
-                    'hostname': 'routeros-test',
                     'privileged': True,
                     'restart': 'no',
                     'environment': {
@@ -60,7 +58,7 @@ def mikrotik_container():
                     'cap_add': ['NET_ADMIN', 'NET_RAW'],
                     'devices': [
                         '/dev/net/tun:/dev/net/tun'
-                    ] if os.name != 'nt' else []
+                    ] if os.name != 'nt' else [],
                     'cap_add': [
                         'NET_ADMIN',
                         'NET_RAW'
