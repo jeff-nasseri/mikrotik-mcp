@@ -41,6 +41,9 @@ def mikrotik_container():
                     'image': 'evilfreelancer/docker-routeros:latest',
                     'container_name': container_name,
                     'hostname': container_name,
+                    'platform': 'linux/amd64',
+                    'container_name': 'routeros-test',
+                    'hostname': 'routeros-test',
                     'privileged': True,
                     'restart': 'no',
                     'environment': {
@@ -58,6 +61,18 @@ def mikrotik_container():
                     'devices': [
                         '/dev/net/tun:/dev/net/tun'
                     ] if os.name != 'nt' else []
+                    'cap_add': [
+                        'NET_ADMIN',
+                        'NET_RAW'
+                    ],
+                    'healthcheck': {
+                        'test': ['CMD', 'true'],
+                        'interval': '5s',
+                        'timeout': '3s',
+                        'retries': 5,
+                        'start_period': '1s'
+                    },
+                    'restart': 'unless-stopped'
                 }
             },
             'networks': {

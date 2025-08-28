@@ -7,6 +7,15 @@ services:
     hostname: ${HOSTNAME:-routeros}
     privileged: true
     restart: ${RESTART_POLICY:-unless-stopped}
+    platform: ${PLATFORM:-linux/amd64}
+
+    healthcheck:
+      # Try netcat first (preferred)
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${API_PORT:-8728} || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 60       # ~5 minutes max
+      start_period: 30s # give RouterOS time to boot
     
     # Environment variables for initial configuration
     environment:
