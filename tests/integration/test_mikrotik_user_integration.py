@@ -33,6 +33,7 @@ def mikrotik_container():
         container_ip = f"10.{subnet_third_octet}.0.2"
 
         ssh_port = random.randint(12000, 15000)
+        platform = os.getenv('PLATFORM', 'linux/amd64')
 
         compose_content = {
             'version': '3.8',
@@ -41,7 +42,7 @@ def mikrotik_container():
                     'image': 'evilfreelancer/docker-routeros:latest',
                     'container_name': container_name,
                     'hostname': container_name,
-                    'platform': 'linux/amd64',
+                    'platform': platform,
                     'privileged': True,
                     'restart': 'no',
                     'environment': {
