@@ -1,10 +1,11 @@
-DEFAULT_MIKROTIK_HOST = "127.0.0.1"  
-DEFAULT_MIKROTIK_USER = "admin"        
-DEFAULT_MIKROTIK_PASS = ""    
+from dataclasses import dataclass
 
-mikrotik_config = {
-    "host": DEFAULT_MIKROTIK_HOST,
-    "username": DEFAULT_MIKROTIK_USER,
-    "password": DEFAULT_MIKROTIK_PASS,
-    "port": 22
-}
+@dataclass
+class MikrotikConfig:
+    host: str = "127.0.0.1"
+    username: str = "admin"
+    password: str = ""
+    key_filename: str = ""
+    port: int = 22
+
+mikrotik_config = MikrotikConfig()

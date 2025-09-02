@@ -4,13 +4,14 @@ from .logger import app_logger
 class MikroTikSSHClient:
     """SSH client for MikroTik devices."""
     
-    def __init__(self, host: str, username: str, password: str, port: int = 22):
+    def __init__(self, host: str, username: str, password: str, key_filename: str, port: int = 22):
         self.host = host
         self.username = username
         self.password = password
         self.port = port
         self.client = None
         self.channel = None
+        self.key_filename = key_filename
     
     def connect(self):
         """Establish SSH connection to MikroTik device."""
@@ -22,6 +23,7 @@ class MikroTikSSHClient:
                 port=self.port,
                 username=self.username,
                 password=self.password,
+                key_filename=self.key_filename,
                 look_for_keys=False,
                 allow_agent=False
             )
