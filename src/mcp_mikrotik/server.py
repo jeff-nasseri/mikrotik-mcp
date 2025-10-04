@@ -15,17 +15,17 @@ def main():
     parser.add_argument('--host', type=str, help='MikroTik device IP/hostname')
     parser.add_argument('--username', type=str, help='SSH username')
     parser.add_argument('--password', type=str, help='SSH password')
-    parser.add_argument('--port', type=int, default=22, help='SSH port (default: 22)')
+    parser.add_argument('--port', type=int, help='SSH port (default: from env or 22)')
     
     args = parser.parse_args()
     
-    if args.host:
+    if args.host is not None:
         mikrotik_config["host"] = args.host
-    if args.username:
+    if args.username is not None:
         mikrotik_config["username"] = args.username
-    if args.password:
+    if args.password is not None:
         mikrotik_config["password"] = args.password
-    if args.port:
+    if args.port is not None:
         mikrotik_config["port"] = args.port
 
     logging.basicConfig(level=logging.INFO,

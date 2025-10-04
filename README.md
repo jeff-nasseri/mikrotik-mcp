@@ -40,6 +40,127 @@ pip install -e .
 mcp-server-mikrotik
 ```
 
+### Docker Installation
+
+The easiest way to run the MCP MikroTik server is using Docker.
+
+#### Quick Start with Docker
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/jeff-nasseri/mikrotik-mcp.git
+   cd mikrotik-mcp
+   ```
+
+2. **Build the Docker image:**
+   ```bash
+   docker build -t mikrotik-mcp .
+   ```
+
+3. **Run the container:**
+   ```bash
+   docker run -it --rm \
+     -e MIKROTIK_HOST=192.168.1.1 \
+     -e MIKROTIK_USERNAME=admin \
+     -e MIKROTIK_PASSWORD=admin \
+     mikrotik-mcp
+   ```
+
+#### Using Docker Compose
+
+1. **Create environment file:**
+   ```bash
+   cp env.example .env
+   # Edit .env with your MikroTik settings
+   ```
+
+2. **Start the service:**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **View logs:**
+   ```bash
+   docker-compose logs -f
+   ```
+
+4. **Stop the service:**
+   ```bash
+   docker-compose down
+   ```
+
+#### Docker Configuration Options
+
+**Environment Variables:**
+- `MIKROTIK_HOST`: MikroTik device IP/hostname (required)
+- `MIKROTIK_USERNAME`: SSH username (required)
+- `MIKROTIK_PASSWORD`: SSH password (required)
+- `MIKROTIK_PORT`: SSH port (default: 22)
+
+**Command Line Arguments:**
+```bash
+docker run -it --rm mikrotik-mcp \
+  --host 192.168.1.1 \
+  --username admin \
+  --password admin123 \
+  --port 22
+```
+
+**Custom Configuration:**
+```bash
+# Using environment variables
+docker run -it --rm \
+  -e MIKROTIK_HOST=10.0.0.1 \
+  -e MIKROTIK_USERNAME=admin \
+  -e MIKROTIK_PASSWORD=secure_password \
+  -e MIKROTIK_PORT=2222 \
+  mikrotik-mcp
+
+# Using command line arguments
+docker run -it --rm mikrotik-mcp \
+  --host 10.0.0.1 \
+  --username admin \
+  --password secure_password \
+  --port 2222
+```
+
+#### Production Deployment
+
+For production use, consider:
+
+1. **Using Docker Compose with restart policies:**
+   ```yaml
+   services:
+     mikrotik-mcp:
+       restart: unless-stopped
+       environment:
+         - MIKROTIK_HOST=your-router-ip
+         - MIKROTIK_USERNAME=your-username
+         - MIKROTIK_PASSWORD=your-password
+   ```
+
+2. **Using secrets for sensitive data:**
+   ```bash
+   # Create a secrets file
+   echo "your-secure-password" > mikrotik-password.txt
+   
+   # Run with secret
+   docker run -it --rm \
+     -e MIKROTIK_HOST=192.168.1.1 \
+     -e MIKROTIK_USERNAME=admin \
+     --secret mikrotik-password,source=mikrotik-password.txt \
+     mikrotik-mcp
+   ```
+
+3. **Health checks and monitoring:**
+   ```yaml
+   healthcheck:
+     test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+     interval: 30s
+     timeout: 10s
+     retries: 3
+   ```
+
 ### Running Integration Tests
 
 This project uses **pytest** for integration testing against a temporary MikroTik RouterOS container.
