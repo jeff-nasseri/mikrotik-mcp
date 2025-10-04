@@ -51,5 +51,3 @@ USER mcpuser
 EXPOSE 8000
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-
-CMD ["mcp-server-mikrotik"]
