@@ -67,7 +67,7 @@ The easiest way to run the MCP MikroTik server is using Docker.
            "run",
            "--rm",
            "-i",
-           "-e", "MIKROTIK_HOST=192.168.88.1"
+           "-e", "MIKROTIK_HOST=192.168.88.1",
            "-e", "MIKROTIK_USERNAME=sshuser",
            "-e", "MIKROTIK_PASSWORD=your_password",
            "-e", "MIKROTIK_PORT=22",

@@ -1,4 +1,4 @@
-FROM python:3.11-alpine as builder
+FROM python:3.11-alpine AS builder
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -20,9 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
-FROM python:3.11-alpine as production
+FROM python:3.11-alpine AS production
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
