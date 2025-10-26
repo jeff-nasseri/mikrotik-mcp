@@ -25,7 +25,8 @@ class MikroTikSSHClient:
                 password=self.password,
                 key_filename=self.key_filename,
                 look_for_keys=False,
-                allow_agent=False
+                allow_agent=False,
+                timeout=10
             )
             return True
         except Exception as e:
