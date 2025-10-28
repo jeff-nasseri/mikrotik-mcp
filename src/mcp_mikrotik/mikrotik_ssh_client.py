@@ -1,10 +1,11 @@
 import paramiko
+from typing import Optional
 from .logger import app_logger
 
 class MikroTikSSHClient:
     """SSH client for MikroTik devices."""
-    
-    def __init__(self, host: str, username: str, password: str, key_filename: str, port: int = 22):
+
+    def __init__(self, host: str, username: str, password: str, key_filename: Optional[str], port: int = 22):
         self.host = host
         self.username = username
         self.password = password
