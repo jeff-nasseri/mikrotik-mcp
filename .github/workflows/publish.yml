@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.gitversion.outputs.semVer }}
+      assemblySemVer: ${{ steps.gitversion.outputs.assemblySemVer }}
       should_publish: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
     steps:
       - name: Checkout
@@ -163,17 +164,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Create and Push Git Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ needs.version.outputs.assemblySemVer }}" -m "Release v${{ needs.version.outputs.assemblySemVer }}"
+          git push origin "v${{ needs.version.outputs.assemblySemVer }}"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.version.outputs.version }}
-          name: Release v${{ needs.version.outputs.version }}
+          tag_name: v${{ needs.version.outputs.assemblySemVer }}
+          name: Release v${{ needs.version.outputs.assemblySemVer }}
           body: |
-            ## Changes in v${{ needs.version.outputs.version }}
+            ## Changes in v${{ needs.version.outputs.assemblySemVer }}
             
             This release was automatically created by GitHub Actions.
             
             **Version:** ${{ needs.version.outputs.version }}
+            **Assembly Version:** ${{ needs.version.outputs.assemblySemVer }}
             **Commit:** ${{ github.sha }}
           draft: false
           prerelease: false
