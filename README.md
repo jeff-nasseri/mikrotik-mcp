@@ -1,9 +1,5 @@
 # MikroTik MCP
 
-# MikroTik MCP
-
-# MikroTik MCP
-
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jeff-nasseri-mikrotik-mcp-badge.png)](https://mseep.ai/app/jeff-nasseri-mikrotik-mcp)
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/jeff-nasseri/mikrotik-mcp/publish.yml?branch=master&label=build&style=flat-square&color=%23007ACC)](https://github.com/jeff-nasseri/mikrotik-mcp/actions/workflows/publish.yml)
