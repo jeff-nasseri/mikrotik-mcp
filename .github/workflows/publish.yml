@@ -1,3 +1,28 @@
+# =============================================================================
+# GitHub Actions Workflow: Build and Publish Python Package to PyPI
+# =============================================================================
+#
+# Purpose:
+#   Automatically builds, tests, and publishes the Python package to PyPI
+#   whenever changes are pushed to the master branch. Uses GitVersion for
+#   semantic versioning and creates GitHub releases with corresponding tags.
+#
+# Workflow Steps:
+#   1. Version Determination: Calculate semantic version using GitVersion
+#   2. Build: Create Python distribution packages (wheel and source)
+#   3. Test: Run test suite across Python 3.10, 3.11, and 3.12
+#   4. Publish: Upload package to PyPI (only on master branch)
+#   5. Release: Create GitHub release with auto-generated tag
+#
+# Triggers:
+#   - Push to master branch
+#
+# Requirements:
+#   - GitVersion.yml configuration file in repository root
+#   - PyPI trusted publisher configured for GitHub Actions
+#   - Repository secrets and permissions properly configured
+#
+# =============================================================================
 name: Build and Publish to PyPI
 
 on:
