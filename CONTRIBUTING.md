@@ -32,7 +32,7 @@ Navigate to `src/mcp_mikrotik/scope/` and create a new Python file for your feat
 Your scope file should:
 - Import necessary dependencies: `execute_mikrotik_command`, `app_logger`
 - Implement functions that execute MikroTik commands
-- Follow the existing naming convention: `mikrotik_<action>_<resource>`
+- Follow the existing naming convention: `mikrotik_<action>_<resource>` for Python functions in `scope/`
 - Include comprehensive docstrings with parameter descriptions
 - Handle errors gracefully and return meaningful messages
 
@@ -86,6 +86,7 @@ Your tools file should:
 - Import the scope functions you created
 - Import `Tool` from `mcp.types`
 - Define MCP tool schemas with proper validation
+- Use the `<action>_<resource>` naming convention for tool names (without the `mikrotik_` prefix)
 - Provide handler functions that map arguments to scope functions
 
 **Example structure** (based on `dhcp_tools.py`):
@@ -101,7 +102,7 @@ def get_my_feature_tools() -> List[Tool]:
     """Return the list of my feature tools."""
     return [
         Tool(
-            name="mikrotik_create_my_resource",
+            name="create_my_resource",
             description="Creates a new resource on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -120,7 +121,7 @@ def get_my_feature_tools() -> List[Tool]:
 def get_my_feature_handlers() -> Dict[str, Callable]:
     """Return the handlers for my feature tools."""
     return {
-        "mikrotik_create_my_resource": lambda args: mikrotik_create_my_resource(
+        "create_my_resource": lambda args: mikrotik_create_my_resource(
             args["name"],
             args["required_param"],
             args.get("optional_param"),

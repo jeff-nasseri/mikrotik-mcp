@@ -11,7 +11,7 @@ def get_vlan_tools() -> List[Tool]:
     return [
         # VLAN interface tools
         Tool(
-            name="mikrotik_create_vlan_interface",
+            name="create_vlan_interface",
             description="Creates a VLAN interface on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -30,7 +30,7 @@ def get_vlan_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_vlan_interfaces",
+            name="list_vlan_interfaces",
             description="Lists VLAN interfaces on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -44,7 +44,7 @@ def get_vlan_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_vlan_interface",
+            name="get_vlan_interface",
             description="Gets detailed information about a specific VLAN interface",
             inputSchema={
                 "type": "object",
@@ -55,7 +55,7 @@ def get_vlan_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_vlan_interface",
+            name="update_vlan_interface",
             description="Updates an existing VLAN interface on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -75,7 +75,7 @@ def get_vlan_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_vlan_interface",
+            name="remove_vlan_interface",
             description="Removes a VLAN interface from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -90,7 +90,7 @@ def get_vlan_tools() -> List[Tool]:
 def get_vlan_handlers() -> Dict[str, Callable]:
     """Return the handlers for VLAN interface tools."""
     return {
-        "mikrotik_create_vlan_interface": lambda args: mikrotik_create_vlan_interface(
+        "create_vlan_interface": lambda args: mikrotik_create_vlan_interface(
             args["name"],
             args["vlan_id"],
             args["interface"],
@@ -101,16 +101,16 @@ def get_vlan_handlers() -> Dict[str, Callable]:
             args.get("arp", "enabled"),
             args.get("arp_timeout")
         ),
-        "mikrotik_list_vlan_interfaces": lambda args: mikrotik_list_vlan_interfaces(
+        "list_vlan_interfaces": lambda args: mikrotik_list_vlan_interfaces(
             args.get("name_filter"),
             args.get("vlan_id_filter"),
             args.get("interface_filter"),
             args.get("disabled_only", False)
         ),
-        "mikrotik_get_vlan_interface": lambda args: mikrotik_get_vlan_interface(
+        "get_vlan_interface": lambda args: mikrotik_get_vlan_interface(
             args["name"]
         ),
-        "mikrotik_update_vlan_interface": lambda args: mikrotik_update_vlan_interface(
+        "update_vlan_interface": lambda args: mikrotik_update_vlan_interface(
             args["name"],
             args.get("new_name"),
             args.get("vlan_id"),
@@ -122,7 +122,7 @@ def get_vlan_handlers() -> Dict[str, Callable]:
             args.get("arp"),
             args.get("arp_timeout")
         ),
-        "mikrotik_remove_vlan_interface": lambda args: mikrotik_remove_vlan_interface(
+        "remove_vlan_interface": lambda args: mikrotik_remove_vlan_interface(
             args["name"]
         ),
     }

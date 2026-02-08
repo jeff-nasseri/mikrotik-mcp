@@ -12,7 +12,7 @@ def get_log_tools() -> List[Tool]:
     return [
         # Log tools
         Tool(
-            name="mikrotik_get_logs",
+            name="get_logs",
             description="Gets logs from MikroTik device with filtering options",
             inputSchema={
                 "type": "object",
@@ -30,7 +30,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_logs_by_severity",
+            name="get_logs_by_severity",
             description="Gets logs filtered by severity level",
             inputSchema={
                 "type": "object",
@@ -43,7 +43,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_logs_by_topic",
+            name="get_logs_by_topic",
             description="Gets logs for a specific topic/facility",
             inputSchema={
                 "type": "object",
@@ -56,7 +56,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_search_logs",
+            name="search_logs",
             description="Searches logs for a specific term",
             inputSchema={
                 "type": "object",
@@ -70,7 +70,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_system_events",
+            name="get_system_events",
             description="Gets system-related log events",
             inputSchema={
                 "type": "object",
@@ -83,7 +83,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_security_logs",
+            name="get_security_logs",
             description="Gets security-related log entries",
             inputSchema={
                 "type": "object",
@@ -95,7 +95,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_clear_logs",
+            name="clear_logs",
             description="Clears all logs from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -104,7 +104,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_log_statistics",
+            name="get_log_statistics",
             description="Gets statistics about log entries",
             inputSchema={
                 "type": "object",
@@ -113,7 +113,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_export_logs",
+            name="export_logs",
             description="Exports logs to a file on the MikroTik device",
             inputSchema={
                 "type": "object",
@@ -127,7 +127,7 @@ def get_log_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_monitor_logs",
+            name="monitor_logs",
             description="Monitors logs in real-time for a specified duration",
             inputSchema={
                 "type": "object",
@@ -144,7 +144,7 @@ def get_log_tools() -> List[Tool]:
 def get_log_handlers() -> Dict[str, Callable]:
     """Return the handlers for log tools."""
     return {
-        "mikrotik_get_logs": lambda args: mikrotik_get_logs(
+        "get_logs": lambda args: mikrotik_get_logs(
             args.get("topics"),
             args.get("action"),
             args.get("time_filter"),
@@ -154,40 +154,40 @@ def get_log_handlers() -> Dict[str, Callable]:
             args.get("follow", False),
             args.get("print_as", "value")
         ),
-        "mikrotik_get_logs_by_severity": lambda args: mikrotik_get_logs_by_severity(
+        "get_logs_by_severity": lambda args: mikrotik_get_logs_by_severity(
             args["severity"],
             args.get("time_filter"),
             args.get("limit")
         ),
-        "mikrotik_get_logs_by_topic": lambda args: mikrotik_get_logs_by_topic(
+        "get_logs_by_topic": lambda args: mikrotik_get_logs_by_topic(
             args["topic"],
             args.get("time_filter"),
             args.get("limit")
         ),
-        "mikrotik_search_logs": lambda args: mikrotik_search_logs(
+        "search_logs": lambda args: mikrotik_search_logs(
             args["search_term"],
             args.get("time_filter"),
             args.get("case_sensitive", False),
             args.get("limit")
         ),
-        "mikrotik_get_system_events": lambda args: mikrotik_get_system_events(
+        "get_system_events": lambda args: mikrotik_get_system_events(
             args.get("event_type"),
             args.get("time_filter"),
             args.get("limit")
         ),
-        "mikrotik_get_security_logs": lambda args: mikrotik_get_security_logs(
+        "get_security_logs": lambda args: mikrotik_get_security_logs(
             args.get("time_filter"),
             args.get("limit")
         ),
-        "mikrotik_clear_logs": lambda args: mikrotik_clear_logs(),
-        "mikrotik_get_log_statistics": lambda args: mikrotik_get_log_statistics(),
-        "mikrotik_export_logs": lambda args: mikrotik_export_logs(
+        "clear_logs": lambda args: mikrotik_clear_logs(),
+        "get_log_statistics": lambda args: mikrotik_get_log_statistics(),
+        "export_logs": lambda args: mikrotik_export_logs(
             args.get("filename"),
             args.get("topics"),
             args.get("time_filter"),
             args.get("format", "plain")
         ),
-        "mikrotik_monitor_logs": lambda args: mikrotik_monitor_logs(
+        "monitor_logs": lambda args: mikrotik_monitor_logs(
             args.get("topics"),
             args.get("action"),
             args.get("duration", 10)

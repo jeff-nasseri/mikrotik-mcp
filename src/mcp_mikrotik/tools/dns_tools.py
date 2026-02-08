@@ -16,7 +16,7 @@ def get_dns_tools() -> List[Tool]:
     return [
         # DNS tools
         Tool(
-            name="mikrotik_set_dns_servers",
+            name="set_dns_servers",
             description="Sets DNS server configuration on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -35,7 +35,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_dns_settings",
+            name="get_dns_settings",
             description="Gets current DNS configuration",
             inputSchema={
                 "type": "object",
@@ -44,7 +44,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_add_dns_static",
+            name="add_dns_static",
             description="Adds a static DNS entry",
             inputSchema={
                 "type": "object",
@@ -68,7 +68,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_dns_static",
+            name="list_dns_static",
             description="Lists static DNS entries",
             inputSchema={
                 "type": "object",
@@ -83,7 +83,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_dns_static",
+            name="get_dns_static",
             description="Gets details of a specific static DNS entry",
             inputSchema={
                 "type": "object",
@@ -94,7 +94,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_dns_static",
+            name="update_dns_static",
             description="Updates an existing static DNS entry",
             inputSchema={
                 "type": "object",
@@ -119,7 +119,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_dns_static",
+            name="remove_dns_static",
             description="Removes a static DNS entry",
             inputSchema={
                 "type": "object",
@@ -130,7 +130,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_enable_dns_static",
+            name="enable_dns_static",
             description="Enables a static DNS entry",
             inputSchema={
                 "type": "object",
@@ -141,7 +141,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_disable_dns_static",
+            name="disable_dns_static",
             description="Disables a static DNS entry",
             inputSchema={
                 "type": "object",
@@ -152,7 +152,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_dns_cache",
+            name="get_dns_cache",
             description="Gets the current DNS cache",
             inputSchema={
                 "type": "object",
@@ -161,7 +161,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_flush_dns_cache",
+            name="flush_dns_cache",
             description="Flushes the DNS cache",
             inputSchema={
                 "type": "object",
@@ -170,7 +170,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_dns_cache_statistics",
+            name="get_dns_cache_statistics",
             description="Gets DNS cache statistics",
             inputSchema={
                 "type": "object",
@@ -179,7 +179,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_add_dns_regexp",
+            name="add_dns_regexp",
             description="Adds a DNS regexp entry for pattern matching",
             inputSchema={
                 "type": "object",
@@ -194,7 +194,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_test_dns_query",
+            name="test_dns_query",
             description="Tests a DNS query",
             inputSchema={
                 "type": "object",
@@ -207,7 +207,7 @@ def get_dns_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_export_dns_config",
+            name="export_dns_config",
             description="Exports DNS configuration to a file",
             inputSchema={
                 "type": "object",
@@ -222,7 +222,7 @@ def get_dns_tools() -> List[Tool]:
 def get_dns_handlers() -> Dict[str, Callable]:
     """Return the handlers for DNS tools."""
     return {
-        "mikrotik_set_dns_servers": lambda args: mikrotik_set_dns_servers(
+        "set_dns_servers": lambda args: mikrotik_set_dns_servers(
             args["servers"],
             args.get("allow_remote_requests", False),
             args.get("max_udp_packet_size"),
@@ -233,8 +233,8 @@ def get_dns_handlers() -> Dict[str, Callable]:
             args.get("doh_server"),
             args.get("verify_doh_cert", True)
         ),
-        "mikrotik_get_dns_settings": lambda args: mikrotik_get_dns_settings(),
-        "mikrotik_add_dns_static": lambda args: mikrotik_add_dns_static(
+        "get_dns_settings": lambda args: mikrotik_get_dns_settings(),
+        "add_dns_static": lambda args: mikrotik_add_dns_static(
             args["name"],
             args.get("address"),
             args.get("cname"),
@@ -250,17 +250,17 @@ def get_dns_handlers() -> Dict[str, Callable]:
             args.get("disabled", False),
             args.get("regexp")
         ),
-        "mikrotik_list_dns_static": lambda args: mikrotik_list_dns_static(
+        "list_dns_static": lambda args: mikrotik_list_dns_static(
             args.get("name_filter"),
             args.get("address_filter"),
             args.get("type_filter"),
             args.get("disabled_only", False),
             args.get("regexp_only", False)
         ),
-        "mikrotik_get_dns_static": lambda args: mikrotik_get_dns_static(
+        "get_dns_static": lambda args: mikrotik_get_dns_static(
             args["entry_id"]
         ),
-        "mikrotik_update_dns_static": lambda args: mikrotik_update_dns_static(
+        "update_dns_static": lambda args: mikrotik_update_dns_static(
             args["entry_id"],
             args.get("name"),
             args.get("address"),
@@ -277,31 +277,31 @@ def get_dns_handlers() -> Dict[str, Callable]:
             args.get("disabled"),
             args.get("regexp")
         ),
-        "mikrotik_remove_dns_static": lambda args: mikrotik_remove_dns_static(
+        "remove_dns_static": lambda args: mikrotik_remove_dns_static(
             args["entry_id"]
         ),
-        "mikrotik_enable_dns_static": lambda args: mikrotik_enable_dns_static(
+        "enable_dns_static": lambda args: mikrotik_enable_dns_static(
             args["entry_id"]
         ),
-        "mikrotik_disable_dns_static": lambda args: mikrotik_disable_dns_static(
+        "disable_dns_static": lambda args: mikrotik_disable_dns_static(
             args["entry_id"]
         ),
-        "mikrotik_get_dns_cache": lambda args: mikrotik_get_dns_cache(),
-        "mikrotik_flush_dns_cache": lambda args: mikrotik_flush_dns_cache(),
-        "mikrotik_get_dns_cache_statistics": lambda args: mikrotik_get_dns_cache_statistics(),
-        "mikrotik_add_dns_regexp": lambda args: mikrotik_add_dns_regexp(
+        "get_dns_cache": lambda args: mikrotik_get_dns_cache(),
+        "flush_dns_cache": lambda args: mikrotik_flush_dns_cache(),
+        "get_dns_cache_statistics": lambda args: mikrotik_get_dns_cache_statistics(),
+        "add_dns_regexp": lambda args: mikrotik_add_dns_regexp(
             args["regexp"],
             args["address"],
             args.get("ttl", "1d"),
             args.get("comment"),
             args.get("disabled", False)
         ),
-        "mikrotik_test_dns_query": lambda args: mikrotik_test_dns_query(
+        "test_dns_query": lambda args: mikrotik_test_dns_query(
             args["name"],
             args.get("server"),
             args.get("type", "A")
         ),
-        "mikrotik_export_dns_config": lambda args: mikrotik_export_dns_config(
+        "export_dns_config": lambda args: mikrotik_export_dns_config(
             args.get("filename")
         ),
     }

@@ -12,7 +12,7 @@ def get_backup_tools() -> List[Tool]:
     return [
         # Backup and Export tools
         Tool(
-            name="mikrotik_create_backup",
+            name="create_backup",
             description="Creates a system backup on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -26,7 +26,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_backups",
+            name="list_backups",
             description="Lists backup files on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -38,7 +38,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_create_export",
+            name="create_export",
             description="Creates a configuration export on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -55,7 +55,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_export_section",
+            name="export_section",
             description="Exports a specific configuration section",
             inputSchema={
                 "type": "object",
@@ -69,7 +69,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_download_file",
+            name="download_file",
             description="Downloads a file from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -81,7 +81,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_upload_file",
+            name="upload_file",
             description="Uploads a file to MikroTik device",
             inputSchema={
                 "type": "object",
@@ -93,7 +93,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_restore_backup",
+            name="restore_backup",
             description="Restores a system backup on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -105,7 +105,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_import_configuration",
+            name="import_configuration",
             description="Imports a configuration script file",
             inputSchema={
                 "type": "object",
@@ -118,7 +118,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_file",
+            name="remove_file",
             description="Removes a file from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -129,7 +129,7 @@ def get_backup_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_backup_info",
+            name="backup_info",
             description="Gets detailed information about a backup file",
             inputSchema={
                 "type": "object",
@@ -144,17 +144,17 @@ def get_backup_tools() -> List[Tool]:
 def get_backup_handlers() -> Dict[str, Callable]:
     """Return the handlers for backup and export tools."""
     return {
-        "mikrotik_create_backup": lambda args: mikrotik_create_backup(
+        "create_backup": lambda args: mikrotik_create_backup(
             args.get("name"),
             args.get("dont_encrypt", False),
             args.get("include_password", True),
             args.get("comment")
         ),
-        "mikrotik_list_backups": lambda args: mikrotik_list_backups(
+        "list_backups": lambda args: mikrotik_list_backups(
             args.get("name_filter"),
             args.get("include_exports", False)
         ),
-        "mikrotik_create_export": lambda args: mikrotik_create_export(
+        "create_export": lambda args: mikrotik_create_export(
             args.get("name"),
             args.get("file_format", "rsc"),
             args.get("export_type", "full"),
@@ -163,33 +163,33 @@ def get_backup_handlers() -> Dict[str, Callable]:
             args.get("compact", False),
             args.get("comment")
         ),
-        "mikrotik_export_section": lambda args: mikrotik_export_section(
+        "export_section": lambda args: mikrotik_export_section(
             args["section"],
             args.get("name"),
             args.get("hide_sensitive", True),
             args.get("compact", False)
         ),
-        "mikrotik_download_file": lambda args: mikrotik_download_file(
+        "download_file": lambda args: mikrotik_download_file(
             args["filename"],
             args.get("file_type", "backup")
         ),
-        "mikrotik_upload_file": lambda args: mikrotik_upload_file(
+        "upload_file": lambda args: mikrotik_upload_file(
             args["filename"],
             args["content_base64"]
         ),
-        "mikrotik_restore_backup": lambda args: mikrotik_restore_backup(
+        "restore_backup": lambda args: mikrotik_restore_backup(
             args["filename"],
             args.get("password")
         ),
-        "mikrotik_import_configuration": lambda args: mikrotik_import_configuration(
+        "import_configuration": lambda args: mikrotik_import_configuration(
             args["filename"],
             args.get("run_after_reset", False),
             args.get("verbose", False)
         ),
-        "mikrotik_remove_file": lambda args: mikrotik_remove_file(
+        "remove_file": lambda args: mikrotik_remove_file(
             args["filename"]
         ),
-        "mikrotik_backup_info": lambda args: mikrotik_backup_info(
+        "backup_info": lambda args: mikrotik_backup_info(
             args["filename"]
         ),
     }

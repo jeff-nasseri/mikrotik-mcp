@@ -14,7 +14,7 @@ def get_user_tools() -> List[Tool]:
     return [
         # User Management tools
         Tool(
-            name="mikrotik_add_user",
+            name="add_user",
             description="Adds a new user to MikroTik device",
             inputSchema={
                 "type": "object",
@@ -30,7 +30,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_users",
+            name="list_users",
             description="Lists users on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -44,7 +44,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_user",
+            name="get_user",
             description="Gets detailed information about a specific user",
             inputSchema={
                 "type": "object",
@@ -55,7 +55,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_user",
+            name="update_user",
             description="Updates an existing user on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -72,7 +72,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_user",
+            name="remove_user",
             description="Removes a user from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -83,7 +83,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_disable_user",
+            name="disable_user",
             description="Disables a user account",
             inputSchema={
                 "type": "object",
@@ -94,7 +94,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_enable_user",
+            name="enable_user",
             description="Enables a user account",
             inputSchema={
                 "type": "object",
@@ -105,7 +105,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_add_user_group",
+            name="add_user_group",
             description="Adds a new user group to MikroTik device",
             inputSchema={
                 "type": "object",
@@ -119,7 +119,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_user_groups",
+            name="list_user_groups",
             description="Lists user groups on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -131,7 +131,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_user_group",
+            name="get_user_group",
             description="Gets detailed information about a specific user group",
             inputSchema={
                 "type": "object",
@@ -142,7 +142,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_user_group",
+            name="update_user_group",
             description="Updates an existing user group on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -157,7 +157,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_user_group",
+            name="remove_user_group",
             description="Removes a user group from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -168,7 +168,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_active_users",
+            name="get_active_users",
             description="Gets currently active/logged-in users",
             inputSchema={
                 "type": "object",
@@ -177,7 +177,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_disconnect_user",
+            name="disconnect_user",
             description="Disconnects an active user session",
             inputSchema={
                 "type": "object",
@@ -188,7 +188,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_export_user_config",
+            name="export_user_config",
             description="Exports user configuration to a file",
             inputSchema={
                 "type": "object",
@@ -199,7 +199,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_set_user_ssh_keys",
+            name="set_user_ssh_keys",
             description="Sets SSH public keys for a user",
             inputSchema={
                 "type": "object",
@@ -211,7 +211,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_user_ssh_keys",
+            name="list_user_ssh_keys",
             description="Lists SSH keys for a specific user",
             inputSchema={
                 "type": "object",
@@ -222,7 +222,7 @@ def get_user_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_user_ssh_key",
+            name="remove_user_ssh_key",
             description="Removes an SSH key",
             inputSchema={
                 "type": "object",
@@ -237,7 +237,7 @@ def get_user_tools() -> List[Tool]:
 def get_user_handlers() -> Dict[str, Callable]:
     """Return the handlers for user management tools."""
     return {
-        "mikrotik_add_user": lambda args: mikrotik_add_user(
+        "add_user": lambda args: mikrotik_add_user(
             args["name"],
             args["password"],
             args.get("group", "read"),
@@ -245,16 +245,16 @@ def get_user_handlers() -> Dict[str, Callable]:
             args.get("comment"),
             args.get("disabled", False)
         ),
-        "mikrotik_list_users": lambda args: mikrotik_list_users(
+        "list_users": lambda args: mikrotik_list_users(
             args.get("name_filter"),
             args.get("group_filter"),
             args.get("disabled_only", False),
             args.get("active_only", False)
         ),
-        "mikrotik_get_user": lambda args: mikrotik_get_user(
+        "get_user": lambda args: mikrotik_get_user(
             args["name"]
         ),
-        "mikrotik_update_user": lambda args: mikrotik_update_user(
+        "update_user": lambda args: mikrotik_update_user(
             args["name"],
             args.get("new_name"),
             args.get("password"),
@@ -263,53 +263,53 @@ def get_user_handlers() -> Dict[str, Callable]:
             args.get("comment"),
             args.get("disabled")
         ),
-        "mikrotik_remove_user": lambda args: mikrotik_remove_user(
+        "remove_user": lambda args: mikrotik_remove_user(
             args["name"]
         ),
-        "mikrotik_disable_user": lambda args: mikrotik_disable_user(
+        "disable_user": lambda args: mikrotik_disable_user(
             args["name"]
         ),
-        "mikrotik_enable_user": lambda args: mikrotik_enable_user(
+        "enable_user": lambda args: mikrotik_enable_user(
             args["name"]
         ),
-        "mikrotik_add_user_group": lambda args: mikrotik_add_user_group(
+        "add_user_group": lambda args: mikrotik_add_user_group(
             args["name"],
             args["policy"],
             args.get("skin"),
             args.get("comment")
         ),
-        "mikrotik_list_user_groups": lambda args: mikrotik_list_user_groups(
+        "list_user_groups": lambda args: mikrotik_list_user_groups(
             args.get("name_filter"),
             args.get("policy_filter")
         ),
-        "mikrotik_get_user_group": lambda args: mikrotik_get_user_group(
+        "get_user_group": lambda args: mikrotik_get_user_group(
             args["name"]
         ),
-        "mikrotik_update_user_group": lambda args: mikrotik_update_user_group(
+        "update_user_group": lambda args: mikrotik_update_user_group(
             args["name"],
             args.get("new_name"),
             args.get("policy"),
             args.get("skin"),
             args.get("comment")
         ),
-        "mikrotik_remove_user_group": lambda args: mikrotik_remove_user_group(
+        "remove_user_group": lambda args: mikrotik_remove_user_group(
             args["name"]
         ),
-        "mikrotik_get_active_users": lambda args: mikrotik_get_active_users(),
-        "mikrotik_disconnect_user": lambda args: mikrotik_disconnect_user(
+        "get_active_users": lambda args: mikrotik_get_active_users(),
+        "disconnect_user": lambda args: mikrotik_disconnect_user(
             args["user_id"]
         ),
-        "mikrotik_export_user_config": lambda args: mikrotik_export_user_config(
+        "export_user_config": lambda args: mikrotik_export_user_config(
             args.get("filename")
         ),
-        "mikrotik_set_user_ssh_keys": lambda args: mikrotik_set_user_ssh_keys(
+        "set_user_ssh_keys": lambda args: mikrotik_set_user_ssh_keys(
             args["username"],
             args["key_file"]
         ),
-        "mikrotik_list_user_ssh_keys": lambda args: mikrotik_list_user_ssh_keys(
+        "list_user_ssh_keys": lambda args: mikrotik_list_user_ssh_keys(
             args["username"]
         ),
-        "mikrotik_remove_user_ssh_key": lambda args: mikrotik_remove_user_ssh_key(
+        "remove_user_ssh_key": lambda args: mikrotik_remove_user_ssh_key(
             args["key_id"]
         ),
     }

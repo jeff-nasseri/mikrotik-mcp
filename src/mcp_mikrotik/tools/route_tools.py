@@ -13,7 +13,7 @@ def get_route_tools() -> List[Tool]:
     return [
         # Route tools
         Tool(
-            name="mikrotik_add_route",
+            name="add_route",
             description="Adds a route to MikroTik routing table",
             inputSchema={
                 "type": "object",
@@ -34,7 +34,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_routes",
+            name="list_routes",
             description="Lists routes in MikroTik routing table",
             inputSchema={
                 "type": "object",
@@ -52,7 +52,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_route",
+            name="get_route",
             description="Gets detailed information about a specific route",
             inputSchema={
                 "type": "object",
@@ -63,7 +63,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_route",
+            name="update_route",
             description="Updates an existing route in MikroTik routing table",
             inputSchema={
                 "type": "object",
@@ -85,7 +85,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_route",
+            name="remove_route",
             description="Removes a route from MikroTik routing table",
             inputSchema={
                 "type": "object",
@@ -96,7 +96,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_enable_route",
+            name="enable_route",
             description="Enables a route",
             inputSchema={
                 "type": "object",
@@ -107,7 +107,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_disable_route",
+            name="disable_route",
             description="Disables a route",
             inputSchema={
                 "type": "object",
@@ -118,7 +118,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_routing_table",
+            name="get_routing_table",
             description="Gets a specific routing table",
             inputSchema={
                 "type": "object",
@@ -131,7 +131,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_check_route_path",
+            name="check_route_path",
             description="Checks the route path to a destination",
             inputSchema={
                 "type": "object",
@@ -144,7 +144,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_route_cache",
+            name="get_route_cache",
             description="Gets the route cache",
             inputSchema={
                 "type": "object",
@@ -153,7 +153,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_flush_route_cache",
+            name="flush_route_cache",
             description="Flushes the route cache",
             inputSchema={
                 "type": "object",
@@ -162,7 +162,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_add_default_route",
+            name="add_default_route",
             description="Adds a default route (0.0.0.0/0)",
             inputSchema={
                 "type": "object",
@@ -176,7 +176,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_add_blackhole_route",
+            name="add_blackhole_route",
             description="Adds a blackhole route",
             inputSchema={
                 "type": "object",
@@ -189,7 +189,7 @@ def get_route_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_route_statistics",
+            name="get_route_statistics",
             description="Gets routing table statistics",
             inputSchema={
                 "type": "object",
@@ -202,7 +202,7 @@ def get_route_tools() -> List[Tool]:
 def get_route_handlers() -> Dict[str, Callable]:
     """Return the handlers for route tools."""
     return {
-        "mikrotik_add_route": lambda args: mikrotik_add_route(
+        "add_route": lambda args: mikrotik_add_route(
             args["dst_address"],
             args["gateway"],
             args.get("distance"),
@@ -215,7 +215,7 @@ def get_route_handlers() -> Dict[str, Callable]:
             args.get("pref_src"),
             args.get("check_gateway")
         ),
-        "mikrotik_list_routes": lambda args: mikrotik_list_routes(
+        "list_routes": lambda args: mikrotik_list_routes(
             args.get("dst_filter"),
             args.get("gateway_filter"),
             args.get("routing_mark_filter"),
@@ -225,10 +225,10 @@ def get_route_handlers() -> Dict[str, Callable]:
             args.get("dynamic_only", False),
             args.get("static_only", False)
         ),
-        "mikrotik_get_route": lambda args: mikrotik_get_route(
+        "get_route": lambda args: mikrotik_get_route(
             args["route_id"]
         ),
-        "mikrotik_update_route": lambda args: mikrotik_update_route(
+        "update_route": lambda args: mikrotik_update_route(
             args["route_id"],
             args.get("dst_address"),
             args.get("gateway"),
@@ -242,37 +242,37 @@ def get_route_handlers() -> Dict[str, Callable]:
             args.get("pref_src"),
             args.get("check_gateway")
         ),
-        "mikrotik_remove_route": lambda args: mikrotik_remove_route(
+        "remove_route": lambda args: mikrotik_remove_route(
             args["route_id"]
         ),
-        "mikrotik_enable_route": lambda args: mikrotik_enable_route(
+        "enable_route": lambda args: mikrotik_enable_route(
             args["route_id"]
         ),
-        "mikrotik_disable_route": lambda args: mikrotik_disable_route(
+        "disable_route": lambda args: mikrotik_disable_route(
             args["route_id"]
         ),
-        "mikrotik_get_routing_table": lambda args: mikrotik_get_routing_table(
+        "get_routing_table": lambda args: mikrotik_get_routing_table(
             args.get("table_name", "main"),
             args.get("protocol_filter"),
             args.get("active_only", True)
         ),
-        "mikrotik_check_route_path": lambda args: mikrotik_check_route_path(
+        "check_route_path": lambda args: mikrotik_check_route_path(
             args["destination"],
             args.get("source"),
             args.get("routing_mark")
         ),
-        "mikrotik_get_route_cache": lambda args: mikrotik_get_route_cache(),
-        "mikrotik_flush_route_cache": lambda args: mikrotik_flush_route_cache(),
-        "mikrotik_add_default_route": lambda args: mikrotik_add_default_route(
+        "get_route_cache": lambda args: mikrotik_get_route_cache(),
+        "flush_route_cache": lambda args: mikrotik_flush_route_cache(),
+        "add_default_route": lambda args: mikrotik_add_default_route(
             args["gateway"],
             args.get("distance", 1),
             args.get("comment"),
             args.get("check_gateway", "ping")
         ),
-        "mikrotik_add_blackhole_route": lambda args: mikrotik_add_blackhole_route(
+        "add_blackhole_route": lambda args: mikrotik_add_blackhole_route(
             args["dst_address"],
             args.get("distance", 1),
             args.get("comment")
         ),
-        "mikrotik_get_route_statistics": lambda args: mikrotik_get_route_statistics(),
+        "get_route_statistics": lambda args: mikrotik_get_route_statistics(),
     }

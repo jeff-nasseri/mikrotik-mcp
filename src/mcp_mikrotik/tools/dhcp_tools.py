@@ -11,7 +11,7 @@ def get_dhcp_tools() -> List[Tool]:
     return [
         # DHCP Server tools
         Tool(
-            name="mikrotik_create_dhcp_server",
+            name="create_dhcp_server",
             description="Creates a DHCP server on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -29,7 +29,7 @@ def get_dhcp_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_dhcp_servers",
+            name="list_dhcp_servers",
             description="Lists DHCP servers on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -43,7 +43,7 @@ def get_dhcp_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_dhcp_server",
+            name="get_dhcp_server",
             description="Gets detailed information about a specific DHCP server",
             inputSchema={
                 "type": "object",
@@ -54,7 +54,7 @@ def get_dhcp_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_create_dhcp_network",
+            name="create_dhcp_network",
             description="Creates a DHCP network configuration",
             inputSchema={
                 "type": "object",
@@ -73,7 +73,7 @@ def get_dhcp_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_create_dhcp_pool",
+            name="create_dhcp_pool",
             description="Creates a DHCP address pool",
             inputSchema={
                 "type": "object",
@@ -87,7 +87,7 @@ def get_dhcp_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_dhcp_server",
+            name="remove_dhcp_server",
             description="Removes a DHCP server from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -102,7 +102,7 @@ def get_dhcp_tools() -> List[Tool]:
 def get_dhcp_handlers() -> Dict[str, Callable]:
     """Return the handlers for DHCP server tools."""
     return {
-        "mikrotik_create_dhcp_server": lambda args: mikrotik_create_dhcp_server(
+        "create_dhcp_server": lambda args: mikrotik_create_dhcp_server(
             args["name"],
             args["interface"],
             args.get("lease_time", "1d"),
@@ -112,16 +112,16 @@ def get_dhcp_handlers() -> Dict[str, Callable]:
             args.get("delay_threshold"),
             args.get("comment")
         ),
-        "mikrotik_list_dhcp_servers": lambda args: mikrotik_list_dhcp_servers(
+        "list_dhcp_servers": lambda args: mikrotik_list_dhcp_servers(
             args.get("name_filter"),
             args.get("interface_filter"),
             args.get("disabled_only", False),
             args.get("invalid_only", False)
         ),
-        "mikrotik_get_dhcp_server": lambda args: mikrotik_get_dhcp_server(
+        "get_dhcp_server": lambda args: mikrotik_get_dhcp_server(
             args["name"]
         ),
-        "mikrotik_create_dhcp_network": lambda args: mikrotik_create_dhcp_network(
+        "create_dhcp_network": lambda args: mikrotik_create_dhcp_network(
             args["network"],
             args["gateway"],
             args.get("netmask"),
@@ -132,13 +132,13 @@ def get_dhcp_handlers() -> Dict[str, Callable]:
             args.get("dhcp_option"),
             args.get("comment")
         ),
-        "mikrotik_create_dhcp_pool": lambda args: mikrotik_create_dhcp_pool(
+        "create_dhcp_pool": lambda args: mikrotik_create_dhcp_pool(
             args["name"],
             args["ranges"],
             args.get("next_pool"),
             args.get("comment")
         ),
-        "mikrotik_remove_dhcp_server": lambda args: mikrotik_remove_dhcp_server(
+        "remove_dhcp_server": lambda args: mikrotik_remove_dhcp_server(
             args["name"]
         ),
     }

@@ -19,7 +19,7 @@ def get_firewall_filter_tools() -> List[Tool]:
     return [
         # Firewall Filter tools
         Tool(
-            name="mikrotik_create_filter_rule",
+            name="create_filter_rule",
             description="Creates a firewall filter rule on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -49,7 +49,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_filter_rules",
+            name="list_filter_rules",
             description="Lists firewall filter rules on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -68,7 +68,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_filter_rule",
+            name="get_filter_rule",
             description="Gets detailed information about a specific firewall filter rule",
             inputSchema={
                 "type": "object",
@@ -79,7 +79,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_filter_rule",
+            name="update_filter_rule",
             description="Updates an existing firewall filter rule on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -109,7 +109,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_filter_rule",
+            name="remove_filter_rule",
             description="Removes a firewall filter rule from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -120,7 +120,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_move_filter_rule",
+            name="move_filter_rule",
             description="Moves a firewall filter rule to a different position",
             inputSchema={
                 "type": "object",
@@ -132,7 +132,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_enable_filter_rule",
+            name="enable_filter_rule",
             description="Enables a firewall filter rule",
             inputSchema={
                 "type": "object",
@@ -143,7 +143,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_disable_filter_rule",
+            name="disable_filter_rule",
             description="Disables a firewall filter rule",
             inputSchema={
                 "type": "object",
@@ -154,7 +154,7 @@ def get_firewall_filter_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_create_basic_firewall_setup",
+            name="create_basic_firewall_setup",
             description="Creates a basic firewall setup with common security rules",
             inputSchema={
                 "type": "object",
@@ -169,7 +169,7 @@ def get_firewall_nat_tools() -> List[Tool]:
     return [
         # NAT tools
         Tool(
-            name="mikrotik_create_nat_rule",
+            name="create_nat_rule",
             description="Creates a NAT rule on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -195,7 +195,7 @@ def get_firewall_nat_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_nat_rules",
+            name="list_nat_rules",
             description="Lists NAT rules on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -213,7 +213,7 @@ def get_firewall_nat_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_nat_rule",
+            name="get_nat_rule",
             description="Gets detailed information about a specific NAT rule",
             inputSchema={
                 "type": "object",
@@ -224,7 +224,7 @@ def get_firewall_nat_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_nat_rule",
+            name="update_nat_rule",
             description="Updates an existing NAT rule on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -250,7 +250,7 @@ def get_firewall_nat_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_nat_rule",
+            name="remove_nat_rule",
             description="Removes a NAT rule from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -261,7 +261,7 @@ def get_firewall_nat_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_move_nat_rule",
+            name="move_nat_rule",
             description="Moves a NAT rule to a different position in the chain",
             inputSchema={
                 "type": "object",
@@ -273,7 +273,7 @@ def get_firewall_nat_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_enable_nat_rule",
+            name="enable_nat_rule",
             description="Enables a NAT rule",
             inputSchema={
                 "type": "object",
@@ -284,7 +284,7 @@ def get_firewall_nat_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_disable_nat_rule",
+            name="disable_nat_rule",
             description="Disables a NAT rule",
             inputSchema={
                 "type": "object",
@@ -299,7 +299,7 @@ def get_firewall_nat_tools() -> List[Tool]:
 def get_firewall_filter_handlers() -> Dict[str, Callable]:
     """Return the handlers for firewall filter tools."""
     return {
-        "mikrotik_create_filter_rule": lambda args: mikrotik_create_filter_rule(
+        "create_filter_rule": lambda args: mikrotik_create_filter_rule(
             args["chain"],
             args["action"],
             args.get("src_address"),
@@ -321,7 +321,7 @@ def get_firewall_filter_handlers() -> Dict[str, Callable]:
             args.get("log_prefix"),
             args.get("place_before")
         ),
-        "mikrotik_list_filter_rules": lambda args: mikrotik_list_filter_rules(
+        "list_filter_rules": lambda args: mikrotik_list_filter_rules(
             args.get("chain_filter"),
             args.get("action_filter"),
             args.get("src_address_filter"),
@@ -332,10 +332,10 @@ def get_firewall_filter_handlers() -> Dict[str, Callable]:
             args.get("invalid_only", False),
             args.get("dynamic_only", False)
         ),
-        "mikrotik_get_filter_rule": lambda args: mikrotik_get_filter_rule(
+        "get_filter_rule": lambda args: mikrotik_get_filter_rule(
             args["rule_id"]
         ),
-        "mikrotik_update_filter_rule": lambda args: mikrotik_update_filter_rule(
+        "update_filter_rule": lambda args: mikrotik_update_filter_rule(
             args["rule_id"],
             args.get("chain"),
             args.get("action"),
@@ -357,26 +357,26 @@ def get_firewall_filter_handlers() -> Dict[str, Callable]:
             args.get("log"),
             args.get("log_prefix")
         ),
-        "mikrotik_remove_filter_rule": lambda args: mikrotik_remove_filter_rule(
+        "remove_filter_rule": lambda args: mikrotik_remove_filter_rule(
             args["rule_id"]
         ),
-        "mikrotik_move_filter_rule": lambda args: mikrotik_move_filter_rule(
+        "move_filter_rule": lambda args: mikrotik_move_filter_rule(
             args["rule_id"],
             args["destination"]
         ),
-        "mikrotik_enable_filter_rule": lambda args: mikrotik_enable_filter_rule(
+        "enable_filter_rule": lambda args: mikrotik_enable_filter_rule(
             args["rule_id"]
         ),
-        "mikrotik_disable_filter_rule": lambda args: mikrotik_disable_filter_rule(
+        "disable_filter_rule": lambda args: mikrotik_disable_filter_rule(
             args["rule_id"]
         ),
-        "mikrotik_create_basic_firewall_setup": lambda args: mikrotik_create_basic_firewall_setup(),
+        "create_basic_firewall_setup": lambda args: mikrotik_create_basic_firewall_setup(),
     }
 
 def get_firewall_nat_handlers() -> Dict[str, Callable]:
     """Return the handlers for firewall NAT tools."""
     return {
-        "mikrotik_create_nat_rule": lambda args: mikrotik_create_nat_rule(
+        "create_nat_rule": lambda args: mikrotik_create_nat_rule(
             args["chain"],
             args["action"],
             args.get("src_address"),
@@ -394,7 +394,7 @@ def get_firewall_nat_handlers() -> Dict[str, Callable]:
             args.get("log_prefix"),
             args.get("place_before")
         ),
-        "mikrotik_list_nat_rules": lambda args: mikrotik_list_nat_rules(
+        "list_nat_rules": lambda args: mikrotik_list_nat_rules(
             args.get("chain_filter"),
             args.get("action_filter"),
             args.get("src_address_filter"),
@@ -404,10 +404,10 @@ def get_firewall_nat_handlers() -> Dict[str, Callable]:
             args.get("disabled_only", False),
             args.get("invalid_only", False)
         ),
-        "mikrotik_get_nat_rule": lambda args: mikrotik_get_nat_rule(
+        "get_nat_rule": lambda args: mikrotik_get_nat_rule(
             args["rule_id"]
         ),
-        "mikrotik_update_nat_rule": lambda args: mikrotik_update_nat_rule(
+        "update_nat_rule": lambda args: mikrotik_update_nat_rule(
             args["rule_id"],
             args.get("chain"),
             args.get("action"),
@@ -425,17 +425,17 @@ def get_firewall_nat_handlers() -> Dict[str, Callable]:
             args.get("log"),
             args.get("log_prefix")
         ),
-        "mikrotik_remove_nat_rule": lambda args: mikrotik_remove_nat_rule(
+        "remove_nat_rule": lambda args: mikrotik_remove_nat_rule(
             args["rule_id"]
         ),
-        "mikrotik_move_nat_rule": lambda args: mikrotik_move_nat_rule(
+        "move_nat_rule": lambda args: mikrotik_move_nat_rule(
             args["rule_id"],
             args["destination"]
         ),
-        "mikrotik_enable_nat_rule": lambda args: mikrotik_enable_nat_rule(
+        "enable_nat_rule": lambda args: mikrotik_enable_nat_rule(
             args["rule_id"]
         ),
-        "mikrotik_disable_nat_rule": lambda args: mikrotik_disable_nat_rule(
+        "disable_nat_rule": lambda args: mikrotik_disable_nat_rule(
             args["rule_id"]
         ),
     }

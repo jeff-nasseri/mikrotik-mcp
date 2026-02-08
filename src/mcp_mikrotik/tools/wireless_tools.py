@@ -18,7 +18,7 @@ def get_wireless_tools() -> List[Tool]:
     return [
         # Wireless Interface Management
         Tool(
-            name="mikrotik_create_wireless_interface",
+            name="create_wireless_interface",
             description="Creates a wireless interface on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -48,7 +48,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_wireless_interfaces",
+            name="list_wireless_interfaces",
             description="Lists wireless interfaces on MikroTik device",
             inputSchema={
                 "type": "object",
@@ -61,7 +61,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_wireless_interface",
+            name="get_wireless_interface",
             description="Gets detailed information about a specific wireless interface",
             inputSchema={
                 "type": "object",
@@ -72,7 +72,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_update_wireless_interface",
+            name="update_wireless_interface",
             description="Updates an existing wireless interface",
             inputSchema={
                 "type": "object",
@@ -87,7 +87,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_wireless_interface",
+            name="remove_wireless_interface",
             description="Removes a wireless interface from MikroTik device",
             inputSchema={
                 "type": "object",
@@ -98,7 +98,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_enable_wireless_interface",
+            name="enable_wireless_interface",
             description="Enables a wireless interface",
             inputSchema={
                 "type": "object",
@@ -109,7 +109,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_disable_wireless_interface",
+            name="disable_wireless_interface",
             description="Disables a wireless interface",
             inputSchema={
                 "type": "object",
@@ -122,7 +122,7 @@ def get_wireless_tools() -> List[Tool]:
 
         # Wireless Security Profile Management (Legacy)
         Tool(
-            name="mikrotik_create_wireless_security_profile",
+            name="create_wireless_security_profile",
             description="Creates a wireless security profile (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -133,7 +133,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_wireless_security_profiles",
+            name="list_wireless_security_profiles",
             description="Lists wireless security profiles (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -142,7 +142,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_wireless_security_profile",
+            name="get_wireless_security_profile",
             description="Gets wireless security profile details (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -153,7 +153,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_wireless_security_profile",
+            name="remove_wireless_security_profile",
             description="Removes a wireless security profile (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -164,7 +164,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_set_wireless_security_profile",
+            name="set_wireless_security_profile",
             description="Sets security profile for interface (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -178,7 +178,7 @@ def get_wireless_tools() -> List[Tool]:
 
         # Wireless Network Operations
         Tool(
-            name="mikrotik_scan_wireless_networks",
+            name="scan_wireless_networks",
             description="Scans for wireless networks using specified interface",
             inputSchema={
                 "type": "object",
@@ -190,7 +190,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_get_wireless_registration_table",
+            name="get_wireless_registration_table",
             description="Gets the wireless registration table (connected clients)",
             inputSchema={
                 "type": "object",
@@ -203,7 +203,7 @@ def get_wireless_tools() -> List[Tool]:
 
         # Wireless Access List Management (Legacy)
         Tool(
-            name="mikrotik_create_wireless_access_list",
+            name="create_wireless_access_list",
             description="Creates a wireless access list entry (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -212,7 +212,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_list_wireless_access_list",
+            name="list_wireless_access_list",
             description="Lists wireless access list entries (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -221,7 +221,7 @@ def get_wireless_tools() -> List[Tool]:
             },
         ),
         Tool(
-            name="mikrotik_remove_wireless_access_list_entry",
+            name="remove_wireless_access_list_entry",
             description="Removes a wireless access list entry (legacy systems only)",
             inputSchema={
                 "type": "object",
@@ -233,7 +233,7 @@ def get_wireless_tools() -> List[Tool]:
         ),
         # Wireless Support Check
         Tool(
-            name="mikrotik_check_wireless_support",
+            name="check_wireless_support",
             description="Checks if the device supports wireless functionality",
             inputSchema={
                 "type": "object",
@@ -248,7 +248,7 @@ def get_wireless_handlers() -> Dict[str, Callable]:
     """Return the handlers for wireless management tools."""
     return {
         # Wireless Interface Management - Updated to match new function signatures
-        "mikrotik_create_wireless_interface": lambda args: mikrotik_create_wireless_interface(
+        "create_wireless_interface": lambda args: mikrotik_create_wireless_interface(
             name=args["name"],
             ssid=args.get("ssid"),
             disabled=args.get("disabled", False),
@@ -256,67 +256,67 @@ def get_wireless_handlers() -> Dict[str, Callable]:
             # Pass all other args as kwargs for legacy compatibility
             **{k: v for k, v in args.items() if k not in ["name", "ssid", "disabled", "comment"]}
         ),
-        "mikrotik_list_wireless_interfaces": lambda args: mikrotik_list_wireless_interfaces(
+        "list_wireless_interfaces": lambda args: mikrotik_list_wireless_interfaces(
             args.get("name_filter"),
             args.get("disabled_only", False),
             args.get("running_only", False)
         ),
-        "mikrotik_get_wireless_interface": lambda args: mikrotik_get_wireless_interface(
+        "get_wireless_interface": lambda args: mikrotik_get_wireless_interface(
             args["name"]
         ),
-        "mikrotik_update_wireless_interface": lambda args: mikrotik_update_wireless_interface(
+        "update_wireless_interface": lambda args: mikrotik_update_wireless_interface(
             name=args["name"],
             **{k: v for k, v in args.items() if k != "name"}
         ),
-        "mikrotik_remove_wireless_interface": lambda args: mikrotik_remove_wireless_interface(
+        "remove_wireless_interface": lambda args: mikrotik_remove_wireless_interface(
             args["name"]
         ),
-        "mikrotik_enable_wireless_interface": lambda args: mikrotik_enable_wireless_interface(
+        "enable_wireless_interface": lambda args: mikrotik_enable_wireless_interface(
             args["name"]
         ),
-        "mikrotik_disable_wireless_interface": lambda args: mikrotik_disable_wireless_interface(
+        "disable_wireless_interface": lambda args: mikrotik_disable_wireless_interface(
             args["name"]
         ),
 
         # Wireless Security Profile Management - Simplified for new system
-        "mikrotik_create_wireless_security_profile": lambda args: mikrotik_create_wireless_security_profile(
+        "create_wireless_security_profile": lambda args: mikrotik_create_wireless_security_profile(
             name=args["name"],
             **{k: v for k, v in args.items() if k != "name"}
         ),
-        "mikrotik_list_wireless_security_profiles": lambda args: mikrotik_list_wireless_security_profiles(
+        "list_wireless_security_profiles": lambda args: mikrotik_list_wireless_security_profiles(
             **args
         ),
-        "mikrotik_get_wireless_security_profile": lambda args: mikrotik_get_wireless_security_profile(
+        "get_wireless_security_profile": lambda args: mikrotik_get_wireless_security_profile(
             args["name"]
         ),
-        "mikrotik_remove_wireless_security_profile": lambda args: mikrotik_remove_wireless_security_profile(
+        "remove_wireless_security_profile": lambda args: mikrotik_remove_wireless_security_profile(
             args["name"]
         ),
-        "mikrotik_set_wireless_security_profile": lambda args: mikrotik_set_wireless_security_profile(
+        "set_wireless_security_profile": lambda args: mikrotik_set_wireless_security_profile(
             args["interface_name"],
             args["security_profile"]
         ),
 
         # Wireless Network Operations
-        "mikrotik_scan_wireless_networks": lambda args: mikrotik_scan_wireless_networks(
+        "scan_wireless_networks": lambda args: mikrotik_scan_wireless_networks(
             args["interface"],
             args.get("duration", 5)
         ),
-        "mikrotik_get_wireless_registration_table": lambda args: mikrotik_get_wireless_registration_table(
+        "get_wireless_registration_table": lambda args: mikrotik_get_wireless_registration_table(
             args.get("interface")
         ),
 
         # Wireless Access List Management - Simplified for new system
-        "mikrotik_create_wireless_access_list": lambda args: mikrotik_create_wireless_access_list(
+        "create_wireless_access_list": lambda args: mikrotik_create_wireless_access_list(
             **args
         ),
-        "mikrotik_list_wireless_access_list": lambda args: mikrotik_list_wireless_access_list(
+        "list_wireless_access_list": lambda args: mikrotik_list_wireless_access_list(
             **args
         ),
-        "mikrotik_remove_wireless_access_list_entry": lambda args: mikrotik_remove_wireless_access_list_entry(
+        "remove_wireless_access_list_entry": lambda args: mikrotik_remove_wireless_access_list_entry(
             args["entry_id"]
         ),
 
         # Wireless Support Check
-        "mikrotik_check_wireless_support": lambda args: mikrotik_check_wireless_support(),
+        "check_wireless_support": lambda args: mikrotik_check_wireless_support(),
     }
