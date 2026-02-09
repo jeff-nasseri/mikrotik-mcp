@@ -2,7 +2,7 @@ from mcp.server.fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import Response
 
-mcp = FastMCP("mcp-mikrotik", host="0.0.0.0")
+mcp = FastMCP("mcp-mikrotik")
 
 
 @mcp.custom_route("/health", methods=["GET"])

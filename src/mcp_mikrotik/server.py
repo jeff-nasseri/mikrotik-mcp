@@ -21,7 +21,9 @@ def main():
         logger.info(f"Using key from: {config.mikrotik_config.key_filename}")
 
     try:
-        mcp.run()
+        mcp.settings.host = config.mikrotik_config.mcp.host
+        mcp.settings.port = config.mikrotik_config.mcp.port
+        mcp.run(transport=config.mikrotik_config.mcp.transport)
     except KeyboardInterrupt:
         logger.info("MCP MikroTik server stopped by user")
     except Exception as e:
