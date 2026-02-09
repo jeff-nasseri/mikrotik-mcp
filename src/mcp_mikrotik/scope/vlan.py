@@ -1,14 +1,15 @@
 from typing import Annotated, Literal, Optional
 from pydantic import Field
 from ..connector import execute_mikrotik_command
-from ..logger import app_logger
+from mcp.server.fastmcp import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
 @mcp.tool(name="create_vlan_interface", annotations=WRITE)
-def mikrotik_create_vlan_interface(
+async def mikrotik_create_vlan_interface(
     name: str,
     vlan_id: Annotated[int, Field(ge=1, le=4094)],
     interface: str,
+    ctx: Context,
     comment: Optional[str] = None,
     disabled: bool = False,
     mtu: Optional[int] = None,
@@ -18,7 +19,7 @@ def mikrotik_create_vlan_interface(
 ) -> str:
     """
     Creates a VLAN interface on MikroTik device.
-    
+
     Args:
         name: Name of the VLAN interface
         vlan_id: VLAN ID (1-4094)
@@ -29,44 +30,44 @@ def mikrotik_create_vlan_interface(
         use_service_tag: Use service tag for QinQ
         arp: ARP mode (enabled, disabled, proxy-arp, reply-only)
         arp_timeout: ARP timeout value
-    
+
     Returns:
         Command output or error message
     """
-    app_logger.info(f"Creating VLAN interface: name={name}, vlan_id={vlan_id}, interface={interface}")
+    await ctx.info(f"Creating VLAN interface: name={name}, vlan_id={vlan_id}, interface={interface}")
 
     # Build the command
     cmd = f"/interface vlan add name={name} vlan-id={vlan_id} interface={interface}"
-    
+
     # Add optional parameters
     if comment:
         cmd += f' comment="{comment}"'
-    
+
     if disabled:
         cmd += " disabled=yes"
-    
+
     if mtu:
         cmd += f" mtu={mtu}"
-    
+
     if use_service_tag:
         cmd += " use-service-tag=yes"
-    
+
     if arp != "enabled":
         cmd += f" arp={arp}"
-    
+
     if arp_timeout:
         cmd += f" arp-timeout={arp_timeout}"
-    
-    result = execute_mikrotik_command(cmd)
-    
+
+    result = await execute_mikrotik_command(cmd, ctx)
+
     # Check if creation was successful
     if result.strip():
         # MikroTik returns the ID of created item on success
         if "*" in result or result.strip().isdigit():
             # Success - get the details
             details_cmd = f"/interface vlan print detail where name={name}"
-            details = execute_mikrotik_command(details_cmd)
-            
+            details = await execute_mikrotik_command(details_cmd, ctx)
+
             if details.strip():
                 return f"VLAN interface created successfully:\n\n{details}"
             else:
@@ -77,15 +78,16 @@ def mikrotik_create_vlan_interface(
     else:
         # No output might mean success, let's check
         details_cmd = f"/interface vlan print detail where name={name}"
-        details = execute_mikrotik_command(details_cmd)
-        
+        details = await execute_mikrotik_command(details_cmd, ctx)
+
         if details.strip():
             return f"VLAN interface created successfully:\n\n{details}"
         else:
             return "VLAN interface creation completed but unable to verify."
 
 @mcp.tool(name="list_vlan_interfaces", annotations=READ)
-def mikrotik_list_vlan_interfaces(
+async def mikrotik_list_vlan_interfaces(
+    ctx: Context,
     name_filter: Optional[str] = None,
     vlan_id_filter: Optional[int] = None,
     interface_filter: Optional[str] = None,
@@ -93,21 +95,21 @@ def mikrotik_list_vlan_interfaces(
 ) -> str:
     """
     Lists VLAN interfaces on MikroTik device.
-    
+
     Args:
         name_filter: Filter by interface name (partial match)
         vlan_id_filter: Filter by VLAN ID
         interface_filter: Filter by parent interface
         disabled_only: Show only disabled interfaces
-    
+
     Returns:
         List of VLAN interfaces
     """
-    app_logger.info(f"Listing VLAN interfaces with filters: name={name_filter}, vlan_id={vlan_id_filter}, interface={interface_filter}")
-    
+    await ctx.info(f"Listing VLAN interfaces with filters: name={name_filter}, vlan_id={vlan_id_filter}, interface={interface_filter}")
+
     # Build the command
     cmd = "/interface vlan print"
-    
+
     # Add filters
     filters = []
     if name_filter:
@@ -118,42 +120,43 @@ def mikrotik_list_vlan_interfaces(
         filters.append(f'interface="{interface_filter}"')
     if disabled_only:
         filters.append("disabled=yes")
-    
+
     if filters:
         cmd += " where " + " ".join(filters)
-    
-    result = execute_mikrotik_command(cmd)
-    
+
+    result = await execute_mikrotik_command(cmd, ctx)
+
     # Check for empty result
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No VLAN interfaces found matching the criteria."
-    
+
     return f"VLAN INTERFACES:\n\n{result}"
 
 @mcp.tool(name="get_vlan_interface", annotations=READ)
-def mikrotik_get_vlan_interface(name: str) -> str:
+async def mikrotik_get_vlan_interface(name: str, ctx: Context) -> str:
     """
     Gets detailed information about a specific VLAN interface.
-    
+
     Args:
         name: Name of the VLAN interface
-    
+
     Returns:
         Detailed information about the VLAN interface
     """
-    app_logger.info(f"Getting VLAN interface details: name={name}")
-    
+    await ctx.info(f"Getting VLAN interface details: name={name}")
+
     cmd = f'/interface vlan print detail where name="{name}"'
-    result = execute_mikrotik_command(cmd)
-    
+    result = await execute_mikrotik_command(cmd, ctx)
+
     if not result or result.strip() == "":
         return f"VLAN interface '{name}' not found."
-    
+
     return f"VLAN INTERFACE DETAILS:\n\n{result}"
 
 @mcp.tool(name="update_vlan_interface", annotations=WRITE_IDEMPOTENT)
-def mikrotik_update_vlan_interface(
+async def mikrotik_update_vlan_interface(
     name: str,
+    ctx: Context,
     new_name: Optional[str] = None,
     vlan_id: Optional[Annotated[int, Field(ge=1, le=4094)]] = None,
     interface: Optional[str] = None,
@@ -166,7 +169,7 @@ def mikrotik_update_vlan_interface(
 ) -> str:
     """
     Updates an existing VLAN interface on MikroTik device.
-    
+
     Args:
         name: Current name of the VLAN interface
         new_name: New name for the interface
@@ -178,15 +181,15 @@ def mikrotik_update_vlan_interface(
         use_service_tag: Enable/disable service tag
         arp: New ARP mode
         arp_timeout: New ARP timeout
-    
+
     Returns:
         Command output or error message
     """
-    app_logger.info(f"Updating VLAN interface: name={name}")
-    
+    await ctx.info(f"Updating VLAN interface: name={name}")
+
     # Build the command
     cmd = f'/interface vlan set [find name="{name}"]'
-    
+
     # Add parameters to update
     updates = []
     if new_name:
@@ -207,50 +210,50 @@ def mikrotik_update_vlan_interface(
         updates.append(f'arp={arp}')
     if arp_timeout:
         updates.append(f'arp-timeout={arp_timeout}')
-    
+
     if not updates:
         return "No updates specified."
-    
+
     cmd += " " + " ".join(updates)
-    
-    result = execute_mikrotik_command(cmd)
-    
+
+    result = await execute_mikrotik_command(cmd, ctx)
+
     # Check if update was successful
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update VLAN interface: {result}"
-    
+
     # Get the updated interface details
     details_name = new_name if new_name else name
     details_cmd = f'/interface vlan print detail where name="{details_name}"'
-    details = execute_mikrotik_command(details_cmd)
-    
+    details = await execute_mikrotik_command(details_cmd, ctx)
+
     return f"VLAN interface updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_vlan_interface", annotations=DESTRUCTIVE)
-def mikrotik_remove_vlan_interface(name: str) -> str:
+async def mikrotik_remove_vlan_interface(name: str, ctx: Context) -> str:
     """
     Removes a VLAN interface from MikroTik device.
-    
+
     Args:
         name: Name of the VLAN interface to remove
-    
+
     Returns:
         Command output or error message
     """
-    app_logger.info(f"Removing VLAN interface: name={name}")
-    
+    await ctx.info(f"Removing VLAN interface: name={name}")
+
     # First check if the interface exists
     check_cmd = f'/interface vlan print count-only where name="{name}"'
-    count = execute_mikrotik_command(check_cmd)
-    
+    count = await execute_mikrotik_command(check_cmd, ctx)
+
     if count.strip() == "0":
         return f"VLAN interface '{name}' not found."
-    
+
     # Remove the interface
     cmd = f'/interface vlan remove [find name="{name}"]'
-    result = execute_mikrotik_command(cmd)
-    
+    result = await execute_mikrotik_command(cmd, ctx)
+
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove VLAN interface: {result}"
-    
+
     return f"VLAN interface '{name}' removed successfully."

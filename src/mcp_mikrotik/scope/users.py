@@ -1,20 +1,21 @@
 from typing import Optional, List
 from ..connector import execute_mikrotik_command
-from ..logger import app_logger
+from mcp.server.fastmcp import Context
 import re
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
 @mcp.tool(name="add_user", annotations=WRITE)
-def mikrotik_add_user(
+async def mikrotik_add_user(
     name: str,
     password: str,
+    ctx: Context,
     group: str = "read",
     address: Optional[str] = None,
     comment: Optional[str] = None,
     disabled: bool = False
 ) -> str:
     """Adds a user to MikroTik device."""
-    app_logger.info(f"Adding user: name={name}, group={group}")
+    await ctx.info(f"Adding user: name={name}, group={group}")
 
     cmd = f'/user add name="{name}" password="{password}" group={group}'
 
@@ -27,13 +28,13 @@ def mikrotik_add_user(
     if disabled:
         cmd += " disabled=yes"
 
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if result.strip():
         if "*" in result or result.strip().isdigit():
             user_id = result.strip()
             details_cmd = f"/user print detail where .id={user_id}"
-            details = execute_mikrotik_command(details_cmd)
+            details = await execute_mikrotik_command(details_cmd, ctx)
 
             if details.strip():
                 # Remove password from output for security
@@ -45,7 +46,7 @@ def mikrotik_add_user(
             return f"Failed to create user: {result}"
     else:
         details_cmd = f'/user print detail where name="{name}"'
-        details = execute_mikrotik_command(details_cmd)
+        details = await execute_mikrotik_command(details_cmd, ctx)
 
         if details.strip():
             details = re.sub(r'password="[^"]*"', 'password="***"', details)
@@ -54,14 +55,15 @@ def mikrotik_add_user(
             return "User creation completed but unable to verify."
 
 @mcp.tool(name="list_users", annotations=READ)
-def mikrotik_list_users(
+async def mikrotik_list_users(
+    ctx: Context,
     name_filter: Optional[str] = None,
     group_filter: Optional[str] = None,
     disabled_only: bool = False,
     active_only: bool = False
 ) -> str:
     """Lists users on MikroTik device."""
-    app_logger.info(f"Listing users with filters: name={name_filter}, group={group_filter}")
+    await ctx.info(f"Listing users with filters: name={name_filter}, group={group_filter}")
 
     cmd = "/user print"
 
@@ -76,7 +78,7 @@ def mikrotik_list_users(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No users found matching the criteria."
@@ -87,12 +89,12 @@ def mikrotik_list_users(
     return f"USERS:\n\n{result}"
 
 @mcp.tool(name="get_user", annotations=READ)
-def mikrotik_get_user(name: str) -> str:
+async def mikrotik_get_user(name: str, ctx: Context) -> str:
     """Gets detailed information about a specific user."""
-    app_logger.info(f"Getting user details: name={name}")
+    await ctx.info(f"Getting user details: name={name}")
 
     cmd = f'/user print detail where name="{name}"'
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result or result.strip() == "":
         return f"User '{name}' not found."
@@ -103,8 +105,9 @@ def mikrotik_get_user(name: str) -> str:
     return f"USER DETAILS:\n\n{result}"
 
 @mcp.tool(name="update_user", annotations=WRITE_IDEMPOTENT)
-def mikrotik_update_user(
+async def mikrotik_update_user(
     name: str,
+    ctx: Context,
     new_name: Optional[str] = None,
     password: Optional[str] = None,
     group: Optional[str] = None,
@@ -113,7 +116,7 @@ def mikrotik_update_user(
     disabled: Optional[bool] = None
 ) -> str:
     """Updates a user."""
-    app_logger.info(f"Updating user: name={name}")
+    await ctx.info(f"Updating user: name={name}")
 
     cmd = f'/user set [find name="{name}"]'
 
@@ -139,14 +142,14 @@ def mikrotik_update_user(
 
     cmd += " " + " ".join(updates)
 
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update user: {result}"
 
     details_name = new_name if new_name else name
     details_cmd = f'/user print detail where name="{details_name}"'
-    details = execute_mikrotik_command(details_cmd)
+    details = await execute_mikrotik_command(details_cmd, ctx)
 
     # Remove password from output
     details = re.sub(r'password="[^"]*"', 'password="***"', details)
@@ -154,22 +157,22 @@ def mikrotik_update_user(
     return f"User updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_user", annotations=DESTRUCTIVE)
-def mikrotik_remove_user(name: str) -> str:
+async def mikrotik_remove_user(name: str, ctx: Context) -> str:
     """Removes a user."""
-    app_logger.info(f"Removing user: name={name}")
+    await ctx.info(f"Removing user: name={name}")
 
     # Don't allow removal of admin user
     if name.lower() == "admin":
         return "Cannot remove the admin user."
 
     check_cmd = f'/user print count-only where name="{name}"'
-    count = execute_mikrotik_command(check_cmd)
+    count = await execute_mikrotik_command(check_cmd, ctx)
 
     if count.strip() == "0":
         return f"User '{name}' not found."
 
     cmd = f'/user remove [find name="{name}"]'
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove user: {result}"
@@ -177,24 +180,25 @@ def mikrotik_remove_user(name: str) -> str:
     return f"User '{name}' removed successfully."
 
 @mcp.tool(name="disable_user", annotations=WRITE_IDEMPOTENT)
-def mikrotik_disable_user(name: str) -> str:
+async def mikrotik_disable_user(name: str, ctx: Context) -> str:
     """Disables a user."""
-    return mikrotik_update_user(name, disabled=True)
+    return await mikrotik_update_user(name, disabled=True, ctx=ctx)
 
 @mcp.tool(name="enable_user", annotations=WRITE_IDEMPOTENT)
-def mikrotik_enable_user(name: str) -> str:
+async def mikrotik_enable_user(name: str, ctx: Context) -> str:
     """Enables a user."""
-    return mikrotik_update_user(name, disabled=False)
+    return await mikrotik_update_user(name, disabled=False, ctx=ctx)
 
 @mcp.tool(name="add_user_group", annotations=WRITE)
-def mikrotik_add_user_group(
+async def mikrotik_add_user_group(
     name: str,
     policy: List[str],
+    ctx: Context,
     skin: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
     """Adds a user group."""
-    app_logger.info(f"Adding user group: name={name}")
+    await ctx.info(f"Adding user group: name={name}")
 
     # Valid policies
     valid_policies = [
@@ -216,13 +220,13 @@ def mikrotik_add_user_group(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if result.strip():
         if "*" in result or result.strip().isdigit():
             group_id = result.strip()
             details_cmd = f"/user group print detail where .id={group_id}"
-            details = execute_mikrotik_command(details_cmd)
+            details = await execute_mikrotik_command(details_cmd, ctx)
 
             if details.strip():
                 return f"User group created successfully:\n\n{details}"
@@ -232,7 +236,7 @@ def mikrotik_add_user_group(
             return f"Failed to create user group: {result}"
     else:
         details_cmd = f'/user group print detail where name="{name}"'
-        details = execute_mikrotik_command(details_cmd)
+        details = await execute_mikrotik_command(details_cmd, ctx)
 
         if details.strip():
             return f"User group created successfully:\n\n{details}"
@@ -240,12 +244,13 @@ def mikrotik_add_user_group(
             return "User group creation completed but unable to verify."
 
 @mcp.tool(name="list_user_groups", annotations=READ)
-def mikrotik_list_user_groups(
+async def mikrotik_list_user_groups(
+    ctx: Context,
     name_filter: Optional[str] = None,
     policy_filter: Optional[str] = None
 ) -> str:
     """Lists user groups on MikroTik device."""
-    app_logger.info(f"Listing user groups with filters: name={name_filter}")
+    await ctx.info(f"Listing user groups with filters: name={name_filter}")
 
     cmd = "/user group print"
 
@@ -258,7 +263,7 @@ def mikrotik_list_user_groups(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No user groups found matching the criteria."
@@ -266,12 +271,12 @@ def mikrotik_list_user_groups(
     return f"USER GROUPS:\n\n{result}"
 
 @mcp.tool(name="get_user_group", annotations=READ)
-def mikrotik_get_user_group(name: str) -> str:
+async def mikrotik_get_user_group(name: str, ctx: Context) -> str:
     """Gets detailed information about a specific user group."""
-    app_logger.info(f"Getting user group details: name={name}")
+    await ctx.info(f"Getting user group details: name={name}")
 
     cmd = f'/user group print detail where name="{name}"'
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result or result.strip() == "":
         return f"User group '{name}' not found."
@@ -279,15 +284,16 @@ def mikrotik_get_user_group(name: str) -> str:
     return f"USER GROUP DETAILS:\n\n{result}"
 
 @mcp.tool(name="update_user_group", annotations=WRITE_IDEMPOTENT)
-def mikrotik_update_user_group(
+async def mikrotik_update_user_group(
     name: str,
+    ctx: Context,
     new_name: Optional[str] = None,
     policy: Optional[List[str]] = None,
     skin: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
     """Updates a user group."""
-    app_logger.info(f"Updating user group: name={name}")
+    await ctx.info(f"Updating user group: name={name}")
 
     # Don't allow modification of built-in groups
     if name in ["read", "write", "full"]:
@@ -313,41 +319,41 @@ def mikrotik_update_user_group(
 
     cmd += " " + " ".join(updates)
 
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update user group: {result}"
 
     details_name = new_name if new_name else name
     details_cmd = f'/user group print detail where name="{details_name}"'
-    details = execute_mikrotik_command(details_cmd)
+    details = await execute_mikrotik_command(details_cmd, ctx)
 
     return f"User group updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_user_group", annotations=DESTRUCTIVE)
-def mikrotik_remove_user_group(name: str) -> str:
+async def mikrotik_remove_user_group(name: str, ctx: Context) -> str:
     """Removes a user group."""
-    app_logger.info(f"Removing user group: name={name}")
+    await ctx.info(f"Removing user group: name={name}")
 
     # Don't allow removal of built-in groups
     if name in ["read", "write", "full"]:
         return f"Cannot remove built-in group '{name}'."
 
     check_cmd = f'/user group print count-only where name="{name}"'
-    count = execute_mikrotik_command(check_cmd)
+    count = await execute_mikrotik_command(check_cmd, ctx)
 
     if count.strip() == "0":
         return f"User group '{name}' not found."
 
     # Check if group is in use
     users_cmd = f'/user print count-only where group="{name}"'
-    users_count = execute_mikrotik_command(users_cmd)
+    users_count = await execute_mikrotik_command(users_cmd, ctx)
 
     if users_count.strip() != "0":
         return f"Cannot remove group '{name}': {users_count.strip()} users are using this group."
 
     cmd = f'/user group remove [find name="{name}"]'
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove user group: {result}"
@@ -355,12 +361,12 @@ def mikrotik_remove_user_group(name: str) -> str:
     return f"User group '{name}' removed successfully."
 
 @mcp.tool(name="get_active_users", annotations=READ)
-def mikrotik_get_active_users() -> str:
+async def mikrotik_get_active_users(ctx: Context) -> str:
     """Gets currently active/logged-in users."""
-    app_logger.info("Getting active users")
+    await ctx.info("Getting active users")
 
     cmd = "/user active print"
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result or result.strip() == "":
         return "No active users found."
@@ -368,12 +374,12 @@ def mikrotik_get_active_users() -> str:
     return f"ACTIVE USERS:\n\n{result}"
 
 @mcp.tool(name="disconnect_user", annotations=DESTRUCTIVE)
-def mikrotik_disconnect_user(user_id: str) -> str:
+async def mikrotik_disconnect_user(user_id: str, ctx: Context) -> str:
     """Disconnects an active user session."""
-    app_logger.info(f"Disconnecting user: user_id={user_id}")
+    await ctx.info(f"Disconnecting user: user_id={user_id}")
 
     cmd = f"/user active remove {user_id}"
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to disconnect user: {result}"
@@ -381,15 +387,15 @@ def mikrotik_disconnect_user(user_id: str) -> str:
     return f"User session {user_id} disconnected successfully."
 
 @mcp.tool(name="export_user_config", annotations=READ)
-def mikrotik_export_user_config(filename: Optional[str] = None) -> str:
+async def mikrotik_export_user_config(ctx: Context, filename: Optional[str] = None) -> str:
     """Exports user configuration to a file."""
-    app_logger.info("Exporting user configuration")
+    await ctx.info("Exporting user configuration")
 
     if not filename:
         filename = "user_config"
 
     cmd = f"/user export file={filename}"
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result.strip():
         return f"User configuration exported to {filename}.rsc"
@@ -397,15 +403,16 @@ def mikrotik_export_user_config(filename: Optional[str] = None) -> str:
         return f"Export result: {result}"
 
 @mcp.tool(name="set_user_ssh_keys", annotations=WRITE)
-def mikrotik_set_user_ssh_keys(
+async def mikrotik_set_user_ssh_keys(
     username: str,
-    key_file: str
+    key_file: str,
+    ctx: Context
 ) -> str:
     """Sets SSH keys for a specific user."""
-    app_logger.info(f"Setting SSH keys for user: {username}")
+    await ctx.info(f"Setting SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys import user="{username}" public-key-file="{key_file}"'
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result.strip() or "imported" in result.lower():
         return f"SSH key imported successfully for user '{username}'."
@@ -413,12 +420,12 @@ def mikrotik_set_user_ssh_keys(
         return f"Failed to import SSH key: {result}"
 
 @mcp.tool(name="list_user_ssh_keys", annotations=READ)
-def mikrotik_list_user_ssh_keys(username: str) -> str:
+async def mikrotik_list_user_ssh_keys(username: str, ctx: Context) -> str:
     """Lists SSH keys for a specific user."""
-    app_logger.info(f"Listing SSH keys for user: {username}")
+    await ctx.info(f"Listing SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys print where user="{username}"'
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if not result or result.strip() == "":
         return f"No SSH keys found for user '{username}'."
@@ -426,12 +433,12 @@ def mikrotik_list_user_ssh_keys(username: str) -> str:
     return f"SSH KEYS for {username}:\n\n{result}"
 
 @mcp.tool(name="remove_user_ssh_key", annotations=DESTRUCTIVE)
-def mikrotik_remove_user_ssh_key(key_id: str) -> str:
+async def mikrotik_remove_user_ssh_key(key_id: str, ctx: Context) -> str:
     """Removes an SSH key."""
-    app_logger.info(f"Removing SSH key: key_id={key_id}")
+    await ctx.info(f"Removing SSH key: key_id={key_id}")
 
     cmd = f"/user ssh-keys remove {key_id}"
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove SSH key: {result}"
