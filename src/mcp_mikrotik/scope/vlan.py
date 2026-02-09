@@ -1,18 +1,19 @@
-from typing import Optional
+from typing import Annotated, Literal, Optional
+from pydantic import Field
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
-from ..app import mcp
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
-@mcp.tool()
+@mcp.tool(name="create_vlan_interface", annotations=WRITE)
 def mikrotik_create_vlan_interface(
     name: str,
-    vlan_id: int,
+    vlan_id: Annotated[int, Field(ge=1, le=4094)],
     interface: str,
     comment: Optional[str] = None,
     disabled: bool = False,
     mtu: Optional[int] = None,
     use_service_tag: bool = False,
-    arp: str = "enabled",
+    arp: Literal["enabled", "disabled", "proxy-arp", "reply-only"] = "enabled",
     arp_timeout: Optional[str] = None
 ) -> str:
     """
@@ -33,11 +34,7 @@ def mikrotik_create_vlan_interface(
         Command output or error message
     """
     app_logger.info(f"Creating VLAN interface: name={name}, vlan_id={vlan_id}, interface={interface}")
-    
-    # Validate VLAN ID
-    if not 1 <= vlan_id <= 4094:
-        return f"Error: Invalid VLAN ID {vlan_id}. Must be between 1 and 4094."
-    
+
     # Build the command
     cmd = f"/interface vlan add name={name} vlan-id={vlan_id} interface={interface}"
     
@@ -87,7 +84,7 @@ def mikrotik_create_vlan_interface(
         else:
             return "VLAN interface creation completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_vlan_interfaces", annotations=READ)
 def mikrotik_list_vlan_interfaces(
     name_filter: Optional[str] = None,
     vlan_id_filter: Optional[int] = None,
@@ -133,7 +130,7 @@ def mikrotik_list_vlan_interfaces(
     
     return f"VLAN INTERFACES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_vlan_interface", annotations=READ)
 def mikrotik_get_vlan_interface(name: str) -> str:
     """
     Gets detailed information about a specific VLAN interface.
@@ -154,17 +151,17 @@ def mikrotik_get_vlan_interface(name: str) -> str:
     
     return f"VLAN INTERFACE DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_vlan_interface", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_vlan_interface(
     name: str,
     new_name: Optional[str] = None,
-    vlan_id: Optional[int] = None,
+    vlan_id: Optional[Annotated[int, Field(ge=1, le=4094)]] = None,
     interface: Optional[str] = None,
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
     mtu: Optional[int] = None,
     use_service_tag: Optional[bool] = None,
-    arp: Optional[str] = None,
+    arp: Optional[Literal["enabled", "disabled", "proxy-arp", "reply-only"]] = None,
     arp_timeout: Optional[str] = None
 ) -> str:
     """
@@ -195,8 +192,6 @@ def mikrotik_update_vlan_interface(
     if new_name:
         updates.append(f'name={new_name}')
     if vlan_id is not None:
-        if not 1 <= vlan_id <= 4094:
-            return f"Error: Invalid VLAN ID {vlan_id}. Must be between 1 and 4094."
         updates.append(f'vlan-id={vlan_id}')
     if interface:
         updates.append(f'interface={interface}')
@@ -231,7 +226,7 @@ def mikrotik_update_vlan_interface(
     
     return f"VLAN interface updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_vlan_interface", annotations=DESTRUCTIVE)
 def mikrotik_remove_vlan_interface(name: str) -> str:
     """
     Removes a VLAN interface from MikroTik device.

@@ -1,9 +1,9 @@
 from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
-from ..app import mcp
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
-@mcp.tool()
+@mcp.tool(name="create_ip_pool", annotations=WRITE)
 def mikrotik_create_ip_pool(
     name: str,
     ranges: str,
@@ -61,7 +61,7 @@ def mikrotik_create_ip_pool(
         else:
             return "IP pool creation completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_ip_pools", annotations=READ)
 def mikrotik_list_ip_pools(
     name_filter: Optional[str] = None,
     ranges_filter: Optional[str] = None,
@@ -125,7 +125,7 @@ def mikrotik_list_ip_pools(
     
     return f"IP POOLS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_ip_pool", annotations=READ)
 def mikrotik_get_ip_pool(name: str) -> str:
     """
     Gets detailed information about a specific IP pool.
@@ -153,7 +153,7 @@ def mikrotik_get_ip_pool(name: str) -> str:
     
     return f"IP POOL DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_ip_pool", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_ip_pool(
     name: str,
     new_name: Optional[str] = None,
@@ -211,7 +211,7 @@ def mikrotik_update_ip_pool(
     
     return f"IP pool updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_ip_pool", annotations=DESTRUCTIVE)
 def mikrotik_remove_ip_pool(name: str) -> str:
     """
     Removes an IP pool from MikroTik device.
@@ -254,7 +254,7 @@ def mikrotik_remove_ip_pool(name: str) -> str:
     
     return f"IP pool '{name}' removed successfully."
 
-@mcp.tool()
+@mcp.tool(name="list_ip_pool_used", annotations=READ)
 def mikrotik_list_ip_pool_used(
     pool_name: Optional[str] = None,
     address_filter: Optional[str] = None,
@@ -298,7 +298,7 @@ def mikrotik_list_ip_pool_used(
     
     return f"USED IP POOL ADDRESSES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="expand_ip_pool", annotations=WRITE_IDEMPOTENT)
 def mikrotik_expand_ip_pool(name: str, additional_ranges: str) -> str:
     """
     Expands an existing IP pool by adding more ranges.

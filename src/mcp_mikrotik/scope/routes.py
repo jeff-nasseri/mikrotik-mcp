@@ -1,9 +1,9 @@
 from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
-from ..app import mcp
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
-@mcp.tool()
+@mcp.tool(name="add_route", annotations=WRITE)
 def mikrotik_add_route(
     dst_address: str,
     gateway: str,
@@ -64,7 +64,7 @@ def mikrotik_add_route(
         else:
             return "Route addition completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_routes", annotations=READ)
 def mikrotik_list_routes(
     dst_filter: Optional[str] = None,
     gateway_filter: Optional[str] = None,
@@ -108,7 +108,7 @@ def mikrotik_list_routes(
 
     return f"ROUTES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_route", annotations=READ)
 def mikrotik_get_route(route_id: str) -> str:
     """Gets detailed information about a specific route."""
     app_logger.info(f"Getting route details: route_id={route_id}")
@@ -121,7 +121,7 @@ def mikrotik_get_route(route_id: str) -> str:
 
     return f"ROUTE DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_route", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_route(
     route_id: str,
     dst_address: Optional[str] = None,
@@ -189,7 +189,7 @@ def mikrotik_update_route(
 
     return f"Route updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_route", annotations=DESTRUCTIVE)
 def mikrotik_remove_route(route_id: str) -> str:
     """Removes a route."""
     app_logger.info(f"Removing route: route_id={route_id}")
@@ -208,17 +208,17 @@ def mikrotik_remove_route(route_id: str) -> str:
 
     return f"Route with ID '{route_id}' removed successfully."
 
-@mcp.tool()
+@mcp.tool(name="enable_route", annotations=WRITE_IDEMPOTENT)
 def mikrotik_enable_route(route_id: str) -> str:
     """Enables a route."""
     return mikrotik_update_route(route_id, disabled=False)
 
-@mcp.tool()
+@mcp.tool(name="disable_route", annotations=WRITE_IDEMPOTENT)
 def mikrotik_disable_route(route_id: str) -> str:
     """Disables a route."""
     return mikrotik_update_route(route_id, disabled=True)
 
-@mcp.tool()
+@mcp.tool(name="get_routing_table", annotations=READ)
 def mikrotik_get_routing_table(
     table_name: Optional[str] = "main",
     protocol_filter: Optional[str] = None,
@@ -247,7 +247,7 @@ def mikrotik_get_routing_table(
 
     return f"ROUTING TABLE ({table_name}):\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="check_route_path", annotations=READ)
 def mikrotik_check_route_path(
     destination: str,
     source: Optional[str] = None,
@@ -270,7 +270,7 @@ def mikrotik_check_route_path(
 
     return f"ROUTE PATH TO {destination}:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_route_cache", annotations=READ)
 def mikrotik_get_route_cache() -> str:
     """Gets the route cache."""
     app_logger.info("Getting route cache")
@@ -283,7 +283,7 @@ def mikrotik_get_route_cache() -> str:
 
     return f"ROUTE CACHE:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="flush_route_cache", annotations=DESTRUCTIVE)
 def mikrotik_flush_route_cache() -> str:
     """Flushes the route cache."""
     app_logger.info("Flushing route cache")
@@ -296,7 +296,7 @@ def mikrotik_flush_route_cache() -> str:
     else:
         return f"Flush result: {result}"
 
-@mcp.tool()
+@mcp.tool(name="add_default_route", annotations=WRITE)
 def mikrotik_add_default_route(
     gateway: str,
     distance: int = 1,
@@ -312,7 +312,7 @@ def mikrotik_add_default_route(
         check_gateway=check_gateway
     )
 
-@mcp.tool()
+@mcp.tool(name="add_blackhole_route", annotations=WRITE)
 def mikrotik_add_blackhole_route(
     dst_address: str,
     distance: int = 1,
@@ -336,7 +336,7 @@ def mikrotik_add_blackhole_route(
     else:
         return "Blackhole route added successfully."
 
-@mcp.tool()
+@mcp.tool(name="get_route_statistics", annotations=READ)
 def mikrotik_get_route_statistics() -> str:
     """Gets routing table statistics."""
     app_logger.info("Getting route statistics")

@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Literal, Optional
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
-from ..app import mcp
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
-@mcp.tool()
+@mcp.tool(name="create_nat_rule", annotations=WRITE)
 def mikrotik_create_nat_rule(
-    chain: str,
+    chain: Literal["srcnat", "dstnat"],
     action: str,
     src_address: Optional[str] = None,
     dst_address: Optional[str] = None,
@@ -47,11 +47,6 @@ def mikrotik_create_nat_rule(
         Command output or error message
     """
     app_logger.info(f"Creating NAT rule: chain={chain}, action={action}")
-    
-    # Validate chain
-    valid_chains = ["srcnat", "dstnat"]
-    if chain not in valid_chains:
-        return f"Error: Invalid chain '{chain}'. Must be one of: {', '.join(valid_chains)}"
     
     # Validate action based on chain
     srcnat_actions = ["accept", "drop", "masquerade", "src-nat", "same", "netmap", "jump", "return", "log", "passthrough"]
@@ -138,7 +133,7 @@ def mikrotik_create_nat_rule(
         else:
             return "NAT rule creation completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_nat_rules", annotations=READ)
 def mikrotik_list_nat_rules(
     chain_filter: Optional[str] = None,
     action_filter: Optional[str] = None,
@@ -200,7 +195,7 @@ def mikrotik_list_nat_rules(
     
     return f"NAT RULES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_nat_rule", annotations=READ)
 def mikrotik_get_nat_rule(rule_id: str) -> str:
     """
     Gets detailed information about a specific NAT rule.
@@ -221,7 +216,7 @@ def mikrotik_get_nat_rule(rule_id: str) -> str:
     
     return f"NAT RULE DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_nat_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_nat_rule(
     rule_id: str,
     chain: Optional[str] = None,
@@ -346,7 +341,7 @@ def mikrotik_update_nat_rule(
     
     return f"NAT rule updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_nat_rule", annotations=DESTRUCTIVE)
 def mikrotik_remove_nat_rule(rule_id: str) -> str:
     """
     Removes a NAT rule from MikroTik device.
@@ -375,7 +370,7 @@ def mikrotik_remove_nat_rule(rule_id: str) -> str:
     
     return f"NAT rule with ID '{rule_id}' removed successfully."
 
-@mcp.tool()
+@mcp.tool(name="move_nat_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_move_nat_rule(rule_id: str, destination: int) -> str:
     """
     Moves a NAT rule to a different position in the chain.
@@ -405,7 +400,7 @@ def mikrotik_move_nat_rule(rule_id: str, destination: int) -> str:
     
     return f"NAT rule with ID '{rule_id}' moved to position {destination}."
 
-@mcp.tool()
+@mcp.tool(name="enable_nat_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_enable_nat_rule(rule_id: str) -> str:
     """
     Enables a NAT rule.
@@ -418,7 +413,7 @@ def mikrotik_enable_nat_rule(rule_id: str) -> str:
     """
     return mikrotik_update_nat_rule(rule_id, disabled=False)
 
-@mcp.tool()
+@mcp.tool(name="disable_nat_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_disable_nat_rule(rule_id: str) -> str:
     """
     Disables a NAT rule.

@@ -1,12 +1,12 @@
-from typing import Optional, List
-from ..app import mcp
+from typing import Literal, Optional, List
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, DANGEROUS
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
 
-@mcp.tool()
+@mcp.tool(name="create_filter_rule", annotations=WRITE)
 def mikrotik_create_filter_rule(
-    chain: str,
-    action: str,
+    chain: Literal["input", "forward", "output"],
+    action: Literal["accept", "drop", "reject", "jump", "log", "passthrough", "return", "tarpit", "fasttrack-connection"],
     src_address: Optional[str] = None,
     dst_address: Optional[str] = None,
     src_port: Optional[str] = None,
@@ -55,16 +55,6 @@ def mikrotik_create_filter_rule(
         Command output or error message
     """
     app_logger.info(f"Creating firewall filter rule: chain={chain}, action={action}")
-    
-    # Validate chain
-    valid_chains = ["input", "forward", "output"]
-    if chain not in valid_chains:
-        return f"Error: Invalid chain '{chain}'. Must be one of: {', '.join(valid_chains)}"
-    
-    # Validate action
-    valid_actions = ["accept", "drop", "reject", "jump", "log", "passthrough", "return", "tarpit", "fasttrack-connection"]
-    if action not in valid_actions:
-        return f"Error: Invalid action '{action}'. Must be one of: {', '.join(valid_actions)}"
     
     # Build the command
     cmd = f"/ip firewall filter add chain={chain} action={action}"
@@ -154,7 +144,7 @@ def mikrotik_create_filter_rule(
         else:
             return "Firewall filter rule creation completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_filter_rules", annotations=READ)
 def mikrotik_list_filter_rules(
     chain_filter: Optional[str] = None,
     action_filter: Optional[str] = None,
@@ -220,7 +210,7 @@ def mikrotik_list_filter_rules(
     
     return f"FIREWALL FILTER RULES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_filter_rule", annotations=READ)
 def mikrotik_get_filter_rule(rule_id: str) -> str:
     """
     Gets detailed information about a specific firewall filter rule.
@@ -241,7 +231,7 @@ def mikrotik_get_filter_rule(rule_id: str) -> str:
     
     return f"FIREWALL FILTER RULE DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_filter_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_filter_rule(
     rule_id: str,
     chain: Optional[str] = None,
@@ -394,7 +384,7 @@ def mikrotik_update_filter_rule(
     
     return f"Firewall filter rule updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_filter_rule", annotations=DESTRUCTIVE)
 def mikrotik_remove_filter_rule(rule_id: str) -> str:
     """
     Removes a firewall filter rule from MikroTik device.
@@ -423,7 +413,7 @@ def mikrotik_remove_filter_rule(rule_id: str) -> str:
     
     return f"Firewall filter rule with ID '{rule_id}' removed successfully."
 
-@mcp.tool()
+@mcp.tool(name="move_filter_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_move_filter_rule(rule_id: str, destination: int) -> str:
     """
     Moves a firewall filter rule to a different position in the chain.
@@ -453,7 +443,7 @@ def mikrotik_move_filter_rule(rule_id: str, destination: int) -> str:
     
     return f"Firewall filter rule with ID '{rule_id}' moved to position {destination}."
 
-@mcp.tool()
+@mcp.tool(name="enable_filter_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_enable_filter_rule(rule_id: str) -> str:
     """
     Enables a firewall filter rule.
@@ -466,7 +456,7 @@ def mikrotik_enable_filter_rule(rule_id: str) -> str:
     """
     return mikrotik_update_filter_rule(rule_id, disabled=False)
 
-@mcp.tool()
+@mcp.tool(name="disable_filter_rule", annotations=WRITE_IDEMPOTENT)
 def mikrotik_disable_filter_rule(rule_id: str) -> str:
     """
     Disables a firewall filter rule.
@@ -479,7 +469,7 @@ def mikrotik_disable_filter_rule(rule_id: str) -> str:
     """
     return mikrotik_update_filter_rule(rule_id, disabled=True)
 
-@mcp.tool()
+@mcp.tool(name="create_basic_firewall_setup", annotations=DANGEROUS)
 def mikrotik_create_basic_firewall_setup() -> str:
     """
     Creates a basic firewall setup with common security rules.

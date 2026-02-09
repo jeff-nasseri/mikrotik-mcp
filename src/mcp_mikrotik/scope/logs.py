@@ -1,12 +1,12 @@
 import time
-from typing import Optional, List, Dict
+from typing import Literal, Optional, List, Dict
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
-from ..app import mcp
+from ..app import mcp, READ, DESTRUCTIVE
 import re
 from datetime import datetime, timedelta
 
-@mcp.tool()
+@mcp.tool(name="get_logs", annotations=READ)
 def mikrotik_get_logs(
     topics: Optional[str] = None,
     action: Optional[str] = None,
@@ -15,7 +15,7 @@ def mikrotik_get_logs(
     prefix_filter: Optional[str] = None,
     limit: Optional[int] = None,
     follow: bool = False,
-    print_as: str = "value"
+    print_as: Literal["value", "detail", "terse"] = "value"
 ) -> str:
     """
     Gets logs from MikroTik device with various filtering options.
@@ -79,9 +79,9 @@ def mikrotik_get_logs(
     
     return f"LOG ENTRIES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_logs_by_severity", annotations=READ)
 def mikrotik_get_logs_by_severity(
-    severity: str,
+    severity: Literal["debug", "info", "warning", "error", "critical"],
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
 ) -> str:
@@ -107,10 +107,7 @@ def mikrotik_get_logs_by_severity(
         "critical": "critical"
     }
     
-    if severity.lower() not in severity_topics:
-        return f"Invalid severity level: {severity}. Must be one of: debug, info, warning, error, critical"
-    
-    topics = severity_topics[severity.lower()]
+    topics = severity_topics[severity]
     
     return mikrotik_get_logs(
         topics=topics,
@@ -118,7 +115,7 @@ def mikrotik_get_logs_by_severity(
         limit=limit
     )
 
-@mcp.tool()
+@mcp.tool(name="get_logs_by_topic", annotations=READ)
 def mikrotik_get_logs_by_topic(
     topic: str,
     time_filter: Optional[str] = None,
@@ -143,7 +140,7 @@ def mikrotik_get_logs_by_topic(
         limit=limit
     )
 
-@mcp.tool()
+@mcp.tool(name="search_logs", annotations=READ)
 def mikrotik_search_logs(
     search_term: str,
     time_filter: Optional[str] = None,
@@ -178,7 +175,7 @@ def mikrotik_search_logs(
         limit=limit
     )
 
-@mcp.tool()
+@mcp.tool(name="get_system_events", annotations=READ)
 def mikrotik_get_system_events(
     event_type: Optional[str] = None,
     time_filter: Optional[str] = None,
@@ -224,7 +221,7 @@ def mikrotik_get_system_events(
         limit=limit
     )
 
-@mcp.tool()
+@mcp.tool(name="get_security_logs", annotations=READ)
 def mikrotik_get_security_logs(
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
@@ -260,7 +257,7 @@ def mikrotik_get_security_logs(
     
     return f"SECURITY LOG ENTRIES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="clear_logs", annotations=DESTRUCTIVE)
 def mikrotik_clear_logs() -> str:
     """
     Clears all logs from MikroTik device.
@@ -279,7 +276,7 @@ def mikrotik_clear_logs() -> str:
     else:
         return f"Log clear result: {result}"
 
-@mcp.tool()
+@mcp.tool(name="get_log_statistics", annotations=READ)
 def mikrotik_get_log_statistics() -> str:
     """
     Gets statistics about log entries.
@@ -315,12 +312,12 @@ def mikrotik_get_log_statistics() -> str:
     
     return "LOG STATISTICS:\n\n" + "\n".join(stats)
 
-@mcp.tool()
+@mcp.tool(name="export_logs", annotations=READ)
 def mikrotik_export_logs(
     filename: Optional[str] = None,
     topics: Optional[str] = None,
     time_filter: Optional[str] = None,
-    format: str = "plain"
+    format: Literal["plain", "csv"] = "plain"
 ) -> str:
     """
     Exports logs to a file on the MikroTik device.
@@ -359,7 +356,7 @@ def mikrotik_export_logs(
     else:
         return f"Export result: {result}"
 
-@mcp.tool()
+@mcp.tool(name="monitor_logs", annotations=READ)
 def mikrotik_monitor_logs(
     topics: Optional[str] = None,
     action: Optional[str] = None,

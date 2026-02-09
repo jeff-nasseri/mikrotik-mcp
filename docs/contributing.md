@@ -11,7 +11,7 @@ This MCP (Model Context Protocol) server provides tools for managing MikroTik Ro
 ```
 src/mcp_mikrotik/
 ├── scope/          # Feature modules — each file registers MCP tools via decorators
-├── app.py          # FastMCP instance
+├── app.py          # FastMCP instance and ToolAnnotation constants
 ├── config.py       # Configuration (pydantic-settings, CLI args, env vars)
 ├── connector.py    # SSH connection handling
 ├── logger.py       # Logging setup
@@ -32,10 +32,11 @@ To add a new MikroTik feature/scope to the project, follow these steps:
 Navigate to `src/mcp_mikrotik/scope/` and create a new Python file for your feature (e.g., `my_feature.py`).
 
 Your scope file should:
-- Import `mcp` from `..app`
+- Import `mcp` and the appropriate `ToolAnnotations` constant from `..app`
 - Import `execute_mikrotik_command` from `..connector`
-- Register tools using `@mcp.tool()` decorators
+- Register tools using `@mcp.tool()` decorators with annotations
 - Follow the existing naming convention: `mikrotik_<action>_<resource>`
+- Use type hints for all parameters (including `Literal` for fixed-value params)
 - Handle errors gracefully and return meaningful messages
 
 **Example structure** (based on `dhcp.py`):
@@ -43,9 +44,9 @@ Your scope file should:
 from typing import Optional
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
-from ..app import mcp
+from ..app import mcp, READ, WRITE
 
-@mcp.tool(name="create_my_resource")
+@mcp.tool(name="create_my_resource", annotations=WRITE)
 def mikrotik_create_my_resource(
     name: str,
     required_param: str,
@@ -70,7 +71,19 @@ def mikrotik_create_my_resource(
     return f"Resource created successfully:\n\n{result}"
 ```
 
-### 2. Register Your Scope
+### 2. Choose the Right Tool Annotation
+
+Import the appropriate annotation constant from `app.py` and pass it via `@mcp.tool(annotations=...)`:
+
+| Constant | Use for |
+|---|---|
+| `READ` | Read-only queries (print, list, get, export) |
+| `WRITE` | Non-idempotent writes (add, create) |
+| `WRITE_IDEMPOTENT` | Idempotent writes (set, update, enable, disable) |
+| `DESTRUCTIVE` | Idempotent destructive operations (remove, flush) |
+| `DANGEROUS` | Non-idempotent destructive operations (reset, bulk create) |
+
+### 3. Register Your Scope
 
 Update `src/mcp_mikrotik/server.py` to import your new scope module:
 
@@ -83,7 +96,7 @@ from mcp_mikrotik.scope import (  # noqa: F401
 
 The import triggers the `@mcp.tool()` decorators, which automatically register your tools with the MCP server. No manual registry is needed.
 
-### 3. Write Tests
+### 4. Write Tests
 
 Create tests in `tests/` for unit tests or `tests/integration/` for integration tests.
 
@@ -119,7 +132,7 @@ class TestMikroTikMyFeatureIntegration:
         assert "test_resource" in result
 ```
 
-### 4. Test Your Implementation
+### 5. Test Your Implementation
 
 Before submitting, ensure your implementation works:
 
@@ -128,7 +141,7 @@ Before submitting, ensure your implementation works:
    ```bash
    # Install MCP Inspector
    npm install -g @modelcontextprotocol/inspector
-   
+
    # Test your MCP server (stdio transport)
    mcp-inspector python -m mcp_mikrotik.server
    ```
@@ -149,7 +162,8 @@ Configure via CLI (`--transport`) or environment variable (`MCP_TRANSPORT`).
 ### Code Style
 - Follow existing code patterns and naming conventions
 - Use type hints for all function parameters and return values
-- Include comprehensive docstrings following the existing format
+- Use `Literal` types for parameters with a fixed set of valid values
+- Use `Annotated[..., Field(...)]` for numeric constraints (e.g., VLAN IDs)
 - Handle errors gracefully with meaningful error messages
 - Log important operations using `app_logger`
 

@@ -2,9 +2,9 @@ from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
 import re
-from ..app import mcp
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
-@mcp.tool()
+@mcp.tool(name="add_user", annotations=WRITE)
 def mikrotik_add_user(
     name: str,
     password: str,
@@ -53,7 +53,7 @@ def mikrotik_add_user(
         else:
             return "User creation completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_users", annotations=READ)
 def mikrotik_list_users(
     name_filter: Optional[str] = None,
     group_filter: Optional[str] = None,
@@ -86,7 +86,7 @@ def mikrotik_list_users(
 
     return f"USERS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_user", annotations=READ)
 def mikrotik_get_user(name: str) -> str:
     """Gets detailed information about a specific user."""
     app_logger.info(f"Getting user details: name={name}")
@@ -102,7 +102,7 @@ def mikrotik_get_user(name: str) -> str:
 
     return f"USER DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_user", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_user(
     name: str,
     new_name: Optional[str] = None,
@@ -153,7 +153,7 @@ def mikrotik_update_user(
 
     return f"User updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_user", annotations=DESTRUCTIVE)
 def mikrotik_remove_user(name: str) -> str:
     """Removes a user."""
     app_logger.info(f"Removing user: name={name}")
@@ -176,17 +176,17 @@ def mikrotik_remove_user(name: str) -> str:
 
     return f"User '{name}' removed successfully."
 
-@mcp.tool()
+@mcp.tool(name="disable_user", annotations=WRITE_IDEMPOTENT)
 def mikrotik_disable_user(name: str) -> str:
     """Disables a user."""
     return mikrotik_update_user(name, disabled=True)
 
-@mcp.tool()
+@mcp.tool(name="enable_user", annotations=WRITE_IDEMPOTENT)
 def mikrotik_enable_user(name: str) -> str:
     """Enables a user."""
     return mikrotik_update_user(name, disabled=False)
 
-@mcp.tool()
+@mcp.tool(name="add_user_group", annotations=WRITE)
 def mikrotik_add_user_group(
     name: str,
     policy: List[str],
@@ -239,7 +239,7 @@ def mikrotik_add_user_group(
         else:
             return "User group creation completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_user_groups", annotations=READ)
 def mikrotik_list_user_groups(
     name_filter: Optional[str] = None,
     policy_filter: Optional[str] = None
@@ -265,7 +265,7 @@ def mikrotik_list_user_groups(
 
     return f"USER GROUPS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_user_group", annotations=READ)
 def mikrotik_get_user_group(name: str) -> str:
     """Gets detailed information about a specific user group."""
     app_logger.info(f"Getting user group details: name={name}")
@@ -278,7 +278,7 @@ def mikrotik_get_user_group(name: str) -> str:
 
     return f"USER GROUP DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_user_group", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_user_group(
     name: str,
     new_name: Optional[str] = None,
@@ -324,7 +324,7 @@ def mikrotik_update_user_group(
 
     return f"User group updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_user_group", annotations=DESTRUCTIVE)
 def mikrotik_remove_user_group(name: str) -> str:
     """Removes a user group."""
     app_logger.info(f"Removing user group: name={name}")
@@ -354,7 +354,7 @@ def mikrotik_remove_user_group(name: str) -> str:
 
     return f"User group '{name}' removed successfully."
 
-@mcp.tool()
+@mcp.tool(name="get_active_users", annotations=READ)
 def mikrotik_get_active_users() -> str:
     """Gets currently active/logged-in users."""
     app_logger.info("Getting active users")
@@ -367,7 +367,7 @@ def mikrotik_get_active_users() -> str:
 
     return f"ACTIVE USERS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="disconnect_user", annotations=DESTRUCTIVE)
 def mikrotik_disconnect_user(user_id: str) -> str:
     """Disconnects an active user session."""
     app_logger.info(f"Disconnecting user: user_id={user_id}")
@@ -380,7 +380,7 @@ def mikrotik_disconnect_user(user_id: str) -> str:
 
     return f"User session {user_id} disconnected successfully."
 
-@mcp.tool()
+@mcp.tool(name="export_user_config", annotations=READ)
 def mikrotik_export_user_config(filename: Optional[str] = None) -> str:
     """Exports user configuration to a file."""
     app_logger.info("Exporting user configuration")
@@ -396,7 +396,7 @@ def mikrotik_export_user_config(filename: Optional[str] = None) -> str:
     else:
         return f"Export result: {result}"
 
-@mcp.tool()
+@mcp.tool(name="set_user_ssh_keys", annotations=WRITE)
 def mikrotik_set_user_ssh_keys(
     username: str,
     key_file: str
@@ -412,7 +412,7 @@ def mikrotik_set_user_ssh_keys(
     else:
         return f"Failed to import SSH key: {result}"
 
-@mcp.tool()
+@mcp.tool(name="list_user_ssh_keys", annotations=READ)
 def mikrotik_list_user_ssh_keys(username: str) -> str:
     """Lists SSH keys for a specific user."""
     app_logger.info(f"Listing SSH keys for user: {username}")
@@ -425,7 +425,7 @@ def mikrotik_list_user_ssh_keys(username: str) -> str:
 
     return f"SSH KEYS for {username}:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="remove_user_ssh_key", annotations=DESTRUCTIVE)
 def mikrotik_remove_user_ssh_key(key_id: str) -> str:
     """Removes an SSH key."""
     app_logger.info(f"Removing SSH key: key_id={key_id}")

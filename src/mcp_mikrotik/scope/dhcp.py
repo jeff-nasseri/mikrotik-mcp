@@ -1,18 +1,18 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 
-from ..app import mcp
+from ..app import mcp, READ, WRITE, DESTRUCTIVE
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
 
 
-@mcp.tool()
+@mcp.tool(name="create_dhcp_server", annotations=WRITE)
 def mikrotik_create_dhcp_server(
     name: str,
     interface: str,
     lease_time: str = "1d",
     address_pool: Optional[str] = None,
     disabled: bool = False,
-    authoritative: str = "yes",
+    authoritative: Literal["yes", "no", "after-2sec-delay"] = "yes",
     delay_threshold: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
@@ -64,7 +64,7 @@ def mikrotik_create_dhcp_server(
     
     return f"DHCP server created successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="list_dhcp_servers", annotations=READ)
 def mikrotik_list_dhcp_servers(
     name_filter: Optional[str] = None,
     interface_filter: Optional[str] = None,
@@ -109,7 +109,7 @@ def mikrotik_list_dhcp_servers(
     
     return f"DHCP SERVERS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_dhcp_server", annotations=READ)
 def mikrotik_get_dhcp_server(name: str) -> str:
     """
     Gets detailed information about a specific DHCP server.
@@ -130,7 +130,7 @@ def mikrotik_get_dhcp_server(name: str) -> str:
     
     return f"DHCP SERVER DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="create_dhcp_network", annotations=WRITE)
 def mikrotik_create_dhcp_network(
     network: str,
     gateway: str,
@@ -197,7 +197,7 @@ def mikrotik_create_dhcp_network(
     
     return f"DHCP network created successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="create_dhcp_pool", annotations=WRITE)
 def mikrotik_create_dhcp_pool(
     name: str,
     ranges: str,
@@ -239,7 +239,7 @@ def mikrotik_create_dhcp_pool(
     
     return f"DHCP pool created successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_dhcp_server", annotations=DESTRUCTIVE)
 def mikrotik_remove_dhcp_server(name: str) -> str:
     """
     Removes a DHCP server from MikroTik device.

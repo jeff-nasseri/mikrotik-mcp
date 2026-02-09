@@ -1,9 +1,9 @@
 from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
-from ..app import mcp
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
-@mcp.tool()
+@mcp.tool(name="set_dns_servers", annotations=WRITE)
 def mikrotik_set_dns_servers(
     servers: List[str],
     allow_remote_requests: bool = False,
@@ -50,7 +50,7 @@ def mikrotik_set_dns_servers(
     else:
         return f"Failed to update DNS settings: {result}"
 
-@mcp.tool()
+@mcp.tool(name="get_dns_settings", annotations=READ)
 def mikrotik_get_dns_settings() -> str:
     """Gets current DNS configuration."""
     app_logger.info("Getting DNS settings")
@@ -63,7 +63,7 @@ def mikrotik_get_dns_settings() -> str:
 
     return f"DNS SETTINGS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="add_dns_static", annotations=WRITE)
 def mikrotik_add_dns_static(
     name: str,
     address: Optional[str] = None,
@@ -136,7 +136,7 @@ def mikrotik_add_dns_static(
         else:
             return "Static DNS entry addition completed but unable to verify."
 
-@mcp.tool()
+@mcp.tool(name="list_dns_static", annotations=READ)
 def mikrotik_list_dns_static(
     name_filter: Optional[str] = None,
     address_filter: Optional[str] = None,
@@ -171,7 +171,7 @@ def mikrotik_list_dns_static(
 
     return f"STATIC DNS ENTRIES:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="get_dns_static", annotations=READ)
 def mikrotik_get_dns_static(entry_id: str) -> str:
     """Gets details of a specific static DNS entry."""
     app_logger.info(f"Getting static DNS entry details: entry_id={entry_id}")
@@ -184,7 +184,7 @@ def mikrotik_get_dns_static(entry_id: str) -> str:
 
     return f"STATIC DNS ENTRY DETAILS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="update_dns_static", annotations=WRITE_IDEMPOTENT)
 def mikrotik_update_dns_static(
     entry_id: str,
     name: Optional[str] = None,
@@ -273,7 +273,7 @@ def mikrotik_update_dns_static(
 
     return f"Static DNS entry updated successfully:\n\n{details}"
 
-@mcp.tool()
+@mcp.tool(name="remove_dns_static", annotations=DESTRUCTIVE)
 def mikrotik_remove_dns_static(entry_id: str) -> str:
     """Removes a static DNS entry."""
     app_logger.info(f"Removing static DNS entry: entry_id={entry_id}")
@@ -292,17 +292,17 @@ def mikrotik_remove_dns_static(entry_id: str) -> str:
 
     return f"Static DNS entry with ID '{entry_id}' removed successfully."
 
-@mcp.tool()
+@mcp.tool(name="enable_dns_static", annotations=WRITE_IDEMPOTENT)
 def mikrotik_enable_dns_static(entry_id: str) -> str:
     """Enables a static DNS entry."""
     return mikrotik_update_dns_static(entry_id, disabled=False)
 
-@mcp.tool()
+@mcp.tool(name="disable_dns_static", annotations=WRITE_IDEMPOTENT)
 def mikrotik_disable_dns_static(entry_id: str) -> str:
     """Disables a static DNS entry."""
     return mikrotik_update_dns_static(entry_id, disabled=True)
 
-@mcp.tool()
+@mcp.tool(name="get_dns_cache", annotations=READ)
 def mikrotik_get_dns_cache() -> str:
     """Gets the current DNS cache."""
     app_logger.info("Getting DNS cache")
@@ -315,7 +315,7 @@ def mikrotik_get_dns_cache() -> str:
 
     return f"DNS CACHE:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="flush_dns_cache", annotations=DESTRUCTIVE)
 def mikrotik_flush_dns_cache() -> str:
     """Flushes the DNS cache."""
     app_logger.info("Flushing DNS cache")
@@ -328,7 +328,7 @@ def mikrotik_flush_dns_cache() -> str:
     else:
         return f"Flush result: {result}"
 
-@mcp.tool()
+@mcp.tool(name="get_dns_cache_statistics", annotations=READ)
 def mikrotik_get_dns_cache_statistics() -> str:
     """Gets DNS cache statistics."""
     app_logger.info("Getting DNS cache statistics")
@@ -341,7 +341,7 @@ def mikrotik_get_dns_cache_statistics() -> str:
 
     return f"DNS CACHE STATISTICS:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="add_dns_regexp", annotations=WRITE)
 def mikrotik_add_dns_regexp(
     regexp: str,
     address: str,
@@ -361,7 +361,7 @@ def mikrotik_add_dns_regexp(
         disabled=disabled
     )
 
-@mcp.tool()
+@mcp.tool(name="test_dns_query", annotations=READ)
 def mikrotik_test_dns_query(
     name: str,
     server: Optional[str] = None,
@@ -385,7 +385,7 @@ def mikrotik_test_dns_query(
 
     return f"DNS QUERY RESULT for {name}:\n\n{result}"
 
-@mcp.tool()
+@mcp.tool(name="export_dns_config", annotations=READ)
 def mikrotik_export_dns_config(filename: Optional[str] = None) -> str:
     """Exports DNS configuration to a file."""
     app_logger.info("Exporting DNS configuration")

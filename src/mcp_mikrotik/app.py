@@ -1,8 +1,15 @@
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
 
 mcp = FastMCP("mcp-mikrotik")
+
+READ = ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False)
+WRITE = ToolAnnotations(destructiveHint=False, openWorldHint=False)
+WRITE_IDEMPOTENT = ToolAnnotations(destructiveHint=False, idempotentHint=True, openWorldHint=False)
+DESTRUCTIVE = ToolAnnotations(destructiveHint=True, idempotentHint=True, openWorldHint=False)
+DANGEROUS = ToolAnnotations(destructiveHint=True, openWorldHint=False)
 
 
 @mcp.custom_route("/health", methods=["GET"])
