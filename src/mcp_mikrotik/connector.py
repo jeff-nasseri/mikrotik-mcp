@@ -1,6 +1,6 @@
 from .logger import app_logger
 from .mikrotik_ssh_client import MikroTikSSHClient
-from .settings.configuration import mikrotik_config
+from . import config
 
 
 def execute_mikrotik_command(command: str) -> str:
@@ -10,11 +10,11 @@ def execute_mikrotik_command(command: str) -> str:
     app_logger.info(f"Executing MikroTik command: {command}")
     
     ssh_client = MikroTikSSHClient(
-        host=mikrotik_config.host,
-        username=mikrotik_config.username,
-        password=mikrotik_config.password,
-        key_filename=mikrotik_config.key_filename,
-        port=mikrotik_config.port
+        host=config.mikrotik_config.host,
+        username=config.mikrotik_config.username,
+        password=config.mikrotik_config.password,
+        key_filename=config.mikrotik_config.key_filename,
+        port=config.mikrotik_config.port
     )
     
     try:

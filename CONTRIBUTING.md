@@ -12,7 +12,7 @@ This MCP (Model Context Protocol) server provides tools for managing MikroTik Ro
 src/mcp_mikrotik/
 ├── scope/          # Core functionality implementations
 ├── tools/          # MCP tool definitions and handlers
-├── settings/       # Configuration management
+├── config.py       # Configuration (pydantic-settings, CLI args, env vars)
 ├── connector.py    # SSH connection handling
 └── server.py       # MCP server implementation
 
