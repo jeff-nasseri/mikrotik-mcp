@@ -2,9 +2,11 @@ import time
 from typing import Optional, List, Dict
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
+from ..app import mcp
 import re
 from datetime import datetime, timedelta
 
+@mcp.tool()
 def mikrotik_get_logs(
     topics: Optional[str] = None,
     action: Optional[str] = None,
@@ -77,6 +79,7 @@ def mikrotik_get_logs(
     
     return f"LOG ENTRIES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_logs_by_severity(
     severity: str,
     time_filter: Optional[str] = None,
@@ -115,6 +118,7 @@ def mikrotik_get_logs_by_severity(
         limit=limit
     )
 
+@mcp.tool()
 def mikrotik_get_logs_by_topic(
     topic: str,
     time_filter: Optional[str] = None,
@@ -139,6 +143,7 @@ def mikrotik_get_logs_by_topic(
         limit=limit
     )
 
+@mcp.tool()
 def mikrotik_search_logs(
     search_term: str,
     time_filter: Optional[str] = None,
@@ -173,6 +178,7 @@ def mikrotik_search_logs(
         limit=limit
     )
 
+@mcp.tool()
 def mikrotik_get_system_events(
     event_type: Optional[str] = None,
     time_filter: Optional[str] = None,
@@ -218,6 +224,7 @@ def mikrotik_get_system_events(
         limit=limit
     )
 
+@mcp.tool()
 def mikrotik_get_security_logs(
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
@@ -253,6 +260,7 @@ def mikrotik_get_security_logs(
     
     return f"SECURITY LOG ENTRIES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_clear_logs() -> str:
     """
     Clears all logs from MikroTik device.
@@ -271,6 +279,7 @@ def mikrotik_clear_logs() -> str:
     else:
         return f"Log clear result: {result}"
 
+@mcp.tool()
 def mikrotik_get_log_statistics() -> str:
     """
     Gets statistics about log entries.
@@ -306,6 +315,7 @@ def mikrotik_get_log_statistics() -> str:
     
     return "LOG STATISTICS:\n\n" + "\n".join(stats)
 
+@mcp.tool()
 def mikrotik_export_logs(
     filename: Optional[str] = None,
     topics: Optional[str] = None,
@@ -349,6 +359,7 @@ def mikrotik_export_logs(
     else:
         return f"Export result: {result}"
 
+@mcp.tool()
 def mikrotik_monitor_logs(
     topics: Optional[str] = None,
     action: Optional[str] = None,

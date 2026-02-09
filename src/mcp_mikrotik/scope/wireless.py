@@ -2,6 +2,7 @@ from typing import List, Optional, Dict, Any
 
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
+from ..app import mcp
 
 
 def mikrotik_detect_wireless_interface_type() -> Optional[str]:
@@ -54,12 +55,18 @@ def mikrotik_detect_wireless_interface_type() -> Optional[str]:
     return None
 
 
+@mcp.tool()
 def mikrotik_create_wireless_interface(
         name: str,
         ssid: Optional[str] = None,
         disabled: bool = False,
         comment: Optional[str] = None,
-        **kwargs  # This captures any additional parameters like radio_name, mode, etc.
+        radio_name: Optional[str] = None,
+        mode: Optional[str] = None,
+        frequency: Optional[str] = None,
+        band: Optional[str] = None,
+        channel_width: Optional[str] = None,
+        security_profile: Optional[str] = None,
 ) -> str:
     """
     Creates a wireless interface on MikroTik device.
@@ -69,7 +76,12 @@ def mikrotik_create_wireless_interface(
         ssid: Network SSID name
         disabled: Whether to disable the interface
         comment: Optional comment
-        **kwargs: Additional parameters (radio_name, mode, etc.) for legacy compatibility
+        radio_name: Radio interface name (required for legacy systems)
+        mode: Wireless mode (e.g., ap-bridge) for legacy systems
+        frequency: Operating frequency for legacy systems
+        band: Frequency band for legacy systems
+        channel_width: Channel width for legacy systems
+        security_profile: Security profile name for legacy systems
 
     Returns:
         Command output or error message
@@ -107,13 +119,10 @@ def mikrotik_create_wireless_interface(
 
     else:
         # Legacy wireless syntax (RouterOS v6.x and older)
-        radio_name = kwargs.get('radio_name')
-        mode = kwargs.get('mode', 'ap-bridge')
-
         if not radio_name:
             return "Error: radio_name is required for legacy wireless systems. Please specify the radio interface (e.g., 'wlan1')."
 
-        cmd = f"{interface_type} add name={name} radio-name={radio_name} mode={mode}"
+        cmd = f"{interface_type} add name={name} radio-name={radio_name} mode={mode or 'ap-bridge'}"
 
         if ssid:
             cmd += f' ssid="{ssid}"'
@@ -123,9 +132,12 @@ def mikrotik_create_wireless_interface(
             cmd += f' comment="{comment}"'
 
         # Add other legacy parameters if provided
-        for param in ['frequency', 'band', 'channel_width', 'security_profile']:
-            if param in kwargs and kwargs[param]:
-                cmd += f" {param.replace('_', '-')}={kwargs[param]}"
+        for param_name, param_value in [
+            ('frequency', frequency), ('band', band),
+            ('channel-width', channel_width), ('security-profile', security_profile),
+        ]:
+            if param_value:
+                cmd += f" {param_name}={param_value}"
 
     app_logger.info(f"Executing command: {cmd}")
     result = execute_mikrotik_command(cmd)
@@ -140,6 +152,7 @@ def mikrotik_create_wireless_interface(
     return f"Wireless interface created successfully using {interface_type}:\n\n{details}"
 
 
+@mcp.tool()
 def mikrotik_list_wireless_interfaces(
         name_filter: Optional[str] = None,
         disabled_only: bool = False,
@@ -223,6 +236,7 @@ NOTE: If you see wireless interfaces above, they might be using a different comm
         return "No wireless interfaces found matching the criteria."
 
 
+@mcp.tool()
 def mikrotik_get_wireless_interface(name: str) -> str:
     """
     Gets detailed information about a specific wireless interface.
@@ -250,6 +264,7 @@ def mikrotik_get_wireless_interface(name: str) -> str:
     return f"WIRELESS INTERFACE DETAILS:\n\n{result}"
 
 
+@mcp.tool()
 def mikrotik_remove_wireless_interface(name: str) -> str:
     """
     Removes a wireless interface from MikroTik device.
@@ -285,6 +300,7 @@ def mikrotik_remove_wireless_interface(name: str) -> str:
     return f"Wireless interface '{name}' removed successfully."
 
 
+@mcp.tool()
 def mikrotik_enable_wireless_interface(name: str) -> str:
     """
     Enables a wireless interface.
@@ -312,6 +328,7 @@ def mikrotik_enable_wireless_interface(name: str) -> str:
     return f"Wireless interface '{name}' enabled successfully."
 
 
+@mcp.tool()
 def mikrotik_disable_wireless_interface(name: str) -> str:
     """
     Disables a wireless interface.
@@ -339,6 +356,7 @@ def mikrotik_disable_wireless_interface(name: str) -> str:
     return f"Wireless interface '{name}' disabled successfully."
 
 
+@mcp.tool()
 def mikrotik_scan_wireless_networks(
         interface: str,
         duration: int = 5
@@ -372,6 +390,7 @@ def mikrotik_scan_wireless_networks(
     return f"WIRELESS NETWORK SCAN RESULTS:\n\n{result}"
 
 
+@mcp.tool()
 def mikrotik_get_wireless_registration_table(
         interface: Optional[str] = None
 ) -> str:
@@ -406,6 +425,7 @@ def mikrotik_get_wireless_registration_table(
     return f"WIRELESS REGISTRATION TABLE:\n\n{result}"
 
 
+@mcp.tool()
 def mikrotik_check_wireless_support() -> str:
     """
     Checks if the device supports wireless functionality and returns detailed information.
@@ -461,7 +481,8 @@ For legacy systems:
 
 
 # Legacy compatibility functions (simplified versions for older RouterOS)
-def mikrotik_create_wireless_security_profile(name: str, **kwargs) -> str:
+@mcp.tool()
+def mikrotik_create_wireless_security_profile(name: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -469,7 +490,8 @@ def mikrotik_create_wireless_security_profile(name: str, **kwargs) -> str:
     return "Legacy security profile creation not implemented in this version."
 
 
-def mikrotik_list_wireless_security_profiles(**kwargs) -> str:
+@mcp.tool()
+def mikrotik_list_wireless_security_profiles() -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -477,6 +499,7 @@ def mikrotik_list_wireless_security_profiles(**kwargs) -> str:
     return "Legacy security profile listing not implemented in this version."
 
 
+@mcp.tool()
 def mikrotik_get_wireless_security_profile(name: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
@@ -485,6 +508,7 @@ def mikrotik_get_wireless_security_profile(name: str) -> str:
     return "Legacy security profile details not implemented in this version."
 
 
+@mcp.tool()
 def mikrotik_remove_wireless_security_profile(name: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
@@ -493,6 +517,7 @@ def mikrotik_remove_wireless_security_profile(name: str) -> str:
     return "Legacy security profile removal not implemented in this version."
 
 
+@mcp.tool()
 def mikrotik_set_wireless_security_profile(interface_name: str, security_profile: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
@@ -501,7 +526,8 @@ def mikrotik_set_wireless_security_profile(interface_name: str, security_profile
     return "Legacy security profile setting not implemented in this version."
 
 
-def mikrotik_create_wireless_access_list(**kwargs) -> str:
+@mcp.tool()
+def mikrotik_create_wireless_access_list() -> str:
     """Legacy function - different in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -509,7 +535,8 @@ def mikrotik_create_wireless_access_list(**kwargs) -> str:
     return "Legacy access list creation not implemented in this version."
 
 
-def mikrotik_list_wireless_access_list(**kwargs) -> str:
+@mcp.tool()
+def mikrotik_list_wireless_access_list() -> str:
     """Legacy function - different in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -517,6 +544,7 @@ def mikrotik_list_wireless_access_list(**kwargs) -> str:
     return "Legacy access list listing not implemented in this version."
 
 
+@mcp.tool()
 def mikrotik_remove_wireless_access_list_entry(entry_id: str) -> str:
     """Legacy function - different in RouterOS v7.x"""
     interface_type = mikrotik_detect_wireless_interface_type()
@@ -525,9 +553,26 @@ def mikrotik_remove_wireless_access_list_entry(entry_id: str) -> str:
     return "Legacy access list removal not implemented in this version."
 
 
-def mikrotik_update_wireless_interface(name: str, **kwargs) -> str:
+@mcp.tool()
+def mikrotik_update_wireless_interface(
+        name: str,
+        new_name: Optional[str] = None,
+        ssid: Optional[str] = None,
+        disabled: Optional[bool] = None,
+        comment: Optional[str] = None,
+) -> str:
     """
     Updates an existing wireless interface.
+
+    Args:
+        name: Name of the wireless interface to update
+        new_name: New name for the interface
+        ssid: New SSID
+        disabled: Whether to disable the interface
+        comment: Optional comment
+
+    Returns:
+        Command output or error message
     """
     app_logger.info(f"Updating wireless interface: name={name}")
 
@@ -547,14 +592,14 @@ def mikrotik_update_wireless_interface(name: str, **kwargs) -> str:
     # Build update command
     updates = []
 
-    if 'new_name' in kwargs and kwargs['new_name']:
-        updates.append(f"name={kwargs['new_name']}")
-    if 'ssid' in kwargs and kwargs['ssid']:
-        updates.append(f'ssid="{kwargs["ssid"]}"')
-    if 'disabled' in kwargs and kwargs['disabled'] is not None:
-        updates.append(f"disabled={'yes' if kwargs['disabled'] else 'no'}")
-    if 'comment' in kwargs and kwargs['comment']:
-        updates.append(f'comment="{kwargs["comment"]}"')
+    if new_name:
+        updates.append(f"name={new_name}")
+    if ssid:
+        updates.append(f'ssid="{ssid}"')
+    if disabled is not None:
+        updates.append(f"disabled={'yes' if disabled else 'no'}")
+    if comment:
+        updates.append(f'comment="{comment}"')
 
     if not updates:
         return "No updates specified."
@@ -566,7 +611,7 @@ def mikrotik_update_wireless_interface(name: str, **kwargs) -> str:
         return f"Failed to update wireless interface: {result}"
 
     # Get updated details
-    target_name = kwargs.get('new_name', name)
+    target_name = new_name or name
     details_cmd = f'{interface_type} print detail where name="{target_name}"'
     details = execute_mikrotik_command(details_cmd)
 

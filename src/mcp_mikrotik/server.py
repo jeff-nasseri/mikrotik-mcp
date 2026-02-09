@@ -1,9 +1,8 @@
-import asyncio
 import logging
 import sys
 
-from mcp_mikrotik.serve import serve
 from mcp_mikrotik import config
+from mcp_mikrotik.app import mcp
 from mcp_mikrotik.config import MikrotikConfig
 
 
@@ -26,7 +25,7 @@ def main():
         logger.info(f"Using key from: {config.mikrotik_config.key_filename}")
 
     try:
-        asyncio.run(serve())
+        mcp.run()
     except KeyboardInterrupt:
         logger.info("MCP MikroTik server stopped by user")
     except Exception as e:

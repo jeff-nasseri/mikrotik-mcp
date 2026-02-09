@@ -1,7 +1,9 @@
 from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
+from ..app import mcp
 
+@mcp.tool()
 def mikrotik_add_route(
     dst_address: str,
     gateway: str,
@@ -15,10 +17,11 @@ def mikrotik_add_route(
     pref_src: Optional[str] = None,
     check_gateway: Optional[str] = None
 ) -> str:
+    """Adds a route to the routing table."""
     app_logger.info(f"Adding route: dst={dst_address}, gateway={gateway}")
-    
+
     cmd = f"/ip route add dst-address={dst_address} gateway={gateway}"
-    
+
     if distance is not None:
         cmd += f" distance={distance}"
     if scope is not None:
@@ -37,15 +40,15 @@ def mikrotik_add_route(
         cmd += f" pref-src={pref_src}"
     if check_gateway:
         cmd += f" check-gateway={check_gateway}"
-    
+
     result = execute_mikrotik_command(cmd)
-    
+
     if result.strip():
         if "*" in result or result.strip().isdigit():
             route_id = result.strip()
             details_cmd = f"/ip route print detail where .id={route_id}"
             details = execute_mikrotik_command(details_cmd)
-            
+
             if details.strip():
                 return f"Route added successfully:\n\n{details}"
             else:
@@ -55,12 +58,13 @@ def mikrotik_add_route(
     else:
         details_cmd = f'/ip route print detail where dst-address="{dst_address}" and gateway="{gateway}"'
         details = execute_mikrotik_command(details_cmd)
-        
+
         if details.strip():
             return f"Route added successfully:\n\n{details}"
         else:
             return "Route addition completed but unable to verify."
 
+@mcp.tool()
 def mikrotik_list_routes(
     dst_filter: Optional[str] = None,
     gateway_filter: Optional[str] = None,
@@ -71,10 +75,11 @@ def mikrotik_list_routes(
     dynamic_only: bool = False,
     static_only: bool = False
 ) -> str:
+    """Lists routes in MikroTik routing table."""
     app_logger.info(f"Listing routes with filters: dst={dst_filter}, gateway={gateway_filter}")
-    
+
     cmd = "/ip route print"
-    
+
     filters = []
     if dst_filter:
         filters.append(f'dst-address~"{dst_filter}"')
@@ -92,28 +97,31 @@ def mikrotik_list_routes(
         filters.append("dynamic=yes")
     if static_only:
         filters.append("static=yes")
-    
+
     if filters:
         cmd += " where " + " ".join(filters)
-    
+
     result = execute_mikrotik_command(cmd)
-    
+
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No routes found matching the criteria."
-    
+
     return f"ROUTES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_route(route_id: str) -> str:
+    """Gets detailed information about a specific route."""
     app_logger.info(f"Getting route details: route_id={route_id}")
-    
+
     cmd = f"/ip route print detail where .id={route_id}"
     result = execute_mikrotik_command(cmd)
-    
+
     if not result or result.strip() == "":
         return f"Route with ID '{route_id}' not found."
-    
+
     return f"ROUTE DETAILS:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_update_route(
     route_id: str,
     dst_address: Optional[str] = None,
@@ -128,10 +136,11 @@ def mikrotik_update_route(
     pref_src: Optional[str] = None,
     check_gateway: Optional[str] = None
 ) -> str:
+    """Updates a route."""
     app_logger.info(f"Updating route: route_id={route_id}")
-    
+
     cmd = f"/ip route set {route_id}"
-    
+
     updates = []
     if dst_address:
         updates.append(f"dst-address={dst_address}")
@@ -164,54 +173,62 @@ def mikrotik_update_route(
             updates.append(f"pref-src={pref_src}")
     if check_gateway is not None:
         updates.append(f"check-gateway={check_gateway}")
-    
+
     if not updates:
         return "No updates specified."
-    
+
     cmd += " " + " ".join(updates)
-    
+
     result = execute_mikrotik_command(cmd)
-    
+
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update route: {result}"
-    
+
     details_cmd = f"/ip route print detail where .id={route_id}"
     details = execute_mikrotik_command(details_cmd)
-    
+
     return f"Route updated successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_remove_route(route_id: str) -> str:
+    """Removes a route."""
     app_logger.info(f"Removing route: route_id={route_id}")
-    
+
     check_cmd = f"/ip route print count-only where .id={route_id}"
     count = execute_mikrotik_command(check_cmd)
-    
+
     if count.strip() == "0":
         return f"Route with ID '{route_id}' not found."
-    
+
     cmd = f"/ip route remove {route_id}"
     result = execute_mikrotik_command(cmd)
-    
+
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove route: {result}"
-    
+
     return f"Route with ID '{route_id}' removed successfully."
 
+@mcp.tool()
 def mikrotik_enable_route(route_id: str) -> str:
+    """Enables a route."""
     return mikrotik_update_route(route_id, disabled=False)
 
+@mcp.tool()
 def mikrotik_disable_route(route_id: str) -> str:
+    """Disables a route."""
     return mikrotik_update_route(route_id, disabled=True)
 
+@mcp.tool()
 def mikrotik_get_routing_table(
     table_name: Optional[str] = "main",
     protocol_filter: Optional[str] = None,
     active_only: bool = True
 ) -> str:
+    """Gets a specific routing table."""
     app_logger.info(f"Getting routing table: table={table_name}")
-    
+
     cmd = "/ip route print"
-    
+
     filters = []
     if table_name and table_name != "main":
         filters.append(f'routing-table="{table_name}"')
@@ -219,66 +236,74 @@ def mikrotik_get_routing_table(
         filters.append(f'protocol="{protocol_filter}"')
     if active_only:
         filters.append("active=yes")
-    
+
     if filters:
         cmd += " where " + " ".join(filters)
-    
+
     result = execute_mikrotik_command(cmd)
-    
+
     if not result or result.strip() == "":
         return f"No routes found in table '{table_name}'."
-    
+
     return f"ROUTING TABLE ({table_name}):\n\n{result}"
 
+@mcp.tool()
 def mikrotik_check_route_path(
     destination: str,
     source: Optional[str] = None,
     routing_mark: Optional[str] = None
 ) -> str:
+    """Checks the route path to a destination."""
     app_logger.info(f"Checking route path to: {destination}")
-    
+
     cmd = f"/ip route check {destination}"
-    
+
     if source:
         cmd += f" src-address={source}"
     if routing_mark:
         cmd += f' routing-mark="{routing_mark}"'
-    
+
     result = execute_mikrotik_command(cmd)
-    
+
     if not result:
         return f"Unable to check route to {destination}"
-    
+
     return f"ROUTE PATH TO {destination}:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_route_cache() -> str:
+    """Gets the route cache."""
     app_logger.info("Getting route cache")
-    
+
     cmd = "/ip route cache print"
     result = execute_mikrotik_command(cmd)
-    
+
     if not result or result.strip() == "":
         return "Route cache is empty."
-    
+
     return f"ROUTE CACHE:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_flush_route_cache() -> str:
+    """Flushes the route cache."""
     app_logger.info("Flushing route cache")
-    
+
     cmd = "/ip route cache flush"
     result = execute_mikrotik_command(cmd)
-    
+
     if not result.strip():
         return "Route cache flushed successfully."
     else:
         return f"Flush result: {result}"
 
+@mcp.tool()
 def mikrotik_add_default_route(
     gateway: str,
     distance: int = 1,
     comment: Optional[str] = None,
     check_gateway: str = "ping"
 ) -> str:
+    """Adds a default route."""
     return mikrotik_add_route(
         dst_address="0.0.0.0/0",
         gateway=gateway,
@@ -287,20 +312,22 @@ def mikrotik_add_default_route(
         check_gateway=check_gateway
     )
 
+@mcp.tool()
 def mikrotik_add_blackhole_route(
     dst_address: str,
     distance: int = 1,
     comment: Optional[str] = None
 ) -> str:
+    """Adds a blackhole route."""
     app_logger.info(f"Adding blackhole route: dst={dst_address}")
-    
+
     cmd = f"/ip route add dst-address={dst_address} type=blackhole distance={distance}"
-    
+
     if comment:
         cmd += f' comment="{comment}"'
-    
+
     result = execute_mikrotik_command(cmd)
-    
+
     if result.strip():
         if "*" in result or result.strip().isdigit():
             return f"Blackhole route added successfully. ID: {result}"
@@ -309,24 +336,26 @@ def mikrotik_add_blackhole_route(
     else:
         return "Blackhole route added successfully."
 
+@mcp.tool()
 def mikrotik_get_route_statistics() -> str:
+    """Gets routing table statistics."""
     app_logger.info("Getting route statistics")
-    
+
     total_cmd = "/ip route print count-only"
     total_count = execute_mikrotik_command(total_cmd)
-    
+
     active_cmd = "/ip route print count-only where active=yes"
     active_count = execute_mikrotik_command(active_cmd)
-    
+
     dynamic_cmd = "/ip route print count-only where dynamic=yes"
     dynamic_count = execute_mikrotik_command(dynamic_cmd)
-    
+
     static_cmd = "/ip route print count-only where static=yes"
     static_count = execute_mikrotik_command(static_cmd)
-    
+
     disabled_cmd = "/ip route print count-only where disabled=yes"
     disabled_count = execute_mikrotik_command(disabled_cmd)
-    
+
     stats = [
         f"Total routes: {total_count.strip()}",
         f"Active routes: {active_count.strip()}",
@@ -334,5 +363,5 @@ def mikrotik_get_route_statistics() -> str:
         f"Static routes: {static_count.strip()}",
         f"Disabled routes: {disabled_count.strip()}"
     ]
-    
+
     return "ROUTE STATISTICS:\n\n" + "\n".join(stats)

@@ -1,7 +1,9 @@
 from typing import Optional
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
+from ..app import mcp
 
+@mcp.tool()
 def mikrotik_create_nat_rule(
     chain: str,
     action: str,
@@ -136,6 +138,7 @@ def mikrotik_create_nat_rule(
         else:
             return "NAT rule creation completed but unable to verify."
 
+@mcp.tool()
 def mikrotik_list_nat_rules(
     chain_filter: Optional[str] = None,
     action_filter: Optional[str] = None,
@@ -197,6 +200,7 @@ def mikrotik_list_nat_rules(
     
     return f"NAT RULES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_nat_rule(rule_id: str) -> str:
     """
     Gets detailed information about a specific NAT rule.
@@ -217,6 +221,7 @@ def mikrotik_get_nat_rule(rule_id: str) -> str:
     
     return f"NAT RULE DETAILS:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_update_nat_rule(
     rule_id: str,
     chain: Optional[str] = None,
@@ -341,6 +346,7 @@ def mikrotik_update_nat_rule(
     
     return f"NAT rule updated successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_remove_nat_rule(rule_id: str) -> str:
     """
     Removes a NAT rule from MikroTik device.
@@ -369,6 +375,7 @@ def mikrotik_remove_nat_rule(rule_id: str) -> str:
     
     return f"NAT rule with ID '{rule_id}' removed successfully."
 
+@mcp.tool()
 def mikrotik_move_nat_rule(rule_id: str, destination: int) -> str:
     """
     Moves a NAT rule to a different position in the chain.
@@ -398,6 +405,7 @@ def mikrotik_move_nat_rule(rule_id: str, destination: int) -> str:
     
     return f"NAT rule with ID '{rule_id}' moved to position {destination}."
 
+@mcp.tool()
 def mikrotik_enable_nat_rule(rule_id: str) -> str:
     """
     Enables a NAT rule.
@@ -410,6 +418,7 @@ def mikrotik_enable_nat_rule(rule_id: str) -> str:
     """
     return mikrotik_update_nat_rule(rule_id, disabled=False)
 
+@mcp.tool()
 def mikrotik_disable_nat_rule(rule_id: str) -> str:
     """
     Disables a NAT rule.

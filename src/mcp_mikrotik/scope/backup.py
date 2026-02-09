@@ -1,10 +1,12 @@
 from typing import Optional, List
+from ..app import mcp
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
 import base64
 import time
 import os
 
+@mcp.tool()
 def mikrotik_create_backup(
     name: Optional[str] = None,
     dont_encrypt: bool = False,
@@ -57,6 +59,7 @@ def mikrotik_create_backup(
     else:
         return f"Failed to create backup: {result}"
 
+@mcp.tool()
 def mikrotik_list_backups(
     name_filter: Optional[str] = None,
     include_exports: bool = False
@@ -93,6 +96,7 @@ def mikrotik_list_backups(
     
     return f"BACKUP FILES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_create_export(
     name: Optional[str] = None,
     file_format: str = "rsc",
@@ -162,6 +166,7 @@ def mikrotik_create_export(
     else:
         return f"Failed to create export: {result}"
 
+@mcp.tool()
 def mikrotik_export_section(
     section: str,
     name: Optional[str] = None,
@@ -211,6 +216,7 @@ def mikrotik_export_section(
     else:
         return f"Failed to export section: {result}"
 
+@mcp.tool()
 def mikrotik_download_file(
     filename: str,
     file_type: str = "backup"
@@ -246,6 +252,7 @@ def mikrotik_download_file(
     else:
         return f"Failed to download file '{filename}'."
 
+@mcp.tool()
 def mikrotik_upload_file(
     filename: str,
     content_base64: str
@@ -272,6 +279,7 @@ def mikrotik_upload_file(
     # For now, we'll simulate it
     return f"File '{filename}' uploaded successfully (simulated)."
 
+@mcp.tool()
 def mikrotik_restore_backup(
     filename: str,
     password: Optional[str] = None
@@ -308,6 +316,7 @@ def mikrotik_restore_backup(
     else:
         return f"Failed to restore backup: {result}"
 
+@mcp.tool()
 def mikrotik_import_configuration(
     filename: str,
     run_after_reset: bool = False,
@@ -349,6 +358,7 @@ def mikrotik_import_configuration(
     else:
         return f"Import result:\n{result}"
 
+@mcp.tool()
 def mikrotik_remove_file(
     filename: str
 ) -> str:
@@ -379,6 +389,7 @@ def mikrotik_remove_file(
     else:
         return f"Failed to remove file: {result}"
 
+@mcp.tool()
 def mikrotik_backup_info(
     filename: str
 ) -> str:

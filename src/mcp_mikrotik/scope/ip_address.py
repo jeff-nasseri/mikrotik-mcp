@@ -2,7 +2,9 @@ from typing import Optional
 
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
+from ..app import mcp
 
+@mcp.tool()
 def mikrotik_add_ip_address(
     address: str,
     interface: str,
@@ -54,6 +56,7 @@ def mikrotik_add_ip_address(
     
     return f"IP address added successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_list_ip_addresses(
     interface_filter: Optional[str] = None,
     address_filter: Optional[str] = None,
@@ -102,6 +105,7 @@ def mikrotik_list_ip_addresses(
     
     return f"IP ADDRESSES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_ip_address(address_id: str) -> str:
     """
     Gets detailed information about a specific IP address.
@@ -128,6 +132,7 @@ def mikrotik_get_ip_address(address_id: str) -> str:
     
     return f"IP ADDRESS DETAILS:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_remove_ip_address(address_id: str) -> str:
     """
     Removes an IP address from MikroTik device.

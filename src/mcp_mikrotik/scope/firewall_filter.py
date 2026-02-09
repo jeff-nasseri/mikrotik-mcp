@@ -1,7 +1,9 @@
 from typing import Optional, List
+from ..app import mcp
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
 
+@mcp.tool()
 def mikrotik_create_filter_rule(
     chain: str,
     action: str,
@@ -152,6 +154,7 @@ def mikrotik_create_filter_rule(
         else:
             return "Firewall filter rule creation completed but unable to verify."
 
+@mcp.tool()
 def mikrotik_list_filter_rules(
     chain_filter: Optional[str] = None,
     action_filter: Optional[str] = None,
@@ -217,6 +220,7 @@ def mikrotik_list_filter_rules(
     
     return f"FIREWALL FILTER RULES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_filter_rule(rule_id: str) -> str:
     """
     Gets detailed information about a specific firewall filter rule.
@@ -237,6 +241,7 @@ def mikrotik_get_filter_rule(rule_id: str) -> str:
     
     return f"FIREWALL FILTER RULE DETAILS:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_update_filter_rule(
     rule_id: str,
     chain: Optional[str] = None,
@@ -389,6 +394,7 @@ def mikrotik_update_filter_rule(
     
     return f"Firewall filter rule updated successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_remove_filter_rule(rule_id: str) -> str:
     """
     Removes a firewall filter rule from MikroTik device.
@@ -417,6 +423,7 @@ def mikrotik_remove_filter_rule(rule_id: str) -> str:
     
     return f"Firewall filter rule with ID '{rule_id}' removed successfully."
 
+@mcp.tool()
 def mikrotik_move_filter_rule(rule_id: str, destination: int) -> str:
     """
     Moves a firewall filter rule to a different position in the chain.
@@ -446,6 +453,7 @@ def mikrotik_move_filter_rule(rule_id: str, destination: int) -> str:
     
     return f"Firewall filter rule with ID '{rule_id}' moved to position {destination}."
 
+@mcp.tool()
 def mikrotik_enable_filter_rule(rule_id: str) -> str:
     """
     Enables a firewall filter rule.
@@ -458,6 +466,7 @@ def mikrotik_enable_filter_rule(rule_id: str) -> str:
     """
     return mikrotik_update_filter_rule(rule_id, disabled=False)
 
+@mcp.tool()
 def mikrotik_disable_filter_rule(rule_id: str) -> str:
     """
     Disables a firewall filter rule.
@@ -470,6 +479,7 @@ def mikrotik_disable_filter_rule(rule_id: str) -> str:
     """
     return mikrotik_update_filter_rule(rule_id, disabled=True)
 
+@mcp.tool()
 def mikrotik_create_basic_firewall_setup() -> str:
     """
     Creates a basic firewall setup with common security rules.

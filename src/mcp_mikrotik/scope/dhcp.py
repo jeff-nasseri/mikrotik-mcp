@@ -1,9 +1,11 @@
 from typing import List, Optional
 
+from ..app import mcp
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
 
 
+@mcp.tool()
 def mikrotik_create_dhcp_server(
     name: str,
     interface: str,
@@ -62,6 +64,7 @@ def mikrotik_create_dhcp_server(
     
     return f"DHCP server created successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_list_dhcp_servers(
     name_filter: Optional[str] = None,
     interface_filter: Optional[str] = None,
@@ -106,6 +109,7 @@ def mikrotik_list_dhcp_servers(
     
     return f"DHCP SERVERS:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_dhcp_server(name: str) -> str:
     """
     Gets detailed information about a specific DHCP server.
@@ -126,6 +130,7 @@ def mikrotik_get_dhcp_server(name: str) -> str:
     
     return f"DHCP SERVER DETAILS:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_create_dhcp_network(
     network: str,
     gateway: str,
@@ -192,6 +197,7 @@ def mikrotik_create_dhcp_network(
     
     return f"DHCP network created successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_create_dhcp_pool(
     name: str,
     ranges: str,
@@ -233,6 +239,7 @@ def mikrotik_create_dhcp_pool(
     
     return f"DHCP pool created successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_remove_dhcp_server(name: str) -> str:
     """
     Removes a DHCP server from MikroTik device.

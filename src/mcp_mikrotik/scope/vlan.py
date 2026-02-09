@@ -1,7 +1,9 @@
 from typing import Optional
 from ..connector import execute_mikrotik_command
 from ..logger import app_logger
+from ..app import mcp
 
+@mcp.tool()
 def mikrotik_create_vlan_interface(
     name: str,
     vlan_id: int,
@@ -85,6 +87,7 @@ def mikrotik_create_vlan_interface(
         else:
             return "VLAN interface creation completed but unable to verify."
 
+@mcp.tool()
 def mikrotik_list_vlan_interfaces(
     name_filter: Optional[str] = None,
     vlan_id_filter: Optional[int] = None,
@@ -130,6 +133,7 @@ def mikrotik_list_vlan_interfaces(
     
     return f"VLAN INTERFACES:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_get_vlan_interface(name: str) -> str:
     """
     Gets detailed information about a specific VLAN interface.
@@ -150,6 +154,7 @@ def mikrotik_get_vlan_interface(name: str) -> str:
     
     return f"VLAN INTERFACE DETAILS:\n\n{result}"
 
+@mcp.tool()
 def mikrotik_update_vlan_interface(
     name: str,
     new_name: Optional[str] = None,
@@ -226,6 +231,7 @@ def mikrotik_update_vlan_interface(
     
     return f"VLAN interface updated successfully:\n\n{details}"
 
+@mcp.tool()
 def mikrotik_remove_vlan_interface(name: str) -> str:
     """
     Removes a VLAN interface from MikroTik device.
