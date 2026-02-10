@@ -38,4 +38,8 @@ def _execute_sync(command: str) -> str:
 
 async def execute_mikrotik_command(command: str, ctx: Context) -> str:
     """Execute a MikroTik command via SSH and return the output."""
-    return await asyncio.to_thread(_execute_sync, command)
+    await ctx.info(f"Executing MikroTik command: {command}")
+    result = await asyncio.to_thread(_execute_sync, command)
+    if result.startswith("Error"):
+        await ctx.error(result)
+    return result

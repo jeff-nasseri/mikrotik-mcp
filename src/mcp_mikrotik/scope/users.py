@@ -6,9 +6,9 @@ from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
 @mcp.tool(name="add_user", annotations=WRITE)
 async def mikrotik_add_user(
+    ctx: Context,
     name: str,
     password: str,
-    ctx: Context,
     group: str = "read",
     address: Optional[str] = None,
     comment: Optional[str] = None,
@@ -89,7 +89,7 @@ async def mikrotik_list_users(
     return f"USERS:\n\n{result}"
 
 @mcp.tool(name="get_user", annotations=READ)
-async def mikrotik_get_user(name: str, ctx: Context) -> str:
+async def mikrotik_get_user(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific user."""
     await ctx.info(f"Getting user details: name={name}")
 
@@ -106,8 +106,8 @@ async def mikrotik_get_user(name: str, ctx: Context) -> str:
 
 @mcp.tool(name="update_user", annotations=WRITE_IDEMPOTENT)
 async def mikrotik_update_user(
-    name: str,
     ctx: Context,
+    name: str,
     new_name: Optional[str] = None,
     password: Optional[str] = None,
     group: Optional[str] = None,
@@ -157,7 +157,7 @@ async def mikrotik_update_user(
     return f"User updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_user", annotations=DESTRUCTIVE)
-async def mikrotik_remove_user(name: str, ctx: Context) -> str:
+async def mikrotik_remove_user(ctx: Context, name: str) -> str:
     """Removes a user."""
     await ctx.info(f"Removing user: name={name}")
 
@@ -180,20 +180,20 @@ async def mikrotik_remove_user(name: str, ctx: Context) -> str:
     return f"User '{name}' removed successfully."
 
 @mcp.tool(name="disable_user", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_disable_user(name: str, ctx: Context) -> str:
+async def mikrotik_disable_user(ctx: Context, name: str) -> str:
     """Disables a user."""
     return await mikrotik_update_user(name, disabled=True, ctx=ctx)
 
 @mcp.tool(name="enable_user", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_enable_user(name: str, ctx: Context) -> str:
+async def mikrotik_enable_user(ctx: Context, name: str) -> str:
     """Enables a user."""
     return await mikrotik_update_user(name, disabled=False, ctx=ctx)
 
 @mcp.tool(name="add_user_group", annotations=WRITE)
 async def mikrotik_add_user_group(
+    ctx: Context,
     name: str,
     policy: List[str],
-    ctx: Context,
     skin: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
@@ -271,7 +271,7 @@ async def mikrotik_list_user_groups(
     return f"USER GROUPS:\n\n{result}"
 
 @mcp.tool(name="get_user_group", annotations=READ)
-async def mikrotik_get_user_group(name: str, ctx: Context) -> str:
+async def mikrotik_get_user_group(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific user group."""
     await ctx.info(f"Getting user group details: name={name}")
 
@@ -285,8 +285,8 @@ async def mikrotik_get_user_group(name: str, ctx: Context) -> str:
 
 @mcp.tool(name="update_user_group", annotations=WRITE_IDEMPOTENT)
 async def mikrotik_update_user_group(
-    name: str,
     ctx: Context,
+    name: str,
     new_name: Optional[str] = None,
     policy: Optional[List[str]] = None,
     skin: Optional[str] = None,
@@ -331,7 +331,7 @@ async def mikrotik_update_user_group(
     return f"User group updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_user_group", annotations=DESTRUCTIVE)
-async def mikrotik_remove_user_group(name: str, ctx: Context) -> str:
+async def mikrotik_remove_user_group(ctx: Context, name: str) -> str:
     """Removes a user group."""
     await ctx.info(f"Removing user group: name={name}")
 
@@ -374,7 +374,7 @@ async def mikrotik_get_active_users(ctx: Context) -> str:
     return f"ACTIVE USERS:\n\n{result}"
 
 @mcp.tool(name="disconnect_user", annotations=DESTRUCTIVE)
-async def mikrotik_disconnect_user(user_id: str, ctx: Context) -> str:
+async def mikrotik_disconnect_user(ctx: Context, user_id: str) -> str:
     """Disconnects an active user session."""
     await ctx.info(f"Disconnecting user: user_id={user_id}")
 
@@ -404,9 +404,9 @@ async def mikrotik_export_user_config(ctx: Context, filename: Optional[str] = No
 
 @mcp.tool(name="set_user_ssh_keys", annotations=WRITE)
 async def mikrotik_set_user_ssh_keys(
+    ctx: Context,
     username: str,
-    key_file: str,
-    ctx: Context
+    key_file: str
 ) -> str:
     """Sets SSH keys for a specific user."""
     await ctx.info(f"Setting SSH keys for user: {username}")
@@ -420,7 +420,7 @@ async def mikrotik_set_user_ssh_keys(
         return f"Failed to import SSH key: {result}"
 
 @mcp.tool(name="list_user_ssh_keys", annotations=READ)
-async def mikrotik_list_user_ssh_keys(username: str, ctx: Context) -> str:
+async def mikrotik_list_user_ssh_keys(ctx: Context, username: str) -> str:
     """Lists SSH keys for a specific user."""
     await ctx.info(f"Listing SSH keys for user: {username}")
 
@@ -433,7 +433,7 @@ async def mikrotik_list_user_ssh_keys(username: str, ctx: Context) -> str:
     return f"SSH KEYS for {username}:\n\n{result}"
 
 @mcp.tool(name="remove_user_ssh_key", annotations=DESTRUCTIVE)
-async def mikrotik_remove_user_ssh_key(key_id: str, ctx: Context) -> str:
+async def mikrotik_remove_user_ssh_key(ctx: Context, key_id: str) -> str:
     """Removes an SSH key."""
     await ctx.info(f"Removing SSH key: key_id={key_id}")
 

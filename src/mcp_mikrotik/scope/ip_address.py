@@ -6,9 +6,9 @@ from ..app import mcp, READ, WRITE, DESTRUCTIVE
 
 @mcp.tool(name="add_ip_address", annotations=WRITE)
 async def mikrotik_add_ip_address(
+    ctx: Context,
     address: str,
     interface: str,
-    ctx: Context,
     network: Optional[str] = None,
     broadcast: Optional[str] = None,
     comment: Optional[str] = None,
@@ -108,7 +108,7 @@ async def mikrotik_list_ip_addresses(
     return f"IP ADDRESSES:\n\n{result}"
 
 @mcp.tool(name="get_ip_address", annotations=READ)
-async def mikrotik_get_ip_address(address_id: str, ctx: Context) -> str:
+async def mikrotik_get_ip_address(ctx: Context, address_id: str) -> str:
     """
     Gets detailed information about a specific IP address.
 
@@ -135,7 +135,7 @@ async def mikrotik_get_ip_address(address_id: str, ctx: Context) -> str:
     return f"IP ADDRESS DETAILS:\n\n{result}"
 
 @mcp.tool(name="remove_ip_address", annotations=DESTRUCTIVE)
-async def mikrotik_remove_ip_address(address_id: str, ctx: Context) -> str:
+async def mikrotik_remove_ip_address(ctx: Context, address_id: str) -> str:
     """
     Removes an IP address from MikroTik device.
 

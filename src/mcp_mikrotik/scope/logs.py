@@ -82,8 +82,8 @@ async def mikrotik_get_logs(
 
 @mcp.tool(name="get_logs_by_severity", annotations=READ)
 async def mikrotik_get_logs_by_severity(
-    severity: Literal["debug", "info", "warning", "error", "critical"],
     ctx: Context,
+    severity: Literal["debug", "info", "warning", "error", "critical"],
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
 ) -> str:
@@ -120,8 +120,8 @@ async def mikrotik_get_logs_by_severity(
 
 @mcp.tool(name="get_logs_by_topic", annotations=READ)
 async def mikrotik_get_logs_by_topic(
-    topic: str,
     ctx: Context,
+    topic: str,
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
 ) -> str:
@@ -147,8 +147,8 @@ async def mikrotik_get_logs_by_topic(
 
 @mcp.tool(name="search_logs", annotations=READ)
 async def mikrotik_search_logs(
-    search_term: str,
     ctx: Context,
+    search_term: str,
     time_filter: Optional[str] = None,
     case_sensitive: bool = False,
     limit: Optional[int] = None

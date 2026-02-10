@@ -8,9 +8,9 @@ from ..connector import execute_mikrotik_command
 
 @mcp.tool(name="create_dhcp_server", annotations=WRITE)
 async def mikrotik_create_dhcp_server(
+    ctx: Context,
     name: str,
     interface: str,
-    ctx: Context,
     lease_time: str = "1d",
     address_pool: Optional[str] = None,
     disabled: bool = False,
@@ -113,7 +113,7 @@ async def mikrotik_list_dhcp_servers(
     return f"DHCP SERVERS:\n\n{result}"
 
 @mcp.tool(name="get_dhcp_server", annotations=READ)
-async def mikrotik_get_dhcp_server(name: str, ctx: Context) -> str:
+async def mikrotik_get_dhcp_server(ctx: Context, name: str) -> str:
     """
     Gets detailed information about a specific DHCP server.
 
@@ -135,9 +135,9 @@ async def mikrotik_get_dhcp_server(name: str, ctx: Context) -> str:
 
 @mcp.tool(name="create_dhcp_network", annotations=WRITE)
 async def mikrotik_create_dhcp_network(
+    ctx: Context,
     network: str,
     gateway: str,
-    ctx: Context,
     netmask: Optional[str] = None,
     dns_servers: Optional[List[str]] = None,
     domain: Optional[str] = None,
@@ -203,9 +203,9 @@ async def mikrotik_create_dhcp_network(
 
 @mcp.tool(name="create_dhcp_pool", annotations=WRITE)
 async def mikrotik_create_dhcp_pool(
+    ctx: Context,
     name: str,
     ranges: str,
-    ctx: Context,
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
@@ -245,7 +245,7 @@ async def mikrotik_create_dhcp_pool(
     return f"DHCP pool created successfully:\n\n{details}"
 
 @mcp.tool(name="remove_dhcp_server", annotations=DESTRUCTIVE)
-async def mikrotik_remove_dhcp_server(name: str, ctx: Context) -> str:
+async def mikrotik_remove_dhcp_server(ctx: Context, name: str) -> str:
     """
     Removes a DHCP server from MikroTik device.
 

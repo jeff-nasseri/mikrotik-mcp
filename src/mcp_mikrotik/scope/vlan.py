@@ -6,10 +6,10 @@ from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
 @mcp.tool(name="create_vlan_interface", annotations=WRITE)
 async def mikrotik_create_vlan_interface(
+    ctx: Context,
     name: str,
     vlan_id: Annotated[int, Field(ge=1, le=4094)],
     interface: str,
-    ctx: Context,
     comment: Optional[str] = None,
     disabled: bool = False,
     mtu: Optional[int] = None,
@@ -133,7 +133,7 @@ async def mikrotik_list_vlan_interfaces(
     return f"VLAN INTERFACES:\n\n{result}"
 
 @mcp.tool(name="get_vlan_interface", annotations=READ)
-async def mikrotik_get_vlan_interface(name: str, ctx: Context) -> str:
+async def mikrotik_get_vlan_interface(ctx: Context, name: str) -> str:
     """
     Gets detailed information about a specific VLAN interface.
 
@@ -155,8 +155,8 @@ async def mikrotik_get_vlan_interface(name: str, ctx: Context) -> str:
 
 @mcp.tool(name="update_vlan_interface", annotations=WRITE_IDEMPOTENT)
 async def mikrotik_update_vlan_interface(
-    name: str,
     ctx: Context,
+    name: str,
     new_name: Optional[str] = None,
     vlan_id: Optional[Annotated[int, Field(ge=1, le=4094)]] = None,
     interface: Optional[str] = None,
@@ -230,7 +230,7 @@ async def mikrotik_update_vlan_interface(
     return f"VLAN interface updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_vlan_interface", annotations=DESTRUCTIVE)
-async def mikrotik_remove_vlan_interface(name: str, ctx: Context) -> str:
+async def mikrotik_remove_vlan_interface(ctx: Context, name: str) -> str:
     """
     Removes a VLAN interface from MikroTik device.
 

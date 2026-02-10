@@ -42,7 +42,7 @@ mcp-server-mikrotik --mcp.transport streamable-http
 | `--mcp.host` | HTTP server listen address | `0.0.0.0` |
 | `--mcp.port` | HTTP server listen port | `8000` |
 
-HTTP-based transports (`sse`, `streamable-http`) expose a `/health` endpoint for health checks.
+HTTP-based transports (`sse`, `streamable-http`) expose a `GET /health` endpoint for health checks. This endpoint is **not available** in `stdio` mode.
 
 ## Docker Installation
 
@@ -101,7 +101,7 @@ The easiest way to run the MCP MikroTik server is using Docker.
    |----------|-------------|---------|
    | `MIKROTIK_HOST` | MikroTik device IP/hostname | `192.168.88.1` |
    | `MIKROTIK_USERNAME` | SSH username | `admin` |
-   | `MIKROTIK_PASSWORD` | SSH password | `admin` |
+   | `MIKROTIK_PASSWORD` | SSH password | _(empty)_ |
    | `MIKROTIK_PORT` | SSH port | `22` |
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |

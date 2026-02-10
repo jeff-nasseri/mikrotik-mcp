@@ -241,7 +241,7 @@ class TestMikroTikUserIntegration:
     def test_03_delete_user(self, mikrotik_container):
         print(f"\n=== Testing user deletion ===")
         ctx = _make_ctx()
-        result = asyncio.run(mikrotik_remove_user(self.test_username, ctx=ctx))
+        result = asyncio.run(mikrotik_remove_user(ctx=ctx, name=self.test_username))
         assert "removed successfully" in result.lower()
 
         # confirm it's gone

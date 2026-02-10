@@ -171,8 +171,8 @@ async def mikrotik_create_export(
 
 @mcp.tool(name="export_section", annotations=READ)
 async def mikrotik_export_section(
-    section: str,
     ctx: Context,
+    section: str,
     name: Optional[str] = None,
     hide_sensitive: bool = True,
     compact: bool = False
@@ -222,8 +222,8 @@ async def mikrotik_export_section(
 
 @mcp.tool(name="download_file", annotations=READ)
 async def mikrotik_download_file(
-    filename: str,
     ctx: Context,
+    filename: str,
     file_type: Literal["backup", "export"] = "backup"
 ) -> str:
     """
@@ -259,9 +259,9 @@ async def mikrotik_download_file(
 
 @mcp.tool(name="upload_file", annotations=WRITE)
 async def mikrotik_upload_file(
+    ctx: Context,
     filename: str,
-    content_base64: str,
-    ctx: Context
+    content_base64: str
 ) -> str:
     """
     Uploads a file to MikroTik device (for restore operations).
@@ -287,8 +287,8 @@ async def mikrotik_upload_file(
 
 @mcp.tool(name="restore_backup", annotations=DANGEROUS)
 async def mikrotik_restore_backup(
-    filename: str,
     ctx: Context,
+    filename: str,
     password: Optional[str] = None
 ) -> str:
     """
@@ -325,8 +325,8 @@ async def mikrotik_restore_backup(
 
 @mcp.tool(name="import_configuration", annotations=DANGEROUS)
 async def mikrotik_import_configuration(
-    filename: str,
     ctx: Context,
+    filename: str,
     run_after_reset: bool = False,
     verbose: bool = False
 ) -> str:
@@ -368,8 +368,8 @@ async def mikrotik_import_configuration(
 
 @mcp.tool(name="remove_file", annotations=DANGEROUS)
 async def mikrotik_remove_file(
-    filename: str,
-    ctx: Context
+    ctx: Context,
+    filename: str
 ) -> str:
     """
     Removes a file from MikroTik device.
@@ -400,8 +400,8 @@ async def mikrotik_remove_file(
 
 @mcp.tool(name="backup_info", annotations=READ)
 async def mikrotik_backup_info(
-    filename: str,
-    ctx: Context
+    ctx: Context,
+    filename: str
 ) -> str:
     """
     Gets detailed information about a backup file.

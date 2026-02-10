@@ -14,7 +14,6 @@ src/mcp_mikrotik/
 ├── app.py          # FastMCP instance and ToolAnnotation constants
 ├── config.py       # Configuration (pydantic-settings, CLI args, env vars)
 ├── connector.py    # SSH connection handling
-├── logger.py       # Logging setup
 ├── server.py       # Entry point — imports scopes, starts the server
 └── mikrotik_ssh_client.py  # Low-level SSH client
 
@@ -42,19 +41,20 @@ Your scope file should:
 **Example structure** (based on `dhcp.py`):
 ```python
 from typing import Optional
+from mcp.server.fastmcp import Context
 from ..connector import execute_mikrotik_command
-from ..logger import app_logger
 from ..app import mcp, READ, WRITE
 
 @mcp.tool(name="create_my_resource", annotations=WRITE)
-def mikrotik_create_my_resource(
+async def mikrotik_create_my_resource(
+    ctx: Context,
     name: str,
     required_param: str,
     optional_param: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
     """Creates a new resource on MikroTik device."""
-    app_logger.info(f"Creating resource: name={name}")
+    await ctx.info(f"Creating resource: name={name}")
 
     cmd = f"/my/feature add name={name} param={required_param}"
 
@@ -63,7 +63,7 @@ def mikrotik_create_my_resource(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = execute_mikrotik_command(cmd)
+    result = await execute_mikrotik_command(cmd, ctx)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create resource: {result}"
@@ -85,7 +85,7 @@ Import the appropriate annotation constant from `app.py` and pass it via `@mcp.t
 
 ### 3. Register Your Scope
 
-Update `src/mcp_mikrotik/server.py` to import your new scope module:
+Update `src/mcp_mikrotik/app.py` to import your new scope module:
 
 ```python
 from mcp_mikrotik.scope import (  # noqa: F401
@@ -152,10 +152,10 @@ Before submitting, ensure your implementation works:
 The server supports three transport modes:
 
 - **stdio** (default) — standard input/output, used by most MCP clients
-- **sse** — Server-Sent Events over HTTP
-- **streamable-http** — HTTP with streaming support
+- **sse** — Server-Sent Events over HTTP (exposes `/health` endpoint)
+- **streamable-http** — HTTP with streaming support (exposes `/health` endpoint)
 
-Configure via CLI (`--transport`) or environment variable (`MCP_TRANSPORT`).
+Configure via CLI (`--mcp.transport`) or environment variable (`MIKROTIK_MCP__TRANSPORT`).
 
 ## Development Guidelines
 
@@ -165,7 +165,7 @@ Configure via CLI (`--transport`) or environment variable (`MCP_TRANSPORT`).
 - Use `Literal` types for parameters with a fixed set of valid values
 - Use `Annotated[..., Field(...)]` for numeric constraints (e.g., VLAN IDs)
 - Handle errors gracefully with meaningful error messages
-- Log important operations using `app_logger`
+- Log important operations using `ctx.info()` / `ctx.error()` for client-visible logging
 
 ### MikroTik Command Guidelines
 - Always validate command syntax against MikroTik documentation

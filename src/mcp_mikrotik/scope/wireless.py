@@ -57,8 +57,8 @@ async def mikrotik_detect_wireless_interface_type(ctx: Context) -> Optional[str]
 
 @mcp.tool(name="create_wireless_interface", annotations=WRITE)
 async def mikrotik_create_wireless_interface(
-        name: str,
         ctx: Context,
+        name: str,
         ssid: Optional[str] = None,
         disabled: bool = False,
         comment: Optional[str] = None,
@@ -239,7 +239,7 @@ NOTE: If you see wireless interfaces above, they might be using a different comm
 
 
 @mcp.tool(name="get_wireless_interface", annotations=READ)
-async def mikrotik_get_wireless_interface(name: str, ctx: Context) -> str:
+async def mikrotik_get_wireless_interface(ctx: Context, name: str) -> str:
     """
     Gets detailed information about a specific wireless interface.
 
@@ -267,7 +267,7 @@ async def mikrotik_get_wireless_interface(name: str, ctx: Context) -> str:
 
 
 @mcp.tool(name="remove_wireless_interface", annotations=DESTRUCTIVE)
-async def mikrotik_remove_wireless_interface(name: str, ctx: Context) -> str:
+async def mikrotik_remove_wireless_interface(ctx: Context, name: str) -> str:
     """
     Removes a wireless interface from MikroTik device.
 
@@ -303,7 +303,7 @@ async def mikrotik_remove_wireless_interface(name: str, ctx: Context) -> str:
 
 
 @mcp.tool(name="enable_wireless_interface", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_enable_wireless_interface(name: str, ctx: Context) -> str:
+async def mikrotik_enable_wireless_interface(ctx: Context, name: str) -> str:
     """
     Enables a wireless interface.
 
@@ -331,7 +331,7 @@ async def mikrotik_enable_wireless_interface(name: str, ctx: Context) -> str:
 
 
 @mcp.tool(name="disable_wireless_interface", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_disable_wireless_interface(name: str, ctx: Context) -> str:
+async def mikrotik_disable_wireless_interface(ctx: Context, name: str) -> str:
     """
     Disables a wireless interface.
 
@@ -360,8 +360,8 @@ async def mikrotik_disable_wireless_interface(name: str, ctx: Context) -> str:
 
 @mcp.tool(name="scan_wireless_networks", annotations=READ)
 async def mikrotik_scan_wireless_networks(
-        interface: str,
         ctx: Context,
+        interface: str,
         duration: int = 5
 ) -> str:
     """
@@ -486,7 +486,7 @@ For legacy systems:
 
 # Legacy compatibility functions (simplified versions for older RouterOS)
 @mcp.tool(name="create_wireless_security_profile", annotations=WRITE)
-async def mikrotik_create_wireless_security_profile(name: str, ctx: Context) -> str:
+async def mikrotik_create_wireless_security_profile(ctx: Context, name: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -504,7 +504,7 @@ async def mikrotik_list_wireless_security_profiles(ctx: Context) -> str:
 
 
 @mcp.tool(name="get_wireless_security_profile", annotations=READ)
-async def mikrotik_get_wireless_security_profile(name: str, ctx: Context) -> str:
+async def mikrotik_get_wireless_security_profile(ctx: Context, name: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -513,7 +513,7 @@ async def mikrotik_get_wireless_security_profile(name: str, ctx: Context) -> str
 
 
 @mcp.tool(name="remove_wireless_security_profile", annotations=DESTRUCTIVE)
-async def mikrotik_remove_wireless_security_profile(name: str, ctx: Context) -> str:
+async def mikrotik_remove_wireless_security_profile(ctx: Context, name: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -522,7 +522,7 @@ async def mikrotik_remove_wireless_security_profile(name: str, ctx: Context) -> 
 
 
 @mcp.tool(name="set_wireless_security_profile", annotations=WRITE)
-async def mikrotik_set_wireless_security_profile(interface_name: str, security_profile: str, ctx: Context) -> str:
+async def mikrotik_set_wireless_security_profile(ctx: Context, interface_name: str, security_profile: str) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -549,7 +549,7 @@ async def mikrotik_list_wireless_access_list(ctx: Context) -> str:
 
 
 @mcp.tool(name="remove_wireless_access_list_entry", annotations=DESTRUCTIVE)
-async def mikrotik_remove_wireless_access_list_entry(entry_id: str, ctx: Context) -> str:
+async def mikrotik_remove_wireless_access_list_entry(ctx: Context, entry_id: str) -> str:
     """Legacy function - different in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
@@ -559,8 +559,8 @@ async def mikrotik_remove_wireless_access_list_entry(entry_id: str, ctx: Context
 
 @mcp.tool(name="update_wireless_interface", annotations=WRITE_IDEMPOTENT)
 async def mikrotik_update_wireless_interface(
-        name: str,
         ctx: Context,
+        name: str,
         new_name: Optional[str] = None,
         ssid: Optional[str] = None,
         disabled: Optional[bool] = None,

@@ -5,9 +5,9 @@ from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
 @mcp.tool(name="add_route", annotations=WRITE)
 async def mikrotik_add_route(
+    ctx: Context,
     dst_address: str,
     gateway: str,
-    ctx: Context,
     distance: Optional[int] = None,
     scope: Optional[int] = None,
     target_scope: Optional[int] = None,
@@ -111,7 +111,7 @@ async def mikrotik_list_routes(
     return f"ROUTES:\n\n{result}"
 
 @mcp.tool(name="get_route", annotations=READ)
-async def mikrotik_get_route(route_id: str, ctx: Context) -> str:
+async def mikrotik_get_route(ctx: Context, route_id: str) -> str:
     """Gets detailed information about a specific route."""
     await ctx.info(f"Getting route details: route_id={route_id}")
 
@@ -125,8 +125,8 @@ async def mikrotik_get_route(route_id: str, ctx: Context) -> str:
 
 @mcp.tool(name="update_route", annotations=WRITE_IDEMPOTENT)
 async def mikrotik_update_route(
-    route_id: str,
     ctx: Context,
+    route_id: str,
     dst_address: Optional[str] = None,
     gateway: Optional[str] = None,
     distance: Optional[int] = None,
@@ -193,7 +193,7 @@ async def mikrotik_update_route(
     return f"Route updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_route", annotations=DESTRUCTIVE)
-async def mikrotik_remove_route(route_id: str, ctx: Context) -> str:
+async def mikrotik_remove_route(ctx: Context, route_id: str) -> str:
     """Removes a route."""
     await ctx.info(f"Removing route: route_id={route_id}")
 
@@ -212,12 +212,12 @@ async def mikrotik_remove_route(route_id: str, ctx: Context) -> str:
     return f"Route with ID '{route_id}' removed successfully."
 
 @mcp.tool(name="enable_route", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_enable_route(route_id: str, ctx: Context) -> str:
+async def mikrotik_enable_route(ctx: Context, route_id: str) -> str:
     """Enables a route."""
     return await mikrotik_update_route(route_id, disabled=False, ctx=ctx)
 
 @mcp.tool(name="disable_route", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_disable_route(route_id: str, ctx: Context) -> str:
+async def mikrotik_disable_route(ctx: Context, route_id: str) -> str:
     """Disables a route."""
     return await mikrotik_update_route(route_id, disabled=True, ctx=ctx)
 
@@ -253,8 +253,8 @@ async def mikrotik_get_routing_table(
 
 @mcp.tool(name="check_route_path", annotations=READ)
 async def mikrotik_check_route_path(
-    destination: str,
     ctx: Context,
+    destination: str,
     source: Optional[str] = None,
     routing_mark: Optional[str] = None
 ) -> str:
@@ -303,8 +303,8 @@ async def mikrotik_flush_route_cache(ctx: Context) -> str:
 
 @mcp.tool(name="add_default_route", annotations=WRITE)
 async def mikrotik_add_default_route(
-    gateway: str,
     ctx: Context,
+    gateway: str,
     distance: int = 1,
     comment: Optional[str] = None,
     check_gateway: str = "ping"
@@ -321,8 +321,8 @@ async def mikrotik_add_default_route(
 
 @mcp.tool(name="add_blackhole_route", annotations=WRITE)
 async def mikrotik_add_blackhole_route(
-    dst_address: str,
     ctx: Context,
+    dst_address: str,
     distance: int = 1,
     comment: Optional[str] = None
 ) -> str:

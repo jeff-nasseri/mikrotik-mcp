@@ -7,9 +7,9 @@ from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
 @mcp.tool(name="create_ip_pool", annotations=WRITE)
 async def mikrotik_create_ip_pool(
+    ctx: Context,
     name: str,
     ranges: str,
-    ctx: Context,
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
@@ -130,7 +130,7 @@ async def mikrotik_list_ip_pools(
     return f"IP POOLS:\n\n{result}"
 
 @mcp.tool(name="get_ip_pool", annotations=READ)
-async def mikrotik_get_ip_pool(name: str, ctx: Context) -> str:
+async def mikrotik_get_ip_pool(ctx: Context, name: str) -> str:
     """
     Gets detailed information about a specific IP pool.
 
@@ -159,8 +159,8 @@ async def mikrotik_get_ip_pool(name: str, ctx: Context) -> str:
 
 @mcp.tool(name="update_ip_pool", annotations=WRITE_IDEMPOTENT)
 async def mikrotik_update_ip_pool(
-    name: str,
     ctx: Context,
+    name: str,
     new_name: Optional[str] = None,
     ranges: Optional[str] = None,
     next_pool: Optional[str] = None,
@@ -217,7 +217,7 @@ async def mikrotik_update_ip_pool(
     return f"IP pool updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_ip_pool", annotations=DESTRUCTIVE)
-async def mikrotik_remove_ip_pool(name: str, ctx: Context) -> str:
+async def mikrotik_remove_ip_pool(ctx: Context, name: str) -> str:
     """
     Removes an IP pool from MikroTik device.
 
@@ -305,7 +305,7 @@ async def mikrotik_list_ip_pool_used(
     return f"USED IP POOL ADDRESSES:\n\n{result}"
 
 @mcp.tool(name="expand_ip_pool", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_expand_ip_pool(name: str, additional_ranges: str, ctx: Context) -> str:
+async def mikrotik_expand_ip_pool(ctx: Context, name: str, additional_ranges: str) -> str:
     """
     Expands an existing IP pool by adding more ranges.
 

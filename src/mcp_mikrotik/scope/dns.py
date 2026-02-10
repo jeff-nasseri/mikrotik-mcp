@@ -7,8 +7,8 @@ from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
 
 @mcp.tool(name="set_dns_servers", annotations=WRITE)
 async def mikrotik_set_dns_servers(
-    servers: List[str],
     ctx: Context,
+    servers: List[str],
     allow_remote_requests: bool = False,
     max_udp_packet_size: Optional[int] = None,
     max_concurrent_queries: Optional[int] = None,
@@ -68,8 +68,8 @@ async def mikrotik_get_dns_settings(ctx: Context) -> str:
 
 @mcp.tool(name="add_dns_static", annotations=WRITE)
 async def mikrotik_add_dns_static(
-    name: str,
     ctx: Context,
+    name: str,
     address: Optional[str] = None,
     cname: Optional[str] = None,
     mx_preference: Optional[int] = None,
@@ -177,7 +177,7 @@ async def mikrotik_list_dns_static(
     return f"STATIC DNS ENTRIES:\n\n{result}"
 
 @mcp.tool(name="get_dns_static", annotations=READ)
-async def mikrotik_get_dns_static(entry_id: str, ctx: Context) -> str:
+async def mikrotik_get_dns_static(ctx: Context, entry_id: str) -> str:
     """Gets details of a specific static DNS entry."""
     await ctx.info(f"Getting static DNS entry details: entry_id={entry_id}")
 
@@ -191,8 +191,8 @@ async def mikrotik_get_dns_static(entry_id: str, ctx: Context) -> str:
 
 @mcp.tool(name="update_dns_static", annotations=WRITE_IDEMPOTENT)
 async def mikrotik_update_dns_static(
-    entry_id: str,
     ctx: Context,
+    entry_id: str,
     name: Optional[str] = None,
     address: Optional[str] = None,
     cname: Optional[str] = None,
@@ -280,7 +280,7 @@ async def mikrotik_update_dns_static(
     return f"Static DNS entry updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_dns_static", annotations=DESTRUCTIVE)
-async def mikrotik_remove_dns_static(entry_id: str, ctx: Context) -> str:
+async def mikrotik_remove_dns_static(ctx: Context, entry_id: str) -> str:
     """Removes a static DNS entry."""
     await ctx.info(f"Removing static DNS entry: entry_id={entry_id}")
 
@@ -299,12 +299,12 @@ async def mikrotik_remove_dns_static(entry_id: str, ctx: Context) -> str:
     return f"Static DNS entry with ID '{entry_id}' removed successfully."
 
 @mcp.tool(name="enable_dns_static", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_enable_dns_static(entry_id: str, ctx: Context) -> str:
+async def mikrotik_enable_dns_static(ctx: Context, entry_id: str) -> str:
     """Enables a static DNS entry."""
     return await mikrotik_update_dns_static(entry_id, disabled=False, ctx=ctx)
 
 @mcp.tool(name="disable_dns_static", annotations=WRITE_IDEMPOTENT)
-async def mikrotik_disable_dns_static(entry_id: str, ctx: Context) -> str:
+async def mikrotik_disable_dns_static(ctx: Context, entry_id: str) -> str:
     """Disables a static DNS entry."""
     return await mikrotik_update_dns_static(entry_id, disabled=True, ctx=ctx)
 
@@ -349,9 +349,9 @@ async def mikrotik_get_dns_cache_statistics(ctx: Context) -> str:
 
 @mcp.tool(name="add_dns_regexp", annotations=WRITE)
 async def mikrotik_add_dns_regexp(
+    ctx: Context,
     regexp: str,
     address: str,
-    ctx: Context,
     ttl: str = "1d",
     comment: Optional[str] = None,
     disabled: bool = False
@@ -371,8 +371,8 @@ async def mikrotik_add_dns_regexp(
 
 @mcp.tool(name="test_dns_query", annotations=READ)
 async def mikrotik_test_dns_query(
-    name: str,
     ctx: Context,
+    name: str,
     server: Optional[str] = None,
     type: str = "A"
 ) -> str:

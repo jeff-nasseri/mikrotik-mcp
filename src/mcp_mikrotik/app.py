@@ -12,6 +12,7 @@ DESTRUCTIVE = ToolAnnotations(destructiveHint=True, idempotentHint=True, openWor
 DANGEROUS = ToolAnnotations(destructiveHint=True, openWorldHint=False)
 
 
+# Only available on HTTP transports (sse, streamable-http)
 @mcp.custom_route("/health", methods=["GET"])
 async def health_check(request: Request) -> Response:
     return Response("OK", media_type="text/plain")
