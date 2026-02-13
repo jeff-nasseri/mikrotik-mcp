@@ -1,4 +1,5 @@
 # GitVersion configuration for automatic semantic versioning
+# Automatically increments version based on commit messages
 mode: ContinuousDeployment
 tag-prefix: v
 major-version-bump-message: '\+semver:\s?(breaking|major)'
