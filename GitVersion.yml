@@ -11,6 +11,8 @@ branches:
     mode: ContinuousDeployment
     label: ''
     increment: Minor
+    prevent-increment:
+      of-merged-branch: false
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: false
