@@ -180,53 +180,204 @@ Configure via CLI (`--mcp.transport`) or environment variable (`MIKROTIK_MCP__TR
 - Use descriptive test names that explain what is being tested
 - Include edge cases and error conditions in your tests
 
-## Commit Message Format
+## Commit Message Format and Versioning
 
-This project follows [Conventional Commits](https://www.conventionalcommits.org/) specification:
+This project uses [GitVersion](https://gitversion.net/) for automatic semantic versioning based on commit messages. We follow [Conventional Commits](https://www.conventionalcommits.org/) specification for commit message structure.
 
-### Format
+### Automatic Version Bumping
+
+Your commit messages directly control which version number gets incremented when merged to `master`.
+
+**Default behavior on master branch:** Any commit without an explicit `+semver:` tag will increment the **minor** version by default.
+
+#### Quick Reference Table
+
+| Commit Type | Example | Version Bump | Notes |
+|-------------|---------|--------------|-------|
+| `feat:` | `feat: add new tool` | **Minor** (0.2.0 → 0.3.0) | Automatic |
+| `fix:` | `fix: resolve bug` | **Minor** (0.2.0 → 0.3.0) | Automatic |
+| Any commit on master | `docs: update README` | **Minor** (0.2.0 → 0.3.0) | Default behavior |
+| `+semver: breaking` | `feat: redesign API`<br>`+semver: breaking` | **Major** (0.2.0 → 1.0.0) | Explicit tag required |
+| `+semver: major` | `refactor: breaking change`<br>`+semver: major` | **Major** (0.2.0 → 1.0.0) | Explicit tag required |
+| `+semver: patch` | `docs: fix typo`<br>`+semver: patch` | **Patch** (0.2.0 → 0.2.1) | Explicit tag required |
+| `+semver: fix` | `style: format code`<br>`+semver: fix` | **Patch** (0.2.0 → 0.2.1) | Explicit tag required |
+| `+semver: none` | `ci: update workflow`<br>`+semver: none` | **No bump** | Explicit tag required |
+| `+semver: skip` | `test: add tests`<br>`+semver: skip` | **No bump** | Explicit tag required |
+
+#### Minor Version Bump (0.2.0 → 0.3.0)
+These commit types will increment the **minor** version:
+
+```bash
+# Using conventional commit prefixes (automatically triggers minor bump)
+feat: add wireless interface management tools
+feat(dhcp): implement DHCP network configuration
+fix: resolve connection timeout in SSH client
+fix(firewall): correct rule ordering logic
+
+# Any commit without explicit +semver tag (defaults to minor on master)
+docs: update installation guide
+refactor: reorganize scope modules
+chore: update dependencies
+
+# Using explicit semver tags
+docs: update installation guide
+
++semver: minor
+
+# Or
+chore: update dependencies
+
++semver: feature
+```
+
+**When to use:** New features, bug fixes, enhancements, or any backward-compatible changes. This is the **default** for commits on the master branch.
+
+#### Major Version Bump (0.2.0 → 1.0.0)
+These commit messages will increment the **major** version:
+
+```bash
+# Using explicit semver tags (required for major bumps)
+refactor: redesign API authentication system
+
++semver: breaking
+
+# Or
+feat: migrate to new MikroTik API protocol
+
++semver: major
+```
+
+**When to use:** Breaking changes, API redesigns, or incompatible updates.
+
+#### Patch Version Bump (0.2.0 → 0.2.1)
+These commit messages will increment the **patch** version:
+
+```bash
+# Using explicit semver tags
+docs: fix typo in README
+
++semver: patch
+
+# Or
+style: format code with black
+
++semver: fix
+```
+
+**When to use:** Documentation updates, code formatting, or minor non-functional changes.
+
+#### No Version Bump
+Prevent any version increment:
+
+```bash
+ci: update GitHub Actions workflow
+
++semver: none
+
+# Or
+test: add missing unit tests
+
++semver: skip
+```
+
+**When to use:** CI/CD changes, test updates, or internal tooling changes that don't affect the published package.
+
+### Commit Message Structure
+
 ```
 <type>[optional scope]: <description>
 
 [optional body]
 
-[optional footer(s)]
+[optional footer with +semver tag]
 ```
 
-### Types
-- `feat`: A new feature
-- `fix`: A bug fix
+#### Types
+- `feat`: A new feature (triggers minor bump)
+- `fix`: A bug fix (triggers minor bump)
 - `docs`: Documentation only changes
-- `style`: Changes that do not affect the meaning of the code
-- `refactor`: A code change that neither fixes a bug nor adds a feature
-- `test`: Adding missing tests or correcting existing tests
-- `chore`: Changes to the build process or auxiliary tools
+- `style`: Code formatting, missing semicolons, etc.
+- `refactor`: Code change that neither fixes a bug nor adds a feature
+- `perf`: Performance improvement
+- `test`: Adding or updating tests
+- `chore`: Build process, tooling, or dependency updates
+- `ci`: CI/CD configuration changes
+
+#### Scopes (optional)
+Use scopes to indicate which area of the codebase is affected:
+- `dhcp`, `dns`, `firewall`, `wireless`, `users`, `backup`, etc.
+- `api`, `cli`, `config`, `docs`
 
 ### Examples
-```
-feat(dhcp): add DHCP server creation and management tools
 
-Add comprehensive DHCP server management including:
-- Create DHCP servers with configurable options
-- List and filter DHCP servers
-- Create DHCP networks and pools
-- Remove DHCP servers
+#### Example 1: Adding a New Feature
+```bash
+git commit -m "feat(wireless): add WPA3 security profile support
 
-Includes integration tests with RouterOS container
+Implement WPA3-Personal and WPA3-Enterprise security profiles
+for wireless interfaces. Includes validation and migration path
+from WPA2."
 ```
+**Result:** Minor version bump (e.g., 0.2.0 → 0.3.0)
 
-```
-fix(firewall): handle special characters in rule comments
+#### Example 2: Bug Fix
+```bash
+git commit -m "fix(dns): handle empty DNS cache gracefully
 
-Escape special characters when creating firewall rules with comments
-to prevent command parsing errors on RouterOS devices
+Prevent crash when querying DNS cache on devices with
+no cached entries. Returns empty list instead of error."
 ```
+**Result:** Minor version bump (e.g., 0.2.0 → 0.3.0)
 
-```
-test(users): expand integration test coverage
+#### Example 3: Breaking Change
+```bash
+git commit -m "feat(api): migrate to FastMCP async patterns
 
-Add tests for user group management and permission validation
+BREAKING CHANGE: All tool functions now require Context parameter
+as first argument. Legacy synchronous API is removed.
+
++semver: breaking"
 ```
+**Result:** Major version bump (e.g., 0.2.0 → 1.0.0)
+
+#### Example 4: Documentation Update
+```bash
+git commit -m "docs: improve DHCP configuration examples
+
+Add complete working examples for DHCP server setup
+including network configuration and pool management.
+
++semver: patch"
+```
+**Result:** Patch version bump (e.g., 0.2.0 → 0.2.1)
+
+#### Example 5: CI/CD Change
+```bash
+git commit -m "ci: add Python 3.13 to test matrix
+
++semver: none"
+```
+**Result:** No version bump
+
+### Version Release Process
+
+1. **Commits are merged to `master`** → GitVersion calculates the new version
+2. **GitHub Actions workflow runs** → Builds and publishes to PyPI
+3. **Git tag is created automatically** → Version tag (e.g., `v0.3.0`) is pushed
+4. **GitHub Release is generated** → With changelog and artifacts
+
+You don't need to manually tag releases or update version numbers in code—GitVersion and CI/CD handle this automatically based on your commit messages.
+
+### Best Practices
+
+1. **Be intentional with commit types** — `feat:` and `fix:` trigger **minor** version bumps automatically
+2. **Default is minor bump** — Any commit to master without `+semver:` tags will bump the minor version
+3. **Use `+semver: none` or `+semver: skip`** — To prevent version bumps for CI/CD, tests, or internal changes
+4. **Use `+semver: patch`** — For documentation, formatting, or minor non-functional changes that should only bump patch version
+5. **Use `+semver: breaking` or `+semver: major`** — For breaking changes that require major version bump
+6. **Write clear commit messages** — They become part of the release history and changelog
+7. **One logical change per commit** — Makes version history clearer and easier to track
+8. **Test before committing** — Failed builds don't get published
 
 ## Submitting a Pull Request
 
@@ -234,12 +385,13 @@ Add tests for user group management and permission validation
 2. **Implement your changes** following the guidelines above
 3. **Run all tests** to ensure nothing is broken
 4. **Test with MCP Inspector** to verify tools work correctly
-5. **Write descriptive commit messages** following conventional commits
+5. **Write descriptive commit messages** following the format above
 6. **Submit a pull request** with:
    - Clear description of what you've added
    - Reference to any related issues
    - Screenshots or examples if applicable
    - Confirmation that tests pass
+   - Indication of version bump impact (minor, major, patch, or none)
 
 ## Getting Help
 
@@ -256,5 +408,6 @@ All contributions go through code review to ensure:
 - Tests provide adequate coverage
 - Documentation is clear and complete
 - Integration with existing codebase is smooth
+- Commit messages follow versioning guidelines
 
 Thank you for contributing to MikroTik MCP! Your additions help make RouterOS management more accessible through the Model Context Protocol.
