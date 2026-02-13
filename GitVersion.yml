@@ -1,13 +1,14 @@
-mode: ContinuousDelivery
+mode: ContinuousDeployment
 tag-prefix: '[vV]'
+commit-message-incrementing: Enabled
 major-version-bump-message: '\+semver:\s?(breaking|major)'
-minor-version-bump-message: '\+semver:\s?(feature|minor)|^feat(\(.+\))?:|^fix(\(.+\))?:|^refactor(\(.+\))?:|^perf(\(.+\))?:|^style(\(.+\))?:|^docs(\(.+\))?:|^test(\(.+\))?:|^chore(\(.+\))?:'
+minor-version-bump-message: '\+semver:\s?(feature|minor)|^feat(\(.+\))?:|^fix(\(.+\))?:|Merge pull request.*feat'
 patch-version-bump-message: '\+semver:\s?(fix|patch)'
 no-bump-message: '\+semver:\s?(none|skip)'
 branches:
   main:
     regex: ^master$|^main$
-    mode: ContinuousDelivery
+    mode: ContinuousDeployment
     label: ''
     increment: Minor
     track-merge-target: false
