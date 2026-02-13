@@ -1,6 +1,9 @@
-import paramiko
+import logging
 from typing import Optional
-from .logger import app_logger
+
+import paramiko
+
+logger = logging.getLogger(__name__)
 
 class MikroTikSSHClient:
     """SSH client for MikroTik devices."""
@@ -31,7 +34,7 @@ class MikroTikSSHClient:
             )
             return True
         except Exception as e:
-            app_logger.error(f"Failed to connect to MikroTik: {e}")
+            logger.error(f"Failed to connect to MikroTik: {e}")
             return False
     
     def execute_command(self, command: str) -> str:
@@ -50,7 +53,7 @@ class MikroTikSSHClient:
             
             return output
         except Exception as e:
-            app_logger.error(f"Error executing command: {e}")
+            logger.error(f"Error executing command: {e}")
             raise
     
     def disconnect(self):

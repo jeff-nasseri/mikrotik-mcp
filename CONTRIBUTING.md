@@ -10,11 +10,12 @@ This MCP (Model Context Protocol) server provides tools for managing MikroTik Ro
 
 ```
 src/mcp_mikrotik/
-├── scope/          # Core functionality implementations
-├── tools/          # MCP tool definitions and handlers
-├── settings/       # Configuration management
+├── scope/          # Feature modules — each file registers MCP tools via decorators
+├── app.py          # FastMCP instance and ToolAnnotation constants
+├── config.py       # Configuration (pydantic-settings, CLI args, env vars)
 ├── connector.py    # SSH connection handling
-└── server.py       # MCP server implementation
+├── server.py       # Entry point — imports scopes, starts the server
+└── mikrotik_ssh_client.py  # Low-level SSH client
 
 tests/
 ├── integration/    # Integration tests using testcontainers
@@ -30,119 +31,76 @@ To add a new MikroTik feature/scope to the project, follow these steps:
 Navigate to `src/mcp_mikrotik/scope/` and create a new Python file for your feature (e.g., `my_feature.py`).
 
 Your scope file should:
-- Import necessary dependencies: `execute_mikrotik_command`, `app_logger`
-- Implement functions that execute MikroTik commands
+- Import `mcp` and the appropriate `ToolAnnotations` constant from `..app`
+- Import `execute_mikrotik_command` from `..connector`
+- Register tools using `@mcp.tool()` decorators with annotations
 - Follow the existing naming convention: `mikrotik_<action>_<resource>`
-- Include comprehensive docstrings with parameter descriptions
+- Use type hints for all parameters (including `Literal` for fixed-value params)
 - Handle errors gracefully and return meaningful messages
 
 **Example structure** (based on `dhcp.py`):
 ```python
-from typing import List, Optional
+from typing import Optional
+from mcp.server.fastmcp import Context
 from ..connector import execute_mikrotik_command
-from ..logger import app_logger
+from ..app import mcp, READ, WRITE
 
-def mikrotik_create_my_resource(
+@mcp.tool(name="create_my_resource", annotations=WRITE)
+async def mikrotik_create_my_resource(
+    ctx: Context,
     name: str,
     required_param: str,
     optional_param: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Creates a new resource on MikroTik device.
-    
-    Args:
-        name: Name of the resource
-        required_param: Required parameter
-        optional_param: Optional parameter
-        comment: Optional comment
-    
-    Returns:
-        Command output or error message
-    """
-    app_logger.info(f"Creating resource: name={name}")
-    
-    # Build MikroTik command
+    """Creates a new resource on MikroTik device."""
+    await ctx.info(f"Creating resource: name={name}")
+
     cmd = f"/my/feature add name={name} param={required_param}"
-    
+
     if optional_param:
         cmd += f" optional-param={optional_param}"
     if comment:
         cmd += f' comment="{comment}"'
-    
-    result = execute_mikrotik_command(cmd)
-    
+
+    result = await execute_mikrotik_command(cmd, ctx)
+
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create resource: {result}"
-    
+
     return f"Resource created successfully:\n\n{result}"
 ```
 
-### 2. Create the Tools Definition
+### 2. Choose the Right Tool Annotation
 
-Navigate to `src/mcp_mikrotik/tools/` and create a corresponding tools file (e.g., `my_feature_tools.py`).
+Import the appropriate annotation constant from `app.py` and pass it via `@mcp.tool(annotations=...)`:
 
-Your tools file should:
-- Import the scope functions you created
-- Import `Tool` from `mcp.types`
-- Define MCP tool schemas with proper validation
-- Provide handler functions that map arguments to scope functions
+| Constant | Use for |
+|---|---|
+| `READ` | Read-only queries (print, list, get, export) |
+| `WRITE` | Non-idempotent writes (add, create) |
+| `WRITE_IDEMPOTENT` | Idempotent writes (set, update, enable, disable) |
+| `DESTRUCTIVE` | Idempotent destructive operations (remove, flush) |
+| `DANGEROUS` | Non-idempotent destructive operations (reset, bulk create) |
 
-**Example structure** (based on `dhcp_tools.py`):
+### 3. Register Your Scope
+
+Update `src/mcp_mikrotik/app.py` to import your new scope module:
+
 ```python
-from typing import Dict, Any, List, Callable
-from ..scope.my_feature import (
-    mikrotik_create_my_resource,
-    mikrotik_list_my_resources
+from mcp_mikrotik.scope import (  # noqa: F401
+    backup, dhcp, dns, firewall_filter, firewall_nat,
+    ip_address, ip_pool, logs, my_feature, routes, users, vlan, wireless,
 )
-from mcp.types import Tool
-
-def get_my_feature_tools() -> List[Tool]:
-    """Return the list of my feature tools."""
-    return [
-        Tool(
-            name="mikrotik_create_my_resource",
-            description="Creates a new resource on MikroTik device",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "required_param": {"type": "string"},
-                    "optional_param": {"type": "string"},
-                    "comment": {"type": "string"}
-                },
-                "required": ["name", "required_param"]
-            },
-        ),
-        # Add more tools...
-    ]
-
-def get_my_feature_handlers() -> Dict[str, Callable]:
-    """Return the handlers for my feature tools."""
-    return {
-        "mikrotik_create_my_resource": lambda args: mikrotik_create_my_resource(
-            args["name"],
-            args["required_param"],
-            args.get("optional_param"),
-            args.get("comment")
-        ),
-        # Add more handlers...
-    }
 ```
 
-### 3. Register Your Tools
+The import triggers the `@mcp.tool()` decorators, which automatically register your tools with the MCP server. No manual registry is needed.
 
-Update `src/mcp_mikrotik/tools/tool_registry.py` to include your new tools:
+### 4. Write Tests
 
-1. Import your tool functions
-2. Add them to the `get_all_tools()` function
-3. Add handlers to the `get_all_handlers()` function
+Create tests in `tests/` for unit tests or `tests/integration/` for integration tests.
 
-### 4. Write Integration Tests
-
-Create comprehensive integration tests in `tests/integration/test_my_feature_integration.py`.
-
-Your test file should:
+Integration tests should:
 - Use testcontainers to spin up a real MikroTik RouterOS container
 - Follow the existing test structure and naming conventions
 - Test complete workflows (create, read, update, delete operations)
@@ -183,20 +141,31 @@ Before submitting, ensure your implementation works:
    ```bash
    # Install MCP Inspector
    npm install -g @modelcontextprotocol/inspector
-   
-   # Test your MCP server
-   mcp-inspector python -m mcp_mikrotik.serve
+
+   # Test your MCP server (stdio transport)
+   mcp-inspector python -m mcp_mikrotik.server
    ```
 3. **Manual testing**: Test with a real MikroTik device to ensure commands work correctly
+
+## Transport Modes
+
+The server supports three transport modes:
+
+- **stdio** (default) — standard input/output, used by most MCP clients
+- **sse** — Server-Sent Events over HTTP (exposes `/health` endpoint)
+- **streamable-http** — HTTP with streaming support (exposes `/health` endpoint)
+
+Configure via CLI (`--mcp.transport`) or environment variable (`MIKROTIK_MCP__TRANSPORT`).
 
 ## Development Guidelines
 
 ### Code Style
 - Follow existing code patterns and naming conventions
 - Use type hints for all function parameters and return values
-- Include comprehensive docstrings following the existing format
+- Use `Literal` types for parameters with a fixed set of valid values
+- Use `Annotated[..., Field(...)]` for numeric constraints (e.g., VLAN IDs)
 - Handle errors gracefully with meaningful error messages
-- Log important operations using `app_logger`
+- Log important operations using `ctx.info()` / `ctx.error()` for client-visible logging
 
 ### MikroTik Command Guidelines
 - Always validate command syntax against MikroTik documentation
@@ -206,7 +175,7 @@ Before submitting, ensure your implementation works:
 - Test commands on actual RouterOS before implementation
 
 ### Testing Requirements
-- Write integration tests that cover the main functionality
+- Write tests that cover the main functionality
 - Ensure tests are isolated and clean up after themselves
 - Use descriptive test names that explain what is being tested
 - Include edge cases and error conditions in your tests
@@ -274,9 +243,9 @@ Add tests for user group management and permission validation
 
 ## Getting Help
 
-- Check existing scope and tools implementations for reference
+- Check existing scope implementations for reference
 - Review the MikroTik RouterOS documentation for command syntax
-- Look at existing integration tests for testing patterns
+- Look at existing tests for testing patterns
 - Open an issue if you need clarification on implementation details
 
 ## Code Review Process

@@ -1,5 +1,8 @@
 """Integration tests for MikroTik user management using testcontainers."""
 
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 import time
 import os
@@ -14,6 +17,16 @@ from mcp_mikrotik.scope.users import (
     mikrotik_list_users,
     mikrotik_remove_user
 )
+
+
+def _make_ctx():
+    """Create a mock FastMCP Context for direct tool function calls."""
+    ctx = MagicMock()
+    ctx.info = AsyncMock()
+    ctx.debug = AsyncMock()
+    ctx.warning = AsyncMock()
+    ctx.error = AsyncMock()
+    return ctx
 
 
 @pytest.fixture(scope="class")
@@ -206,27 +219,31 @@ class TestMikroTikUserIntegration:
 
     def test_01_create_user(self, mikrotik_container):
         print(f"\n=== Testing user creation ===")
-        result = mikrotik_add_user(
+        ctx = _make_ctx()
+        result = asyncio.run(mikrotik_add_user(
             name=self.test_username,
             password=self.test_password,
+            ctx=ctx,
             group="read",
             comment="Integration test user"
-        )
+        ))
         assert "failed" not in result.lower()
         assert self.test_username in result
 
     def test_02_list_users(self, mikrotik_container):
         print(f"\n=== Testing user listing ===")
-        result = mikrotik_list_users()
+        ctx = _make_ctx()
+        result = asyncio.run(mikrotik_list_users(ctx=ctx))
         print(result)
         assert "admin" in result
         assert self.test_username in result
 
     def test_03_delete_user(self, mikrotik_container):
         print(f"\n=== Testing user deletion ===")
-        result = mikrotik_remove_user(self.test_username)
+        ctx = _make_ctx()
+        result = asyncio.run(mikrotik_remove_user(ctx=ctx, name=self.test_username))
         assert "removed successfully" in result.lower()
 
         # confirm it's gone
-        result = mikrotik_list_users()
+        result = asyncio.run(mikrotik_list_users(ctx=ctx))
         assert self.test_username not in result

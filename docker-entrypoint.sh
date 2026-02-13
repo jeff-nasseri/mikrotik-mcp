@@ -9,6 +9,7 @@ usage() {
     echo "  --username USERNAME   SSH username"
     echo "  --password PASSWORD   SSH password"
     echo "  --port PORT           SSH port (default: 22)"
+    echo "  --transport TYPE      Transport: stdio, sse, streamable-http (default: stdio)"
     echo "  --help                Show this help message"
     echo ""
     echo "Environment variables:"
@@ -16,18 +17,20 @@ usage() {
     echo "  MIKROTIK_USERNAME     SSH username"
     echo "  MIKROTIK_PASSWORD     SSH password"
     echo "  MIKROTIK_PORT         SSH port (default: 22)"
+    echo "  MIKROTIK_MCP__TRANSPORT         Transport type (default: stdio)"
     echo ""
     echo "Examples:"
     echo "  $0 --host 192.168.88.1 --username admin --password admin123"
-    echo "  $0 mcp-server-mikrotik --host 192.168.88.1 --username admin --password admin123"
-    echo "  MIKROTIK_HOST=192.168.88.1 MIKROTIK_USERNAME=admin MIKROTIK_PASSWORD=admin123 $0"
+    echo "  $0 --host 192.168.88.1 --username admin --password admin123 --transport sse"
+    echo "  MIKROTIK_HOST=192.168.88.1 MIKROTIK_MCP__TRANSPORT=sse $0"
     exit 1
 }
 
 MIKROTIK_HOST="${MIKROTIK_HOST:-192.168.88.1}"
 MIKROTIK_USERNAME="${MIKROTIK_USERNAME:-admin}"
-MIKROTIK_PASSWORD="${MIKROTIK_PASSWORD:-admin}"
+MIKROTIK_PASSWORD="${MIKROTIK_PASSWORD:-}"
 MIKROTIK_PORT="${MIKROTIK_PORT:-22}"
+MIKROTIK_MCP__TRANSPORT="${MIKROTIK_MCP__TRANSPORT:-stdio}"
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -47,6 +50,10 @@ while [ $# -gt 0 ]; do
             MIKROTIK_PORT="$2"
             shift 2
             ;;
+        --transport)
+            MIKROTIK_MCP__TRANSPORT="$2"
+            shift 2
+            ;;
         --help)
             usage
             ;;
@@ -60,6 +67,7 @@ export MIKROTIK_HOST
 export MIKROTIK_USERNAME
 export MIKROTIK_PASSWORD
 export MIKROTIK_PORT
+export MIKROTIK_MCP__TRANSPORT
 
 if [ $# -eq 0 ]; then
     exec mcp-server-mikrotik

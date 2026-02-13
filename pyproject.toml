@@ -25,11 +25,11 @@ classifiers = [
     "Topic :: System :: Networking",
 ]
 dependencies = [
-    "mcp>=1.8.0",  # Updated based on your site-packages
+    "mcp>=1.8.0",
     "paramiko>=3.5.1",
     "pydantic>=2.11.4",
     "pydantic-settings>=2.9.1",
-    "python-dotenv>=1.1.0",
+    "starlette>=0.27.0",
 ]
 
 [project.urls]
