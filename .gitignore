@@ -278,6 +278,7 @@ coverage/
 
 # Pytest
 .pytest_cache/
+pytest-cache-files-*/
 pytest_cache/
 
 # MCP CLI cache
