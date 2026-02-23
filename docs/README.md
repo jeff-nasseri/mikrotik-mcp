@@ -28,6 +28,7 @@ Complete tool documentation organized by category:
 - **[Routes](reference/routes/README.md)** - Route Management
 - **[DNS](reference/dns/README.md)** - DNS Management
 - **[Users](reference/users/README.md)** - User Management
+- **[WireGuard](reference/wireguard/README.md)** - WireGuard VPN Management
 
 ## Examples
 

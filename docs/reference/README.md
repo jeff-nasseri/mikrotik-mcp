@@ -15,3 +15,4 @@ Complete reference documentation for all MikroTik MCP tools.
 - **[Routes](routes/README.md)** - Route Management
 - **[DNS](dns/README.md)** - DNS Management
 - **[Users](users/README.md)** - User Management
+- **[WireGuard](wireguard/README.md)** - WireGuard VPN Management
