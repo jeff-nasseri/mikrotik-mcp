@@ -480,3 +480,84 @@ async def mikrotik_disable_wireguard_peer(ctx: Context, peer_id: str) -> str:
         return f"Failed to disable WireGuard peer: {result}"
 
     return f"WireGuard peer '{peer_id}' disabled successfully."
+
+
+@mcp.tool(name="generate_wireguard_client_config", annotations=READ)
+async def mikrotik_generate_wireguard_client_config(
+    ctx: Context,
+    client_private_key: str,
+    client_address: str,
+    server_public_key: str,
+    server_endpoint: str,
+    server_port: int = 51820,
+    allowed_ips: str = "0.0.0.0/0",
+    dns: Optional[str] = None,
+    persistent_keepalive: int = 25,
+) -> str:
+    """
+    Generates a WireGuard client configuration file (wg0.conf format).
+
+    This tool only formats configuration text – it does not communicate with
+    the router.  Use list_wireguard_interfaces / get_wireguard_interface to
+    obtain the server public key, and use add_wireguard_peer to register the
+    client's public key on the server side.
+
+    Args:
+        client_private_key: Client's Base64-encoded WireGuard private key.
+        client_address: IP address (with prefix) assigned to the client inside
+                        the VPN tunnel (e.g. "10.0.0.2/24").
+        server_public_key: Server's Base64-encoded WireGuard public key
+                           (visible in get_wireguard_interface output).
+        server_endpoint: Public IP or hostname of the MikroTik router
+                         (e.g. "203.0.113.1").
+        server_port: UDP port the server listens on (default: 51820).
+        allowed_ips: Comma-separated list of destination CIDRs routed through
+                     the tunnel.  Use "0.0.0.0/0, ::/0" for full-tunnel (all
+                     traffic) or a specific subnet like "10.0.0.0/24" for
+                     split-tunnel (default: "0.0.0.0/0").
+        dns: Optional DNS server address(es) for the client to use while
+             connected (e.g. "1.1.1.1" or "10.0.0.1").
+        persistent_keepalive: Seconds between keepalive packets sent to the
+                              server.  Recommended when the client is behind
+                              NAT (default: 25, use 0 to disable).
+
+    Returns:
+        Ready-to-use WireGuard client configuration file content.
+    """
+    await ctx.info("Generating WireGuard client configuration")
+
+    lines = [
+        "[Interface]",
+        f"PrivateKey = {client_private_key}",
+        f"Address = {client_address}",
+    ]
+
+    if dns:
+        lines.append(f"DNS = {dns}")
+
+    lines += [
+        "",
+        "[Peer]",
+        f"PublicKey = {server_public_key}",
+        f"Endpoint = {server_endpoint}:{server_port}",
+        f"AllowedIPs = {allowed_ips}",
+    ]
+
+    if persistent_keepalive > 0:
+        lines.append(f"PersistentKeepalive = {persistent_keepalive}")
+
+    config_text = "\n".join(lines)
+
+    return (
+        "WIREGUARD CLIENT CONFIGURATION\n"
+        "Save as /etc/wireguard/wg0.conf (Linux) or import into your WireGuard app:\n\n"
+        f"{config_text}\n\n"
+        "NEXT STEPS:\n"
+        "1. Generate the client key-pair on the client device:\n"
+        "     wg genkey | tee private.key | wg pubkey > public.key\n"
+        "2. Replace 'PrivateKey' above with the content of private.key.\n"
+        "3. Register the client's public key on the server with add_wireguard_peer,\n"
+        f"   setting allowed_address to {client_address.split('/')[0]}/32.\n"
+        "4. Bring the tunnel up:\n"
+        "     wg-quick up wg0"
+    )
