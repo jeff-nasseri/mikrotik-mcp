@@ -9,17 +9,33 @@ from .mikrotik_ssh_client import MikroTikSSHClient
 logger = logging.getLogger(__name__)
 
 
+def _get_connection_params() -> dict:
+    """Resolve connection parameters from conversation state, falling back to config."""
+    state = config.connection_state
+    cfg = config.mikrotik_config
+
+    host = state.host if state.host is not None else cfg.host
+    if host is None:
+        raise ValueError(
+            "No MikroTik host configured. Use the connect_to_device tool to specify a device, "
+            "or set the host via CLI arguments or MIKROTIK_HOST environment variable."
+        )
+
+    return {
+        "host": host,
+        "username": state.username if state.username is not None else cfg.username,
+        "password": state.password if state.password is not None else cfg.password,
+        "key_filename": state.key_filename if state.key_filename is not None else cfg.key_filename,
+        "port": state.port if state.port is not None else cfg.port,
+    }
+
+
 def _execute_sync(command: str) -> str:
     """Execute a MikroTik command via SSH and return the output (blocking)."""
     logger.info(f"Executing MikroTik command: {command}")
 
-    ssh_client = MikroTikSSHClient(
-        host=config.mikrotik_config.host,
-        username=config.mikrotik_config.username,
-        password=config.mikrotik_config.password,
-        key_filename=config.mikrotik_config.key_filename,
-        port=config.mikrotik_config.port
-    )
+    params = _get_connection_params()
+    ssh_client = MikroTikSSHClient(**params)
 
     try:
         if not ssh_client.connect():

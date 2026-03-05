@@ -193,8 +193,16 @@ def _verify_ssh_auth(port, password, max_attempts=10, delay=10):
 
 @pytest.fixture(autouse=True)
 def setup_mikrotik_config(mikrotik_container, monkeypatch):
-    """Patch paramiko.SSHClient.connect to always use correct test port."""
+    """Patch paramiko.SSHClient.connect to always use correct test port
+    and set the connection state for the test session."""
     import paramiko
+    from mcp_mikrotik import config
+
+    # Set connection state so the connector can resolve parameters
+    config.connection_state.host = mikrotik_container['host']
+    config.connection_state.port = mikrotik_container['port']
+    config.connection_state.username = mikrotik_container['username']
+    config.connection_state.password = mikrotik_container['password']
 
     orig_connect = paramiko.SSHClient.connect
 
@@ -210,6 +218,10 @@ def setup_mikrotik_config(mikrotik_container, monkeypatch):
         )
 
     monkeypatch.setattr(paramiko.SSHClient, "connect", patched_connect)
+
+    yield
+
+    config.connection_state.clear()
 
 
 @pytest.mark.integration

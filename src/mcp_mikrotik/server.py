@@ -15,10 +15,13 @@ def main():
     logger = logging.getLogger(__name__)
 
     logger.info("Starting MCP MikroTik server")
-    logger.info(f"Using host: {config.mikrotik_config.host}")
-    logger.info(f"Using username: {config.mikrotik_config.username}")
-    if config.mikrotik_config.key_filename:
-        logger.info(f"Using key from: {config.mikrotik_config.key_filename}")
+    if config.mikrotik_config.host:
+        logger.info(f"Default host: {config.mikrotik_config.host}")
+        logger.info(f"Default username: {config.mikrotik_config.username}")
+        if config.mikrotik_config.key_filename:
+            logger.info(f"Using key from: {config.mikrotik_config.key_filename}")
+    else:
+        logger.info("No default host configured - device must be set via connect_to_device tool")
 
     try:
         mcp.settings.host = config.mikrotik_config.mcp.host

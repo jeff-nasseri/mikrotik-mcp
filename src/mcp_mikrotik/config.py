@@ -19,7 +19,7 @@ class MikrotikConfig(BaseSettings):
         cli_kebab_case=True,
     )
 
-    host: str = "127.0.0.1"
+    host: Optional[str] = None
     username: str = "admin"
     password: str = ""
     port: int = 22
@@ -28,3 +28,28 @@ class MikrotikConfig(BaseSettings):
 
 
 mikrotik_config = MikrotikConfig()
+
+
+class ConnectionState:
+    """Holds the active MikroTik device connection parameters set during conversation."""
+
+    def __init__(self):
+        self.host: Optional[str] = None
+        self.username: Optional[str] = None
+        self.password: Optional[str] = None
+        self.port: Optional[int] = None
+        self.key_filename: Optional[str] = None
+
+    @property
+    def is_set(self) -> bool:
+        return self.host is not None
+
+    def clear(self):
+        self.host = None
+        self.username = None
+        self.password = None
+        self.port = None
+        self.key_filename = None
+
+
+connection_state = ConnectionState()
