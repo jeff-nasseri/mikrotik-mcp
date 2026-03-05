@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Optional
 
 from mcp.server.fastmcp import Context
 
@@ -9,32 +10,51 @@ from .mikrotik_ssh_client import MikroTikSSHClient
 logger = logging.getLogger(__name__)
 
 
-def _get_connection_params() -> dict:
-    """Resolve connection parameters from conversation state, falling back to config."""
-    state = config.connection_state
+def _get_connection_params(device: Optional[str] = None) -> dict:
+    """Resolve connection parameters for a named device, the default device, or config fallback."""
+    registry = config.device_registry
     cfg = config.mikrotik_config
 
-    host = state.host if state.host is not None else cfg.host
-    if host is None:
+    # Try registry first (explicit device name or default)
+    conn = registry.get(device)
+    if conn is not None:
+        return {
+            "host": conn.host,
+            "username": conn.username,
+            "password": conn.password,
+            "key_filename": conn.key_filename,
+            "port": conn.port,
+        }
+
+    # If a specific device was requested but not found, error
+    if device is not None:
+        available = ", ".join(registry.device_names) if not registry.is_empty else "none"
         raise ValueError(
-            "No MikroTik host configured. Use the connect_to_device tool to specify a device, "
-            "or set the host via CLI arguments or MIKROTIK_HOST environment variable."
+            f"Device '{device}' not found. Available devices: {available}. "
+            f"Use connect_to_device to register it first."
         )
 
-    return {
-        "host": host,
-        "username": state.username if state.username is not None else cfg.username,
-        "password": state.password if state.password is not None else cfg.password,
-        "key_filename": state.key_filename if state.key_filename is not None else cfg.key_filename,
-        "port": state.port if state.port is not None else cfg.port,
-    }
+    # Fall back to config
+    if cfg.host is not None:
+        return {
+            "host": cfg.host,
+            "username": cfg.username,
+            "password": cfg.password,
+            "key_filename": cfg.key_filename,
+            "port": cfg.port,
+        }
+
+    raise ValueError(
+        "No MikroTik device configured. Use the connect_to_device tool to specify a device, "
+        "or set the host via CLI arguments or MIKROTIK_HOST environment variable."
+    )
 
 
-def _execute_sync(command: str) -> str:
+def _execute_sync(command: str, device: Optional[str] = None) -> str:
     """Execute a MikroTik command via SSH and return the output (blocking)."""
     logger.info(f"Executing MikroTik command: {command}")
 
-    params = _get_connection_params()
+    params = _get_connection_params(device)
     ssh_client = MikroTikSSHClient(**params)
 
     try:
@@ -52,10 +72,10 @@ def _execute_sync(command: str) -> str:
         ssh_client.disconnect()
 
 
-async def execute_mikrotik_command(command: str, ctx: Context) -> str:
+async def execute_mikrotik_command(command: str, ctx: Context, device: Optional[str] = None) -> str:
     """Execute a MikroTik command via SSH and return the output."""
     await ctx.info(f"Executing MikroTik command: {command}")
-    result = await asyncio.to_thread(_execute_sync, command)
+    result = await asyncio.to_thread(_execute_sync, command, device)
     if result.startswith("Error"):
         await ctx.error(result)
     return result

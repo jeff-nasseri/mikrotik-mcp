@@ -28,7 +28,7 @@ async def mikrotik_detect_wireless_interface_type(ctx: Context) -> Optional[str]
 
             # Use a simpler test command that's less likely to hang
             test_cmd = f"{interface_type} print count-only"
-            result = await execute_mikrotik_command(test_cmd, ctx)
+            result = await execute_mikrotik_command(test_cmd, ctx, device=device)
 
             await ctx.debug(f"Result for {interface_type}: {result}")
 
@@ -68,6 +68,7 @@ async def mikrotik_create_wireless_interface(
         band: Optional[Literal["2ghz-b", "2ghz-b/g", "2ghz-b/g/n", "5ghz-a", "5ghz-a/n", "5ghz-a/n/ac", "2ghz-g", "2ghz-n", "5ghz-n", "5ghz-ac"]] = None,
         channel_width: Optional[Literal["20mhz", "40mhz", "80mhz", "160mhz", "20/40mhz-eC", "20/40mhz-Ce"]] = None,
         security_profile: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Creates a wireless interface on MikroTik device.
@@ -141,14 +142,14 @@ async def mikrotik_create_wireless_interface(
                 cmd += f" {param_name}={param_value}"
 
     await ctx.info(f"Executing command: {cmd}")
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create wireless interface: {result}"
 
     # Get the created interface details
     details_cmd = f'{interface_type} print detail where name="{name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"Wireless interface created successfully using {interface_type}:\n\n{details}"
 
@@ -158,7 +159,8 @@ async def mikrotik_list_wireless_interfaces(
         ctx: Context,
         name_filter: Optional[str] = None,
         disabled_only: bool = False,
-        running_only: bool = False
+        running_only: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """
     Lists wireless interfaces on MikroTik device.
@@ -201,7 +203,7 @@ async def mikrotik_list_wireless_interfaces(
             if filters:
                 cmd += " where " + " and ".join(filters)
 
-            result = await execute_mikrotik_command(cmd, ctx)
+            result = await execute_mikrotik_command(cmd, ctx, device=device)
 
             # Check if command worked and has results
             if (result and
@@ -223,7 +225,7 @@ async def mikrotik_list_wireless_interfaces(
     # If no results found, try to show all interfaces to help debug
     try:
         all_interfaces_cmd = "/interface print"
-        all_interfaces = await execute_mikrotik_command(all_interfaces_cmd, ctx)
+        all_interfaces = await execute_mikrotik_command(all_interfaces_cmd, ctx, device=device)
         return f"""No wireless interfaces found matching the criteria.
 
 DEBUGGING INFO:
@@ -258,7 +260,7 @@ async def mikrotik_get_wireless_interface(ctx: Context, name: str) -> str:
         return "Error: No wireless interface support detected on this device."
 
     cmd = f'{interface_type} print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"Wireless interface '{name}' not found."
@@ -287,14 +289,14 @@ async def mikrotik_remove_wireless_interface(ctx: Context, name: str) -> str:
 
     # Check if interface exists
     check_cmd = f'{interface_type} print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Wireless interface '{name}' not found."
 
     # Remove the interface
     cmd = f'{interface_type} remove [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove wireless interface: {result}"
@@ -322,7 +324,7 @@ async def mikrotik_enable_wireless_interface(ctx: Context, name: str) -> str:
         return "Error: No wireless interface support detected on this device."
 
     cmd = f'{interface_type} enable [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to enable wireless interface: {result}"
@@ -350,7 +352,7 @@ async def mikrotik_disable_wireless_interface(ctx: Context, name: str) -> str:
         return "Error: No wireless interface support detected on this device."
 
     cmd = f'{interface_type} disable [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to disable wireless interface: {result}"
@@ -362,7 +364,8 @@ async def mikrotik_disable_wireless_interface(ctx: Context, name: str) -> str:
 async def mikrotik_scan_wireless_networks(
         ctx: Context,
         interface: str,
-        duration: int = 5
+        duration: int = 5,
+    device: Optional[str] = None,
 ) -> str:
     """
     Scans for wireless networks using specified interface.
@@ -385,7 +388,7 @@ async def mikrotik_scan_wireless_networks(
     # Different scan commands for different versions
     scan_cmd = f'{interface_type} scan {interface} duration={duration}'
 
-    result = await execute_mikrotik_command(scan_cmd, ctx)
+    result = await execute_mikrotik_command(scan_cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to scan wireless networks: {result}"
@@ -396,7 +399,8 @@ async def mikrotik_scan_wireless_networks(
 @mcp.tool(name="get_wireless_registration_table", annotations=READ)
 async def mikrotik_get_wireless_registration_table(
         ctx: Context,
-        interface: Optional[str] = None
+        interface: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Gets the wireless registration table (connected clients).
@@ -421,7 +425,7 @@ async def mikrotik_get_wireless_registration_table(
     if interface:
         cmd += f' where interface="{interface}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "No wireless clients registered."
@@ -441,15 +445,15 @@ async def mikrotik_check_wireless_support(ctx: Context) -> str:
 
     # Check RouterOS version
     version_cmd = "/system resource print"
-    version_result = await execute_mikrotik_command(version_cmd, ctx)
+    version_result = await execute_mikrotik_command(version_cmd, ctx, device=device)
 
     # Check installed packages
     package_cmd = "/system package print"
-    package_result = await execute_mikrotik_command(package_cmd, ctx)
+    package_result = await execute_mikrotik_command(package_cmd, ctx, device=device)
 
     # Check available interfaces
     interface_cmd = "/interface print"
-    interface_result = await execute_mikrotik_command(interface_cmd, ctx)
+    interface_result = await execute_mikrotik_command(interface_cmd, ctx, device=device)
 
     # Detect wireless interface type
     wireless_type = await mikrotik_detect_wireless_interface_type(ctx)
@@ -565,6 +569,7 @@ async def mikrotik_update_wireless_interface(
         ssid: Optional[str] = None,
         disabled: Optional[bool] = None,
         comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Updates an existing wireless interface.
@@ -589,7 +594,7 @@ async def mikrotik_update_wireless_interface(
 
     # Check if interface exists
     check_cmd = f'{interface_type} print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Wireless interface '{name}' not found."
@@ -610,7 +615,7 @@ async def mikrotik_update_wireless_interface(
         return "No updates specified."
 
     cmd = f'{interface_type} set [find name="{name}"] {" ".join(updates)}'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update wireless interface: {result}"
@@ -618,6 +623,6 @@ async def mikrotik_update_wireless_interface(
     # Get updated details
     target_name = new_name or name
     details_cmd = f'{interface_type} print detail where name="{target_name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"Wireless interface updated successfully:\n\n{details}"

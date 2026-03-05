@@ -16,7 +16,8 @@ async def mikrotik_add_route(
     disabled: bool = False,
     vrf_interface: Optional[str] = None,
     pref_src: Optional[str] = None,
-    check_gateway: Optional[str] = None
+    check_gateway: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Adds a route to the routing table."""
     await ctx.info(f"Adding route: dst={dst_address}, gateway={gateway}")
@@ -42,13 +43,13 @@ async def mikrotik_add_route(
     if check_gateway:
         cmd += f" check-gateway={check_gateway}"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if result.strip():
         if "*" in result or result.strip().isdigit():
             route_id = result.strip()
             details_cmd = f"/ip route print detail where .id={route_id}"
-            details = await execute_mikrotik_command(details_cmd, ctx)
+            details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
             if details.strip():
                 return f"Route added successfully:\n\n{details}"
@@ -58,7 +59,7 @@ async def mikrotik_add_route(
             return f"Failed to add route: {result}"
     else:
         details_cmd = f'/ip route print detail where dst-address="{dst_address}" and gateway="{gateway}"'
-        details = await execute_mikrotik_command(details_cmd, ctx)
+        details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
         if details.strip():
             return f"Route added successfully:\n\n{details}"
@@ -75,7 +76,8 @@ async def mikrotik_list_routes(
     active_only: bool = False,
     disabled_only: bool = False,
     dynamic_only: bool = False,
-    static_only: bool = False
+    static_only: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """Lists routes in MikroTik routing table."""
     await ctx.info(f"Listing routes with filters: dst={dst_filter}, gateway={gateway_filter}")
@@ -103,7 +105,7 @@ async def mikrotik_list_routes(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No routes found matching the criteria."
@@ -116,7 +118,7 @@ async def mikrotik_get_route(ctx: Context, route_id: str) -> str:
     await ctx.info(f"Getting route details: route_id={route_id}")
 
     cmd = f"/ip route print detail where .id={route_id}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"Route with ID '{route_id}' not found."
@@ -137,7 +139,8 @@ async def mikrotik_update_route(
     disabled: Optional[bool] = None,
     vrf_interface: Optional[str] = None,
     pref_src: Optional[str] = None,
-    check_gateway: Optional[str] = None
+    check_gateway: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Updates a route."""
     await ctx.info(f"Updating route: route_id={route_id}")
@@ -182,13 +185,13 @@ async def mikrotik_update_route(
 
     cmd += " " + " ".join(updates)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update route: {result}"
 
     details_cmd = f"/ip route print detail where .id={route_id}"
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"Route updated successfully:\n\n{details}"
 
@@ -198,13 +201,13 @@ async def mikrotik_remove_route(ctx: Context, route_id: str) -> str:
     await ctx.info(f"Removing route: route_id={route_id}")
 
     check_cmd = f"/ip route print count-only where .id={route_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Route with ID '{route_id}' not found."
 
     cmd = f"/ip route remove {route_id}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove route: {result}"
@@ -226,7 +229,8 @@ async def mikrotik_get_routing_table(
     ctx: Context,
     table_name: Optional[str] = "main",
     protocol_filter: Optional[str] = None,
-    active_only: bool = True
+    active_only: bool = True,
+    device: Optional[str] = None,
 ) -> str:
     """Gets a specific routing table."""
     await ctx.info(f"Getting routing table: table={table_name}")
@@ -244,7 +248,7 @@ async def mikrotik_get_routing_table(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"No routes found in table '{table_name}'."
@@ -256,7 +260,8 @@ async def mikrotik_check_route_path(
     ctx: Context,
     destination: str,
     source: Optional[str] = None,
-    routing_mark: Optional[str] = None
+    routing_mark: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Checks the route path to a destination."""
     await ctx.info(f"Checking route path to: {destination}")
@@ -268,7 +273,7 @@ async def mikrotik_check_route_path(
     if routing_mark:
         cmd += f' routing-mark="{routing_mark}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result:
         return f"Unable to check route to {destination}"
@@ -281,7 +286,7 @@ async def mikrotik_get_route_cache(ctx: Context) -> str:
     await ctx.info("Getting route cache")
 
     cmd = "/ip route cache print"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "Route cache is empty."
@@ -294,7 +299,7 @@ async def mikrotik_flush_route_cache(ctx: Context) -> str:
     await ctx.info("Flushing route cache")
 
     cmd = "/ip route cache flush"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result.strip():
         return "Route cache flushed successfully."
@@ -307,7 +312,8 @@ async def mikrotik_add_default_route(
     gateway: str,
     distance: int = 1,
     comment: Optional[str] = None,
-    check_gateway: str = "ping"
+    check_gateway: str = "ping",
+    device: Optional[str] = None,
 ) -> str:
     """Adds a default route."""
     return await mikrotik_add_route(
@@ -324,7 +330,8 @@ async def mikrotik_add_blackhole_route(
     ctx: Context,
     dst_address: str,
     distance: int = 1,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Adds a blackhole route."""
     await ctx.info(f"Adding blackhole route: dst={dst_address}")
@@ -334,7 +341,7 @@ async def mikrotik_add_blackhole_route(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if result.strip():
         if "*" in result or result.strip().isdigit():
@@ -350,19 +357,19 @@ async def mikrotik_get_route_statistics(ctx: Context) -> str:
     await ctx.info("Getting route statistics")
 
     total_cmd = "/ip route print count-only"
-    total_count = await execute_mikrotik_command(total_cmd, ctx)
+    total_count = await execute_mikrotik_command(total_cmd, ctx, device=device)
 
     active_cmd = "/ip route print count-only where active=yes"
-    active_count = await execute_mikrotik_command(active_cmd, ctx)
+    active_count = await execute_mikrotik_command(active_cmd, ctx, device=device)
 
     dynamic_cmd = "/ip route print count-only where dynamic=yes"
-    dynamic_count = await execute_mikrotik_command(dynamic_cmd, ctx)
+    dynamic_count = await execute_mikrotik_command(dynamic_cmd, ctx, device=device)
 
     static_cmd = "/ip route print count-only where static=yes"
-    static_count = await execute_mikrotik_command(static_cmd, ctx)
+    static_count = await execute_mikrotik_command(static_cmd, ctx, device=device)
 
     disabled_cmd = "/ip route print count-only where disabled=yes"
-    disabled_count = await execute_mikrotik_command(disabled_cmd, ctx)
+    disabled_count = await execute_mikrotik_command(disabled_cmd, ctx, device=device)
 
     stats = [
         f"Total routes: {total_count.strip()}",

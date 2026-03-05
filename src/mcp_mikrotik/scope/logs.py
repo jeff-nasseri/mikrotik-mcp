@@ -16,7 +16,8 @@ async def mikrotik_get_logs(
     prefix_filter: Optional[str] = None,
     limit: Optional[int] = None,
     follow: bool = False,
-    print_as: Literal["value", "detail", "terse"] = "value"
+    print_as: Literal["value", "detail", "terse"] = "value",
+    device: Optional[str] = None,
 ) -> str:
     """
     Gets logs from MikroTik device with various filtering options.
@@ -73,7 +74,7 @@ async def mikrotik_get_logs(
     if follow:
         cmd += " follow"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No log entries found matching the criteria."
@@ -85,7 +86,8 @@ async def mikrotik_get_logs_by_severity(
     ctx: Context,
     severity: Literal["debug", "info", "warning", "error", "critical"],
     time_filter: Optional[str] = None,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Gets logs filtered by severity level.
@@ -123,7 +125,8 @@ async def mikrotik_get_logs_by_topic(
     ctx: Context,
     topic: str,
     time_filter: Optional[str] = None,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Gets logs for a specific topic/facility.
@@ -151,7 +154,8 @@ async def mikrotik_search_logs(
     search_term: str,
     time_filter: Optional[str] = None,
     case_sensitive: bool = False,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Searches logs for a specific term.
@@ -187,7 +191,8 @@ async def mikrotik_get_system_events(
     ctx: Context,
     event_type: Optional[str] = None,
     time_filter: Optional[str] = None,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Gets system-related log events.
@@ -234,7 +239,8 @@ async def mikrotik_get_system_events(
 async def mikrotik_get_security_logs(
     ctx: Context,
     time_filter: Optional[str] = None,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Gets security-related log entries.
@@ -260,7 +266,7 @@ async def mikrotik_get_security_logs(
     if limit:
         cmd += f" limit={limit}"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No security-related log entries found."
@@ -279,7 +285,7 @@ async def mikrotik_clear_logs(ctx: Context) -> str:
     await ctx.info("Clearing all logs")
 
     cmd = "/log print follow-only"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result.strip():
         return "Logs cleared successfully."
@@ -298,7 +304,7 @@ async def mikrotik_get_log_statistics(ctx: Context) -> str:
 
     # Get total count
     total_cmd = "/log print count-only"
-    total_count = await execute_mikrotik_command(total_cmd, ctx)
+    total_count = await execute_mikrotik_command(total_cmd, ctx, device=device)
 
     stats = [f"Total log entries: {total_count.strip()}"]
 
@@ -306,18 +312,18 @@ async def mikrotik_get_log_statistics(ctx: Context) -> str:
     topics = ["info", "warning", "error", "system", "dhcp", "firewall", "interface"]
     for topic in topics:
         count_cmd = f'/log print count-only where topics~"{topic}"'
-        count = await execute_mikrotik_command(count_cmd, ctx)
+        count = await execute_mikrotik_command(count_cmd, ctx, device=device)
         if count.strip().isdigit() and int(count.strip()) > 0:
             stats.append(f"{topic.capitalize()}: {count.strip()}")
 
     # Get recent entries count (last hour)
     recent_cmd = "/log print count-only where time > ([:timestamp] - 1h)"
-    recent_count = await execute_mikrotik_command(recent_cmd, ctx)
+    recent_count = await execute_mikrotik_command(recent_cmd, ctx, device=device)
     stats.append(f"\nEntries in last hour: {recent_count.strip()}")
 
     # Get today's entries
     today_cmd = "/log print count-only where time > ([:timestamp] - 1d)"
-    today_count = await execute_mikrotik_command(today_cmd, ctx)
+    today_count = await execute_mikrotik_command(today_cmd, ctx, device=device)
     stats.append(f"Entries in last 24 hours: {today_count.strip()}")
 
     return "LOG STATISTICS:\n\n" + "\n".join(stats)
@@ -328,7 +334,8 @@ async def mikrotik_export_logs(
     filename: Optional[str] = None,
     topics: Optional[str] = None,
     time_filter: Optional[str] = None,
-    format: Literal["plain", "csv"] = "plain"
+    format: Literal["plain", "csv"] = "plain",
+    device: Optional[str] = None,
 ) -> str:
     """
     Exports logs to a file on the MikroTik device.
@@ -360,7 +367,7 @@ async def mikrotik_export_logs(
     if filters:
         cmd += " where " + " and ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result.strip():
         return f"Logs exported to file: {filename}.txt"
@@ -372,7 +379,8 @@ async def mikrotik_monitor_logs(
     ctx: Context,
     topics: Optional[str] = None,
     action: Optional[str] = None,
-    duration: int = 10
+    duration: int = 10,
+    device: Optional[str] = None,
 ) -> str:
     """
     Monitors logs in real-time for a specified duration.
@@ -404,6 +412,6 @@ async def mikrotik_monitor_logs(
     # Add a limit to prevent overwhelming output
     cmd += " limit=100"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     return f"LOG MONITOR (last {duration} seconds):\n\n{result}"

@@ -11,7 +11,8 @@ async def mikrotik_create_ip_pool(
     name: str,
     ranges: str,
     next_pool: Optional[str] = None,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Creates an IP pool on MikroTik device.
@@ -37,7 +38,7 @@ async def mikrotik_create_ip_pool(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if creation was successful
     if result.strip():
@@ -45,7 +46,7 @@ async def mikrotik_create_ip_pool(
         if "*" in result or result.strip().isdigit():
             # Success - get the details
             details_cmd = f'/ip pool print detail where name="{name}"'
-            details = await execute_mikrotik_command(details_cmd, ctx)
+            details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
             if details.strip():
                 return f"IP pool created successfully:\n\n{details}"
@@ -57,7 +58,7 @@ async def mikrotik_create_ip_pool(
     else:
         # No output might mean success, let's check
         details_cmd = f'/ip pool print detail where name="{name}"'
-        details = await execute_mikrotik_command(details_cmd, ctx)
+        details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
         if details.strip():
             return f"IP pool created successfully:\n\n{details}"
@@ -69,7 +70,8 @@ async def mikrotik_list_ip_pools(
     ctx: Context,
     name_filter: Optional[str] = None,
     ranges_filter: Optional[str] = None,
-    include_used: bool = False
+    include_used: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """
     Lists IP pools on MikroTik device.
@@ -100,7 +102,7 @@ async def mikrotik_list_ip_pools(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check for empty result
     if not result or result.strip() == "" or result.strip() == "no such item":
@@ -121,7 +123,7 @@ async def mikrotik_list_ip_pools(
                     pool_name = line[name_start:name_end]
                     # Get used addresses for this pool
                     used_cmd = f'/ip pool used print count-only where pool="{pool_name}"'
-                    used_count = await execute_mikrotik_command(used_cmd, ctx)
+                    used_count = await execute_mikrotik_command(used_cmd, ctx, device=device)
                     if used_count.strip().isdigit():
                         output_lines.append(f"      used-addresses={used_count.strip()}")
 
@@ -143,14 +145,14 @@ async def mikrotik_get_ip_pool(ctx: Context, name: str) -> str:
     await ctx.info(f"Getting IP pool details: name={name}")
 
     cmd = f'/ip pool print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"IP pool '{name}' not found."
 
     # Get used addresses count
     used_cmd = f'/ip pool used print count-only where pool="{name}"'
-    used_count = await execute_mikrotik_command(used_cmd, ctx)
+    used_count = await execute_mikrotik_command(used_cmd, ctx, device=device)
 
     if used_count.strip().isdigit():
         return f"IP POOL DETAILS:\n\n{result}\n      used-addresses={used_count.strip()}"
@@ -164,7 +166,8 @@ async def mikrotik_update_ip_pool(
     new_name: Optional[str] = None,
     ranges: Optional[str] = None,
     next_pool: Optional[str] = None,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Updates an existing IP pool on MikroTik device.
@@ -203,7 +206,7 @@ async def mikrotik_update_ip_pool(
 
     cmd += " " + " ".join(updates)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if update was successful
     if "failure:" in result.lower() or "error" in result.lower():
@@ -212,7 +215,7 @@ async def mikrotik_update_ip_pool(
     # Get the updated pool details
     details_name = new_name if new_name else name
     details_cmd = f'/ip pool print detail where name="{details_name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"IP pool updated successfully:\n\n{details}"
 
@@ -231,28 +234,28 @@ async def mikrotik_remove_ip_pool(ctx: Context, name: str) -> str:
 
     # First check if the pool exists
     check_cmd = f'/ip pool print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"IP pool '{name}' not found."
 
     # Check if pool is in use
     pool_used_cmd = f'/ip pool used print count-only where pool="{name}"'
-    used_count = await execute_mikrotik_command(pool_used_cmd, ctx)
+    used_count = await execute_mikrotik_command(pool_used_cmd, ctx, device=device)
 
     if used_count.strip() != "0":
         return f"Cannot remove IP pool '{name}': {used_count.strip()} addresses are currently in use."
 
     # Check if pool is referenced by DHCP servers
     dhcp_check_cmd = f'/ip dhcp-server print count-only where address-pool="{name}"'
-    dhcp_count = await execute_mikrotik_command(dhcp_check_cmd, ctx)
+    dhcp_count = await execute_mikrotik_command(dhcp_check_cmd, ctx, device=device)
 
     if dhcp_count.strip() != "0":
         return f"Cannot remove IP pool '{name}': It is used by {dhcp_count.strip()} DHCP server(s)."
 
     # Remove the pool
     cmd = f'/ip pool remove [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove IP pool: {result}"
@@ -265,7 +268,8 @@ async def mikrotik_list_ip_pool_used(
     pool_name: Optional[str] = None,
     address_filter: Optional[str] = None,
     mac_filter: Optional[str] = None,
-    info_filter: Optional[str] = None
+    info_filter: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Lists used addresses from IP pools.
@@ -297,7 +301,7 @@ async def mikrotik_list_ip_pool_used(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No used addresses found matching the criteria."
@@ -320,7 +324,7 @@ async def mikrotik_expand_ip_pool(ctx: Context, name: str, additional_ranges: st
 
     # Get current ranges
     get_cmd = f'/ip pool print detail where name="{name}"'
-    current = await execute_mikrotik_command(get_cmd, ctx)
+    current = await execute_mikrotik_command(get_cmd, ctx, device=device)
 
     if not current or "no such item" in current:
         return f"IP pool '{name}' not found."

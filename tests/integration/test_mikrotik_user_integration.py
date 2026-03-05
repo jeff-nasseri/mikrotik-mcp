@@ -198,11 +198,14 @@ def setup_mikrotik_config(mikrotik_container, monkeypatch):
     import paramiko
     from mcp_mikrotik import config
 
-    # Set connection state so the connector can resolve parameters
-    config.connection_state.host = mikrotik_container['host']
-    config.connection_state.port = mikrotik_container['port']
-    config.connection_state.username = mikrotik_container['username']
-    config.connection_state.password = mikrotik_container['password']
+    # Register the test device so the connector can resolve parameters
+    from mcp_mikrotik.config import DeviceConnection
+    config.device_registry.add("test", DeviceConnection(
+        host=mikrotik_container['host'],
+        port=mikrotik_container['port'],
+        username=mikrotik_container['username'],
+        password=mikrotik_container['password'],
+    ))
 
     orig_connect = paramiko.SSHClient.connect
 
@@ -221,7 +224,7 @@ def setup_mikrotik_config(mikrotik_container, monkeypatch):
 
     yield
 
-    config.connection_state.clear()
+    config.device_registry.clear()
 
 
 @pytest.mark.integration

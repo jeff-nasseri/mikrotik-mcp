@@ -12,7 +12,8 @@ async def mikrotik_create_backup(
     name: Optional[str] = None,
     dont_encrypt: bool = False,
     include_password: bool = True,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Creates a system backup on MikroTik device.
@@ -44,14 +45,14 @@ async def mikrotik_create_backup(
     if not include_password:
         cmd += " password-file=no"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if backup was successful
     print(result)
     if "saved" in result or not result.strip():
         # Get file details
         file_cmd = f"/file print detail where name={name}.backup"
-        file_details = await execute_mikrotik_command(file_cmd, ctx)
+        file_details = await execute_mikrotik_command(file_cmd, ctx, device=device)
 
         if file_details:
             return f"Backup created successfully:\n\n{file_details}"
@@ -64,7 +65,8 @@ async def mikrotik_create_backup(
 async def mikrotik_list_backups(
     ctx: Context,
     name_filter: Optional[str] = None,
-    include_exports: bool = False
+    include_exports: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """
     Lists backup files on MikroTik device.
@@ -91,7 +93,7 @@ async def mikrotik_list_backups(
         else:
             cmd = f'/file print where type=backup and name~"{name_filter}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No backup files found."
@@ -107,7 +109,8 @@ async def mikrotik_create_export(
     hide_sensitive: bool = True,
     verbose: bool = False,
     compact: bool = False,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Creates a configuration export on MikroTik device.
@@ -154,13 +157,13 @@ async def mikrotik_create_export(
     if export_type != "full":
         cmd += f" file={name}"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if export was successful
     if not result.strip() or "failure:" not in result.lower():
         # Get file details
         file_cmd = f"/file print detail where name={full_name}"
-        file_details = await execute_mikrotik_command(file_cmd, ctx)
+        file_details = await execute_mikrotik_command(file_cmd, ctx, device=device)
 
         if file_details:
             return f"Export created successfully:\n\n{file_details}"
@@ -175,7 +178,8 @@ async def mikrotik_export_section(
     section: str,
     name: Optional[str] = None,
     hide_sensitive: bool = True,
-    compact: bool = False
+    compact: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """
     Exports a specific configuration section.
@@ -205,13 +209,13 @@ async def mikrotik_export_section(
     if compact:
         cmd += " compact"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if export was successful
     if not result.strip() or "failure:" not in result.lower():
         # Get file details
         file_cmd = f"/file print detail where name={name}.rsc"
-        file_details = await execute_mikrotik_command(file_cmd, ctx)
+        file_details = await execute_mikrotik_command(file_cmd, ctx, device=device)
 
         if file_details:
             return f"Section export created successfully:\n\n{file_details}"
@@ -224,7 +228,8 @@ async def mikrotik_export_section(
 async def mikrotik_download_file(
     ctx: Context,
     filename: str,
-    file_type: Literal["backup", "export"] = "backup"
+    file_type: Literal["backup", "export"] = "backup",
+    device: Optional[str] = None,
 ) -> str:
     """
     Downloads a file from MikroTik device (backup or export).
@@ -240,7 +245,7 @@ async def mikrotik_download_file(
 
     # First, check if file exists
     check_cmd = f"/file print count-only where name={filename}"
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"File '{filename}' not found."
@@ -248,7 +253,7 @@ async def mikrotik_download_file(
     # Get file content (this is a simplified version)
     # In a real implementation, you'd need to handle file transfer properly
     content_cmd = f"/file print file={filename}"
-    content = await execute_mikrotik_command(content_cmd, ctx)
+    content = await execute_mikrotik_command(content_cmd, ctx, device=device)
 
     if content:
         # Encode content to base64 for safe transmission
@@ -261,7 +266,8 @@ async def mikrotik_download_file(
 async def mikrotik_upload_file(
     ctx: Context,
     filename: str,
-    content_base64: str
+    content_base64: str,
+    device: Optional[str] = None,
 ) -> str:
     """
     Uploads a file to MikroTik device (for restore operations).
@@ -289,7 +295,8 @@ async def mikrotik_upload_file(
 async def mikrotik_restore_backup(
     ctx: Context,
     filename: str,
-    password: Optional[str] = None
+    password: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """
     Restores a system backup on MikroTik device.
@@ -305,7 +312,7 @@ async def mikrotik_restore_backup(
 
     # Check if backup file exists
     check_cmd = f"/file print count-only where name={filename}"
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Backup file '{filename}' not found."
@@ -316,7 +323,7 @@ async def mikrotik_restore_backup(
     if password:
         cmd += f' password="{password}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "Restoring system configuration" in result or not result.strip():
         return f"Backup '{filename}' restored successfully. System will reboot."
@@ -328,7 +335,8 @@ async def mikrotik_import_configuration(
     ctx: Context,
     filename: str,
     run_after_reset: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """
     Imports a configuration script (.rsc file).
@@ -345,7 +353,7 @@ async def mikrotik_import_configuration(
 
     # Check if file exists
     check_cmd = f"/file print count-only where name={filename}"
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Configuration file '{filename}' not found."
@@ -359,7 +367,7 @@ async def mikrotik_import_configuration(
     if verbose:
         cmd += " verbose=yes"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result.strip() or "Script file loaded and executed successfully" in result:
         return f"Configuration '{filename}' imported successfully."
@@ -369,7 +377,8 @@ async def mikrotik_import_configuration(
 @mcp.tool(name="remove_file", annotations=DANGEROUS)
 async def mikrotik_remove_file(
     ctx: Context,
-    filename: str
+    filename: str,
+    device: Optional[str] = None,
 ) -> str:
     """
     Removes a file from MikroTik device.
@@ -384,14 +393,14 @@ async def mikrotik_remove_file(
 
     # Check if file exists
     check_cmd = f"/file print count-only where name={filename}"
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"File '{filename}' not found."
 
     # Remove the file
     cmd = f"/file remove {filename}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result.strip():
         return f"File '{filename}' removed successfully."
@@ -401,7 +410,8 @@ async def mikrotik_remove_file(
 @mcp.tool(name="backup_info", annotations=READ)
 async def mikrotik_backup_info(
     ctx: Context,
-    filename: str
+    filename: str,
+    device: Optional[str] = None,
 ) -> str:
     """
     Gets detailed information about a backup file.
@@ -416,7 +426,7 @@ async def mikrotik_backup_info(
 
     # Get file details
     cmd = f"/file print detail where name={filename}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"Backup file '{filename}' not found."

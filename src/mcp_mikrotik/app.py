@@ -6,6 +6,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from mcp_mikrotik import config
+from mcp_mikrotik.config import DeviceConnection
 
 mcp = FastMCP("mcp-mikrotik")
 
@@ -26,68 +27,102 @@ async def health_check(request: Request) -> Response:
 async def connect_to_device(
     ctx: Context,
     host: str,
+    name: Optional[str] = None,
     username: str = "admin",
     password: str = "",
     port: int = 22,
     key_filename: Optional[str] = None,
+    make_default: bool = True,
 ) -> str:
     """
-    Connect to a MikroTik device. Sets the target device for all subsequent commands.
-    Must be called before using any other tools if no default host is configured.
+    Register a MikroTik device for use in this session.
+    Multiple devices can be registered under different names.
+    All other tools accept an optional 'device' parameter to select which device to use.
 
     Args:
         host: IP address or hostname of the MikroTik device
+        name: A short name for this device (e.g. "main-router", "switch-1"). Defaults to the host value.
         username: SSH username (default: admin)
         password: SSH password (default: empty)
         port: SSH port (default: 22)
         key_filename: Optional path to SSH private key file
+        make_default: Whether to make this the default device (default: true)
     """
-    await ctx.info(f"Setting target device to {host}")
+    device_name = name or host
+    await ctx.info(f"Registering device '{device_name}' at {host}:{port}")
 
-    state = config.connection_state
-    state.host = host
-    state.username = username
-    state.password = password
-    state.port = port
-    state.key_filename = key_filename
+    conn = DeviceConnection(
+        host=host,
+        username=username,
+        password=password,
+        port=port,
+        key_filename=key_filename,
+    )
+    config.device_registry.add(device_name, conn, make_default=make_default)
 
-    return f"Connected to MikroTik device at {host}:{port} as {username}"
+    default_note = " (default)" if config.device_registry.default_name == device_name else ""
+    return f"Device '{device_name}' registered at {host}:{port} as {username}{default_note}"
 
 
 @mcp.tool(name="disconnect_device", annotations=WRITE)
-async def disconnect_device(ctx: Context) -> str:
+async def disconnect_device(ctx: Context, name: Optional[str] = None) -> str:
     """
-    Disconnect from the current MikroTik device. Clears the connection state
-    so that a new device can be targeted.
-    """
-    state = config.connection_state
-    if not state.is_set:
-        return "No device is currently connected"
+    Remove a registered MikroTik device.
 
-    old_host = state.host
-    state.clear()
-    await ctx.info(f"Disconnected from {old_host}")
-    return f"Disconnected from {old_host}"
+    Args:
+        name: Device name to remove. If not specified, removes the default device.
+    """
+    registry = config.device_registry
+    target = name or registry.default_name
+
+    if target is None:
+        return "No devices are currently registered"
+
+    if registry.remove(target):
+        await ctx.info(f"Removed device '{target}'")
+        return f"Device '{target}' removed"
+    else:
+        return f"Device '{target}' not found"
 
 
-@mcp.tool(name="get_connection_info", annotations=READ)
-async def get_connection_info(ctx: Context) -> str:
+@mcp.tool(name="list_devices", annotations=READ)
+async def list_devices(ctx: Context) -> str:
     """
-    Returns the current MikroTik device connection information.
-    Shows which device commands will be sent to.
+    List all registered MikroTik devices and show which is the default.
     """
-    state = config.connection_state
+    registry = config.device_registry
     cfg = config.mikrotik_config
 
-    host = state.host if state.host is not None else cfg.host
-    username = state.username if state.username is not None else cfg.username
-    port = state.port if state.port is not None else cfg.port
-    source = "conversation" if state.is_set else "configuration"
+    lines = []
 
-    if host is None:
-        return "No device configured. Use connect_to_device to specify a MikroTik device."
+    if not registry.is_empty:
+        for device_name in registry.device_names:
+            conn = registry.get(device_name)
+            default_marker = " (default)" if device_name == registry.default_name else ""
+            lines.append(f"- {device_name}: {conn.host}:{conn.port} as {conn.username}{default_marker}")
+    elif cfg.host:
+        lines.append(f"- (from config): {cfg.host}:{cfg.port} as {cfg.username} (default)")
+    else:
+        return "No devices configured. Use connect_to_device to register a MikroTik device."
 
-    return f"Host: {host}\nPort: {port}\nUsername: {username}\nSource: {source}"
+    return "Registered devices:\n" + "\n".join(lines)
+
+
+@mcp.tool(name="set_default_device", annotations=WRITE)
+async def set_default_device(ctx: Context, name: str) -> str:
+    """
+    Set which registered device is used by default when no device name is specified.
+
+    Args:
+        name: Device name to set as default
+    """
+    registry = config.device_registry
+    if name not in registry.device_names:
+        available = ", ".join(registry.device_names) if not registry.is_empty else "none"
+        return f"Device '{name}' not found. Available: {available}"
+
+    registry.default_name = name
+    return f"Default device set to '{name}'"
 
 
 # Import scope modules to trigger @mcp.tool() registration

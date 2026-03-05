@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,26 +30,65 @@ class MikrotikConfig(BaseSettings):
 mikrotik_config = MikrotikConfig()
 
 
-class ConnectionState:
-    """Holds the active MikroTik device connection parameters set during conversation."""
+class DeviceConnection:
+    """Connection parameters for a single MikroTik device."""
+
+    def __init__(self, host: str, username: str = "admin", password: str = "",
+                 port: int = 22, key_filename: Optional[str] = None):
+        self.host = host
+        self.username = username
+        self.password = password
+        self.port = port
+        self.key_filename = key_filename
+
+
+class DeviceRegistry:
+    """Registry of named MikroTik device connections set during conversation."""
 
     def __init__(self):
-        self.host: Optional[str] = None
-        self.username: Optional[str] = None
-        self.password: Optional[str] = None
-        self.port: Optional[int] = None
-        self.key_filename: Optional[str] = None
+        self._devices: Dict[str, DeviceConnection] = {}
+        self._default: Optional[str] = None
+
+    def add(self, name: str, connection: DeviceConnection, make_default: bool = True):
+        self._devices[name] = connection
+        if make_default or len(self._devices) == 1:
+            self._default = name
+
+    def remove(self, name: str) -> bool:
+        if name not in self._devices:
+            return False
+        del self._devices[name]
+        if self._default == name:
+            self._default = next(iter(self._devices), None)
+        return True
+
+    def get(self, name: Optional[str] = None) -> Optional[DeviceConnection]:
+        if name is not None:
+            return self._devices.get(name)
+        if self._default is not None:
+            return self._devices.get(self._default)
+        return None
 
     @property
-    def is_set(self) -> bool:
-        return self.host is not None
+    def default_name(self) -> Optional[str]:
+        return self._default
+
+    @default_name.setter
+    def default_name(self, name: str):
+        if name in self._devices:
+            self._default = name
+
+    @property
+    def device_names(self) -> list:
+        return list(self._devices.keys())
+
+    @property
+    def is_empty(self) -> bool:
+        return len(self._devices) == 0
 
     def clear(self):
-        self.host = None
-        self.username = None
-        self.password = None
-        self.port = None
-        self.key_filename = None
+        self._devices.clear()
+        self._default = None
 
 
-connection_state = ConnectionState()
+device_registry = DeviceRegistry()

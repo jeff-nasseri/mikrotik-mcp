@@ -12,7 +12,8 @@ async def mikrotik_add_ip_address(
     network: Optional[str] = None,
     broadcast: Optional[str] = None,
     comment: Optional[str] = None,
-    disabled: bool = False
+    disabled: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """
     Adds an IP address to an interface on MikroTik device.
@@ -46,14 +47,14 @@ async def mikrotik_add_ip_address(
     if disabled:
         cmd += " disabled=yes"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to add IP address: {result}"
 
     # Get the created address details
     details_cmd = f'/ip address print detail where address="{address}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"IP address added successfully:\n\n{details}"
 
@@ -64,7 +65,8 @@ async def mikrotik_list_ip_addresses(
     address_filter: Optional[str] = None,
     network_filter: Optional[str] = None,
     disabled_only: bool = False,
-    dynamic_only: bool = False
+    dynamic_only: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """
     Lists IP addresses on MikroTik device.
@@ -100,7 +102,7 @@ async def mikrotik_list_ip_addresses(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "No IP addresses found matching the criteria."
@@ -122,12 +124,12 @@ async def mikrotik_get_ip_address(ctx: Context, address_id: str) -> str:
 
     # Try to find by ID first, then by address
     cmd = f'/ip address print detail where .id="{address_id}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         # Try finding by address value
         cmd = f'/ip address print detail where address="{address_id}"'
-        result = await execute_mikrotik_command(cmd, ctx)
+        result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"IP address '{address_id}' not found."
@@ -149,12 +151,12 @@ async def mikrotik_remove_ip_address(ctx: Context, address_id: str) -> str:
 
     # Try to find by ID first
     check_cmd = f'/ip address print count-only where .id="{address_id}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         # Try finding by address value
         check_cmd = f'/ip address print count-only where address="{address_id}"'
-        count = await execute_mikrotik_command(check_cmd, ctx)
+        count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
         if count.strip() == "0":
             return f"IP address '{address_id}' not found."
@@ -165,7 +167,7 @@ async def mikrotik_remove_ip_address(ctx: Context, address_id: str) -> str:
         # Remove by ID
         cmd = f'/ip address remove [find .id="{address_id}"]'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove IP address: {result}"

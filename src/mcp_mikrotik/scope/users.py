@@ -12,7 +12,8 @@ async def mikrotik_add_user(
     group: str = "read",
     address: Optional[str] = None,
     comment: Optional[str] = None,
-    disabled: bool = False
+    disabled: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """Adds a user to MikroTik device."""
     await ctx.info(f"Adding user: name={name}, group={group}")
@@ -28,13 +29,13 @@ async def mikrotik_add_user(
     if disabled:
         cmd += " disabled=yes"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if result.strip():
         if "*" in result or result.strip().isdigit():
             user_id = result.strip()
             details_cmd = f"/user print detail where .id={user_id}"
-            details = await execute_mikrotik_command(details_cmd, ctx)
+            details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
             if details.strip():
                 # Remove password from output for security
@@ -46,7 +47,7 @@ async def mikrotik_add_user(
             return f"Failed to create user: {result}"
     else:
         details_cmd = f'/user print detail where name="{name}"'
-        details = await execute_mikrotik_command(details_cmd, ctx)
+        details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
         if details.strip():
             details = re.sub(r'password="[^"]*"', 'password="***"', details)
@@ -60,7 +61,8 @@ async def mikrotik_list_users(
     name_filter: Optional[str] = None,
     group_filter: Optional[str] = None,
     disabled_only: bool = False,
-    active_only: bool = False
+    active_only: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """Lists users on MikroTik device."""
     await ctx.info(f"Listing users with filters: name={name_filter}, group={group_filter}")
@@ -78,7 +80,7 @@ async def mikrotik_list_users(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No users found matching the criteria."
@@ -94,7 +96,7 @@ async def mikrotik_get_user(ctx: Context, name: str) -> str:
     await ctx.info(f"Getting user details: name={name}")
 
     cmd = f'/user print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"User '{name}' not found."
@@ -113,7 +115,8 @@ async def mikrotik_update_user(
     group: Optional[str] = None,
     address: Optional[str] = None,
     comment: Optional[str] = None,
-    disabled: Optional[bool] = None
+    disabled: Optional[bool] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Updates a user."""
     await ctx.info(f"Updating user: name={name}")
@@ -142,14 +145,14 @@ async def mikrotik_update_user(
 
     cmd += " " + " ".join(updates)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update user: {result}"
 
     details_name = new_name if new_name else name
     details_cmd = f'/user print detail where name="{details_name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     # Remove password from output
     details = re.sub(r'password="[^"]*"', 'password="***"', details)
@@ -166,13 +169,13 @@ async def mikrotik_remove_user(ctx: Context, name: str) -> str:
         return "Cannot remove the admin user."
 
     check_cmd = f'/user print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"User '{name}' not found."
 
     cmd = f'/user remove [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove user: {result}"
@@ -195,7 +198,8 @@ async def mikrotik_add_user_group(
     name: str,
     policy: List[str],
     skin: Optional[str] = None,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Adds a user group."""
     await ctx.info(f"Adding user group: name={name}")
@@ -220,13 +224,13 @@ async def mikrotik_add_user_group(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if result.strip():
         if "*" in result or result.strip().isdigit():
             group_id = result.strip()
             details_cmd = f"/user group print detail where .id={group_id}"
-            details = await execute_mikrotik_command(details_cmd, ctx)
+            details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
             if details.strip():
                 return f"User group created successfully:\n\n{details}"
@@ -236,7 +240,7 @@ async def mikrotik_add_user_group(
             return f"Failed to create user group: {result}"
     else:
         details_cmd = f'/user group print detail where name="{name}"'
-        details = await execute_mikrotik_command(details_cmd, ctx)
+        details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
         if details.strip():
             return f"User group created successfully:\n\n{details}"
@@ -247,7 +251,8 @@ async def mikrotik_add_user_group(
 async def mikrotik_list_user_groups(
     ctx: Context,
     name_filter: Optional[str] = None,
-    policy_filter: Optional[str] = None
+    policy_filter: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Lists user groups on MikroTik device."""
     await ctx.info(f"Listing user groups with filters: name={name_filter}")
@@ -263,7 +268,7 @@ async def mikrotik_list_user_groups(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No user groups found matching the criteria."
@@ -276,7 +281,7 @@ async def mikrotik_get_user_group(ctx: Context, name: str) -> str:
     await ctx.info(f"Getting user group details: name={name}")
 
     cmd = f'/user group print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"User group '{name}' not found."
@@ -290,7 +295,8 @@ async def mikrotik_update_user_group(
     new_name: Optional[str] = None,
     policy: Optional[List[str]] = None,
     skin: Optional[str] = None,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None,
 ) -> str:
     """Updates a user group."""
     await ctx.info(f"Updating user group: name={name}")
@@ -319,14 +325,14 @@ async def mikrotik_update_user_group(
 
     cmd += " " + " ".join(updates)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update user group: {result}"
 
     details_name = new_name if new_name else name
     details_cmd = f'/user group print detail where name="{details_name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"User group updated successfully:\n\n{details}"
 
@@ -340,20 +346,20 @@ async def mikrotik_remove_user_group(ctx: Context, name: str) -> str:
         return f"Cannot remove built-in group '{name}'."
 
     check_cmd = f'/user group print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"User group '{name}' not found."
 
     # Check if group is in use
     users_cmd = f'/user print count-only where group="{name}"'
-    users_count = await execute_mikrotik_command(users_cmd, ctx)
+    users_count = await execute_mikrotik_command(users_cmd, ctx, device=device)
 
     if users_count.strip() != "0":
         return f"Cannot remove group '{name}': {users_count.strip()} users are using this group."
 
     cmd = f'/user group remove [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove user group: {result}"
@@ -366,7 +372,7 @@ async def mikrotik_get_active_users(ctx: Context) -> str:
     await ctx.info("Getting active users")
 
     cmd = "/user active print"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "No active users found."
@@ -379,7 +385,7 @@ async def mikrotik_disconnect_user(ctx: Context, user_id: str) -> str:
     await ctx.info(f"Disconnecting user: user_id={user_id}")
 
     cmd = f"/user active remove {user_id}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to disconnect user: {result}"
@@ -395,7 +401,7 @@ async def mikrotik_export_user_config(ctx: Context, filename: Optional[str] = No
         filename = "user_config"
 
     cmd = f"/user export file={filename}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result.strip():
         return f"User configuration exported to {filename}.rsc"
@@ -406,13 +412,14 @@ async def mikrotik_export_user_config(ctx: Context, filename: Optional[str] = No
 async def mikrotik_set_user_ssh_keys(
     ctx: Context,
     username: str,
-    key_file: str
+    key_file: str,
+    device: Optional[str] = None,
 ) -> str:
     """Sets SSH keys for a specific user."""
     await ctx.info(f"Setting SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys import user="{username}" public-key-file="{key_file}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result.strip() or "imported" in result.lower():
         return f"SSH key imported successfully for user '{username}'."
@@ -425,7 +432,7 @@ async def mikrotik_list_user_ssh_keys(ctx: Context, username: str) -> str:
     await ctx.info(f"Listing SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys print where user="{username}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"No SSH keys found for user '{username}'."
@@ -438,7 +445,7 @@ async def mikrotik_remove_user_ssh_key(ctx: Context, key_id: str) -> str:
     await ctx.info(f"Removing SSH key: key_id={key_id}")
 
     cmd = f"/user ssh-keys remove {key_id}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove SSH key: {result}"
