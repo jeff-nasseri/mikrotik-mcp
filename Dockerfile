@@ -3,7 +3,7 @@ FROM python:3.11-alpine AS builder
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.7 /uv /uvx /bin/
 
 RUN apk add --no-cache \
     gcc \
@@ -16,11 +16,11 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY src/ ./src/
 
-RUN uv sync --no-dev
+RUN uv sync --frozen --no-dev
 
 FROM python:3.11-alpine AS production
 

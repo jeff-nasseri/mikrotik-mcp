@@ -45,6 +45,6 @@ packages = ["src/mcp_mikrotik"]
 [dependency-groups]
 dev = [
     "pytest>=9.0.0",
-    "testcontainers>=4.14.0",
+    "testcontainers[compose]>=4.14.0",
     "PyYAML>=6.0.3",
 ]
