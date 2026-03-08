@@ -1,4 +1,4 @@
-FROM python:3.11-alpine AS builder
+FROM python:3.12-alpine AS builder
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -14,15 +14,15 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY src/ ./src/
 
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-editable
 
-FROM python:3.11-alpine AS production
+FROM python:3.12-alpine AS production
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
