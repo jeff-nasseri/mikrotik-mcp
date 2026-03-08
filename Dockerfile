@@ -2,8 +2,8 @@ FROM python:3.11-alpine AS builder
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PIP_NO_CACHE_DIR=1
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN apk add --no-cache \
     gcc \
@@ -14,19 +14,19 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-COPY requirements.txt pyproject.toml ./
+COPY pyproject.toml uv.lock ./
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv sync --no-dev --no-install-project
 
 COPY src/ ./src/
 
-RUN pip install --no-cache-dir .
+RUN uv sync --no-dev
 
 FROM python:3.11-alpine AS production
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PATH="/app/.local/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH"
 
 RUN apk add --no-cache \
     libffi \
@@ -37,8 +37,7 @@ RUN addgroup -g 1000 mcpuser && adduser -D -u 1000 -G mcpuser mcpuser
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /app/.venv ./.venv
 
 COPY --from=builder /app/src ./src
 
