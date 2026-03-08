@@ -107,6 +107,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.7.x"
 
       - name: Update version in pyproject.toml
         run: |
@@ -116,7 +118,7 @@ jobs:
         run: uv build
 
       - name: Check distribution
-        run: uvx twine check dist/*
+        run: uvx twine@6 check dist/*
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -137,16 +139,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
+          version: "0.7.x"
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --frozen
 
       - name: Run tests
-        run: |
-          # Add your test commands here
-          # uv run pytest tests/ --cov=mcp_mikrotik --cov-report=xml
-          echo "Tests would run here"
+        run: uv run pytest -m "not integration"
 
   publish:
     runs-on: ubuntu-latest

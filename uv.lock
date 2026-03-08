@@ -548,7 +548,7 @@ requires-dist = [
 dev = [
     { name = "pytest", specifier = ">=9.0.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "testcontainers", specifier = ">=4.14.0" },
+    { name = "testcontainers", extras = ["compose"], specifier = ">=4.14.0" },
 ]
 
 [[package]]

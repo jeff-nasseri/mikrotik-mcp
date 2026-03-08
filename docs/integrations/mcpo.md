@@ -4,20 +4,15 @@ This guide shows how to expose your MikroTik MCP server as a RESTful API using M
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.10+
 - MikroTik MCP server already set up
-- `uv` package manager (recommended) or `pip`
+- `uv` package manager
 
 ## Installation
 
-Install MCPO using one of these methods:
-
 ```bash
-# Option 1: Using uvx (recommended - no installation needed)
+# Using uvx (no installation needed)
 uvx mcpo --help
-
-# Option 2: Using pip
-pip install mcpo
 ```
 
 ## Configuration
@@ -28,9 +23,10 @@ Create a `mcp-config.json` file in your project directory:
 {
   "mcpServers": {
     "mikrotik-mcp-server": {
-      "command": "python",
+      "command": "uv",
       "args": [
-        "src/mcp_mikrotik/server.py",
+        "run",
+        "mcp-server-mikrotik",
         "--password", "admin",
         "--host", "192.168.1.1",
         "--port", "22",
