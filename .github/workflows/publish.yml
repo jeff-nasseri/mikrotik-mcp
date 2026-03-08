@@ -89,6 +89,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.7.x"
 
       - name: Update version in pyproject.toml
         run: |
@@ -98,7 +100,7 @@ jobs:
         run: uv build
 
       - name: Check distribution
-        run: uvx twine check dist/*
+        run: uvx twine@6 check dist/*
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -120,13 +122,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
+          version: "0.7.x"
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: uv sync --frozen
 
-      - name: Run unit tests
-        run: uv run pytest -m "not integration" -v
+      - name: Run tests
+        run: uv run pytest -m "not integration"
 
   publish:
     runs-on: ubuntu-latest
