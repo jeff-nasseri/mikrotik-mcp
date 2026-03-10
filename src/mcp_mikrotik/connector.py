@@ -37,9 +37,25 @@ def _execute_sync(command: str) -> str:
 
 
 async def execute_mikrotik_command(command: str, ctx: Context) -> str:
-    """Execute a MikroTik command via SSH and return the output."""
-    await ctx.info(f"Executing MikroTik command: {command}")
-    result = await asyncio.to_thread(_execute_sync, command)
+    """Execute a MikroTik command via SSH and return the output.
+
+    When Safe Mode is active the command is routed through the persistent
+    interactive shell session so it runs inside the safe-mode context.
+    """
+    from .safe_mode import get_safe_mode_manager
+
+    safe_mgr = get_safe_mode_manager()
+    if safe_mgr.is_active:
+        await ctx.info(f"Executing (safe mode): {command}")
+        try:
+            result = await asyncio.to_thread(safe_mgr.execute, command)
+        except Exception as e:
+            result = f"Error executing command in safe mode session: {str(e)}"
+    else:
+        await ctx.info(f"Executing MikroTik command: {command}")
+        result = await asyncio.to_thread(_execute_sync, command)
+
+    logger.info(f"Command result: {repr(result)}")
     if result.startswith("Error"):
         await ctx.error(result)
     return result
