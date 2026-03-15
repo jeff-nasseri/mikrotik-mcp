@@ -25,6 +25,32 @@ uv run mcp-server-mikrotik --mcp.transport sse
 uv run mcp-server-mikrotik --mcp.transport streamable-http
 ```
 
+<details>
+<summary>Alternative: using pip</summary>
+
+```bash
+# Clone the repository
+git clone https://github.com/jeff-nasseri/mikrotik-mcp/tree/master
+cd mcp-mikrotik
+
+# Create a virtual environment and install
+python -m venv .venv
+source .venv/bin/activate   # Linux/macOS
+# .venv\Scripts\activate    # Windows
+pip install -e .
+
+# Run the server
+python -m mcp_server_mikrotik
+
+# Run with SSE transport
+python -m mcp_server_mikrotik --mcp.transport sse
+
+# Run with streamable HTTP transport
+python -m mcp_server_mikrotik --mcp.transport streamable-http
+```
+
+</details>
+
 ### CLI Options
 
 | Flag | Description | Default |
