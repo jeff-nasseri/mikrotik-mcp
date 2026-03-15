@@ -25,6 +25,32 @@ uv run mcp-server-mikrotik --mcp.transport sse
 uv run mcp-server-mikrotik --mcp.transport streamable-http
 ```
 
+<details>
+<summary>Alternative: using pip</summary>
+
+```bash
+# Clone the repository
+git clone https://github.com/jeff-nasseri/mikrotik-mcp/tree/master
+cd mcp-mikrotik
+
+# Create a virtual environment and install
+python -m venv .venv
+source .venv/bin/activate   # Linux/macOS
+# .venv\Scripts\activate    # Windows
+pip install -e .
+
+# Run the server
+python -m mcp_server_mikrotik
+
+# Run with SSE transport
+python -m mcp_server_mikrotik --mcp.transport sse
+
+# Run with streamable HTTP transport
+python -m mcp_server_mikrotik --mcp.transport streamable-http
+```
+
+</details>
+
 ### CLI Options
 
 | Flag | Description | Default |
@@ -67,7 +93,7 @@ The easiest way to run the MCP MikroTik server is using Docker.
            "run",
            "--rm",
            "-i",
-           "-e", "MIKROTIK_HOST=192.168.88.1",
+           "-e", "MIKROTIK_HOST=192.168.1.1",
            "-e", "MIKROTIK_USERNAME=sshuser",
            "-e", "MIKROTIK_PASSWORD=your_password",
            "-e", "MIKROTIK_PORT=22",
@@ -82,7 +108,7 @@ The easiest way to run the MCP MikroTik server is using Docker.
 
    ```bash
    docker run --rm -p 8000:8000 \
-     -e MIKROTIK_HOST=192.168.88.1 \
+     -e MIKROTIK_HOST=192.168.1.1 \
      -e MIKROTIK_USERNAME=sshuser \
      -e MIKROTIK_PASSWORD=your_password \
      -e MIKROTIK_MCP__TRANSPORT=sse \
@@ -95,7 +121,7 @@ The easiest way to run the MCP MikroTik server is using Docker.
 
    | Variable | Description | Default |
    |----------|-------------|---------|
-   | `MIKROTIK_HOST` | MikroTik device IP/hostname | `192.168.88.1` |
+   | `MIKROTIK_HOST` | MikroTik device IP/hostname | `192.168.1.1` |
    | `MIKROTIK_USERNAME` | SSH username | `admin` |
    | `MIKROTIK_PASSWORD` | SSH password | _(empty)_ |
    | `MIKROTIK_PORT` | SSH port | `22` |

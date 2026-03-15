@@ -14,7 +14,7 @@ Keeps credentials out of the command line:
 
 ```bash
 claude mcp add --transport stdio mikrotik \
-  --env MIKROTIK_HOST=192.168.88.1 \
+  --env MIKROTIK_HOST=192.168.1.1 \
   --env MIKROTIK_USERNAME=admin \
   --env MIKROTIK_PASSWORD=your_password \
   -- uvx mcp-server-mikrotik
@@ -32,10 +32,10 @@ claude mcp add --transport stdio mikrotik \
 
    ```bash
    # Upload the key file
-   scp ~/.ssh/mcp-server-mikrotik.pub admin@192.168.88.1:/
+   scp ~/.ssh/mcp-server-mikrotik.pub admin@192.168.1.1:/
 
    # Import it on the router
-   ssh admin@192.168.88.1 "/user ssh-keys import public-key-file=mcp-server-mikrotik.pub user=admin"
+   ssh admin@192.168.1.1 "/user ssh-keys import public-key-file=mcp-server-mikrotik.pub user=admin"
    ```
 
 3. Add the server to Claude Code:
@@ -43,7 +43,7 @@ claude mcp add --transport stdio mikrotik \
    ```bash
    claude mcp add --transport stdio mikrotik \
      -- uvx mcp-server-mikrotik \
-     --host 192.168.88.1 --username admin --key-filename ~/.ssh/mcp-server-mikrotik
+     --host 192.168.1.1 --username admin --key-filename ~/.ssh/mcp-server-mikrotik
    ```
 
 ## Verify
