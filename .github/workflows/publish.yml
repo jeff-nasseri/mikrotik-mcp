@@ -105,25 +105,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: '3.11'
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine
+          version: "0.10.x"
 
       - name: Update version in pyproject.toml
         run: |
           sed -i 's/version = ".*"/version = "${{ needs.version.outputs.version }}"/' pyproject.toml
 
       - name: Build package
-        run: python -m build
+        run: uv build
 
       - name: Check distribution
-        run: twine check dist/*
+        run: uvx twine@6 check dist/*
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -141,22 +136,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
+          version: "0.10.x"
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install pytest pytest-cov
+        run: uv sync --frozen
 
       - name: Run tests
-        run: |
-          # Add your test commands here
-          # pytest tests/ --cov=mcp_mikrotik --cov-report=xml
-          echo "Tests would run here"
+        run: uv run pytest -m "not integration"
 
   publish:
     runs-on: ubuntu-latest
