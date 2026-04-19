@@ -164,8 +164,9 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [version, publish]
-    # Run even when publish was skipped due to a duplicate version.
+    needs: [version, build, publish]
+    # Run even when publish was skipped due to a duplicate version (skip-existing).
+    # Guard on build success so we never tag a broken build.
     if: always() && needs.version.outputs.should_publish == 'true' && needs.build.result == 'success'
     permissions:
       contents: write
@@ -177,26 +178,30 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Skip tag creation if it already exists (idempotent)
-          if git rev-parse "v${{ needs.version.outputs.version }}" >/dev/null 2>&1; then
-            echo "Tag v${{ needs.version.outputs.version }} already exists — skipping."
+          # Tag uses semVer (3-part: v0.5.1) so GitVersion can parse it as a
+          # version source on the next run.  The PyPI package uses assemblySemVer
+          # (4-part: 0.5.1.0) which is a different value — both are exposed as
+          # separate outputs from the version job.
+          TAG="v${{ needs.version.outputs.semVer }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — skipping."
           else
-            git tag -a "v${{ needs.version.outputs.version }}" -m "Release v${{ needs.version.outputs.version }}"
-            git push origin "v${{ needs.version.outputs.version }}"
+            git tag -a "$TAG" -m "Release $TAG (package ${{ needs.version.outputs.version }})"
+            git push origin "$TAG"
           fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.version.outputs.version }}
-          name: Release v${{ needs.version.outputs.version }}
+          tag_name: v${{ needs.version.outputs.semVer }}
+          name: Release v${{ needs.version.outputs.semVer }}
           body: |
-            ## Changes in v${{ needs.version.outputs.version }}
+            ## Changes in v${{ needs.version.outputs.semVer }}
 
             This release was automatically created by GitHub Actions.
 
-            **Package version:** ${{ needs.version.outputs.version }}
-            **SemVer:** ${{ needs.version.outputs.semVer }}
+            **PyPI package version:** ${{ needs.version.outputs.version }}
+            **SemVer (git tag):** v${{ needs.version.outputs.semVer }}
             **Commit:** ${{ github.sha }}
           draft: false
           prerelease: false
