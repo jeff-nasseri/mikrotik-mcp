@@ -1,28 +1,34 @@
-# GitVersion configuration for GitVersion 6.x
+# GitVersion configuration
 #
-# Workflow: GitHub Flow — all PRs merge directly to master, no develop/release branches.
-# Version format published to PyPI: MAJOR.MINOR.PATCH (semVer) / MAJOR.MINOR.PATCH.BUILD (assemblySemVer)
+# Strategy: GitHub Flow — all PRs merge directly to master.
+# No develop / release / feature branches needed.
 #
-# Conventional commit rules:
-#   feat:                       → Minor bump  (0.x.0)
-#   fix | chore | refactor | …  → Patch bump  (0.0.x)
-#   docs | doc | documentation  → No bump     (version unchanged)
-#   untyped commit              → Patch bump  (fallback)
-#   +semver: breaking/major     → Major bump  (EMERGENCY ONLY — major is frozen at 0)
+# Version format:
+#   PyPI package (assemblySemVer): MAJOR.MINOR.PATCH.0   e.g. 0.6.0.0
+#   Git tag        (semVer):       MAJOR.MINOR.PATCH       e.g. 0.6.0
+#
+# Bump rules (conventional commits):
+#   feat:                               → Minor bump  0.x.0
+#   fix | chore | refactor | perf | …  → Patch bump  0.0.x
+#   docs: | doc: | documentation:      → No bump     (pipeline still runs, PyPI skips duplicate)
+#   untyped message                    → Patch bump  (fallback via branch increment)
+#   +semver: breaking  (footer)        → Major bump  (EMERGENCY — major frozen at 0)
 
-# GitHubFlow/v1 provides sensible defaults for master-only workflows:
-#   - ContinuousDelivery mode on main/master (clean versions, no pre-release labels)
-#   - Feature branches get a pre-release label derived from the branch name
-workflow: GitHubFlow/v1
-
-# Floor version — GitVersion will never calculate a version below this.
+mode: ContinuousDelivery
 next-version: 0.5.0
 
-# Parse every commit message on the path from HEAD to the last version tag.
-# The highest matching rule wins (Minor > Patch > None).
+# Parse every commit on HEAD→version-source; the highest matching rule wins.
 commit-message-incrementing: Enabled
 
 major-version-bump-message: '^\+semver:\s*(breaking|major)'
 minor-version-bump-message: '^feat(\(.+\))?!?:'
 patch-version-bump-message: '^(fix|chore|refactor|perf|style|ci|test|build|revert)(\(.+\))?!?:'
 no-bump-message: '^(docs?|documentation)(\(.+\))?!?:'
+
+branches:
+  master:
+    regex: ^master$
+    mode: ContinuousDelivery
+    label: ''
+    increment: Patch
+    is-release-branch: true
