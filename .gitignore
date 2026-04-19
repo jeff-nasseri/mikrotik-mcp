@@ -210,7 +210,12 @@ Desktop.ini
 
 # UV package manager
 .uv/
-uv.lock
+
+# MCP local config (may contain credentials)
+.mcp.json
+
+# Claude Code project instructions
+CLAUDE.md
 
 # Logs
 logs/

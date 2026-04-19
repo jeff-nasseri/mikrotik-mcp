@@ -136,14 +136,11 @@ class TestMikroTikMyFeatureIntegration:
 
 Before submitting, ensure your implementation works:
 
-1. **Run integration tests**: `pytest tests/integration/test_my_feature_integration.py -v`
+1. **Run integration tests**: `uv run pytest tests/integration/test_my_feature_integration.py -v`
 2. **Use MCP Inspector**: Test your tools interactively using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
    ```bash
-   # Install MCP Inspector
-   npm install -g @modelcontextprotocol/inspector
-
    # Test your MCP server (stdio transport)
-   mcp-inspector python -m mcp_mikrotik.server
+   npx @modelcontextprotocol/inspector uv run mcp-server-mikrotik
    ```
 3. **Manual testing**: Test with a real MikroTik device to ensure commands work correctly
 
