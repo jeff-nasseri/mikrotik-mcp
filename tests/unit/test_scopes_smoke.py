@@ -15,10 +15,12 @@ SCOPE_MODULES = [
     "ip_address",
     "ip_pool",
     "logs",
+    "queue",
     "routes",
     "users",
     "vlan",
     "wireless",
+    "wireguard",
 ]
 
 BROKEN_WRAPPER_FUNCS = {

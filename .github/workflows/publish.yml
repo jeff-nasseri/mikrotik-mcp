@@ -7,11 +7,17 @@
 #   whenever changes are pushed to the master branch. Uses GitVersion for
 #   semantic versioning and creates GitHub releases with corresponding tags.
 #
+# Version format: MAJOR.MINOR.PATCH.FIX (assemblySemVer, 4-part PEP 440)
+#   feat:   bumps MINOR  →  0.x.0.0
+#   chore:  bumps PATCH  →  0.0.x.0
+#   fix:    bumps PATCH  →  0.0.x.0  (4th digit tracks commits since last tag)
+#   docs:   no bump
+#
 # Workflow Steps:
-#   1. Version Determination: Calculate semantic version using GitVersion
-#   2. Build: Create Python distribution packages (wheel and source)
-#   3. Test: Run test suite across Python 3.10, 3.11, and 3.12
-#   4. Publish: Upload package to PyPI (only on master branch)
+#   1. Version: Calculate semantic version using GitVersion
+#   2. Build:   Create Python distribution packages (wheel and source)
+#   3. Test:    Run unit test suite across Python 3.10, 3.11, and 3.12
+#   4. Publish: Upload package to PyPI (skip-existing prevents duplicate failures)
 #   5. Release: Create GitHub release with auto-generated tag
 #
 # Triggers:
@@ -20,7 +26,6 @@
 # Requirements:
 #   - GitVersion.yml configuration file in repository root
 #   - PyPI trusted publisher configured for GitHub Actions
-#   - Repository secrets and permissions properly configured
 #
 # =============================================================================
 name: Build and Publish to PyPI
@@ -34,8 +39,8 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.gitversion.outputs.semVer }}
-      assemblySemVer: ${{ steps.gitversion.outputs.assemblySemVer }}
+      version: ${{ steps.gitversion.outputs.assemblySemVer }}
+      semVer: ${{ steps.gitversion.outputs.semVer }}
       should_publish: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
     steps:
       - name: Checkout
@@ -65,38 +70,15 @@ jobs:
 
       - name: Display GitVersion outputs
         run: |
-          echo "Major: ${{ steps.gitversion.outputs.major }}"
-          echo "Minor: ${{ steps.gitversion.outputs.minor }}"
-          echo "Patch: ${{ steps.gitversion.outputs.patch }}"
-          echo "PreReleaseTag: ${{ steps.gitversion.outputs.preReleaseTag }}"
-          echo "PreReleaseTagWithDash: ${{ steps.gitversion.outputs.preReleaseTagWithDash }}"
-          echo "PreReleaseLabel: ${{ steps.gitversion.outputs.preReleaseLabel }}"
-          echo "PreReleaseNumber: ${{ steps.gitversion.outputs.preReleaseNumber }}"
-          echo "WeightedPreReleaseNumber: ${{ steps.gitversion.outputs.weightedPreReleaseNumber }}"
-          echo "BuildMetaData: ${{ steps.gitversion.outputs.buildMetaData }}"
-          echo "BuildMetaDataPadded: ${{ steps.gitversion.outputs.buildMetaDataPadded }}"
-          echo "FullBuildMetaData: ${{ steps.gitversion.outputs.fullBuildMetaData }}"
-          echo "MajorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}"
-          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-          echo "LegacySemVer: ${{ steps.gitversion.outputs.legacySemVer }}"
-          echo "LegacySemVerPadded: ${{ steps.gitversion.outputs.legacySemVerPadded }}"
-          echo "AssemblySemVer: ${{ steps.gitversion.outputs.assemblySemVer }}"
-          echo "AssemblySemFileVer: ${{ steps.gitversion.outputs.assemblySemFileVer }}"
-          echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
-          echo "InformationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}"
-          echo "BranchName: ${{ steps.gitversion.outputs.branchName }}"
-          echo "EscapedBranchName: ${{ steps.gitversion.outputs.escapedBranchName }}"
-          echo "Sha: ${{ steps.gitversion.outputs.sha }}"
-          echo "ShortSha: ${{ steps.gitversion.outputs.shortSha }}"
-          echo "NuGetVersionV2: ${{ steps.gitversion.outputs.nuGetVersionV2 }}"
-          echo "NuGetVersion: ${{ steps.gitversion.outputs.nuGetVersion }}"
-          echo "NuGetPreReleaseTagV2: ${{ steps.gitversion.outputs.nuGetPreReleaseTagV2 }}"
-          echo "NuGetPreReleaseTag: ${{ steps.gitversion.outputs.nuGetPreReleaseTag }}"
-          echo "VersionSourceSha: ${{ steps.gitversion.outputs.versionSourceSha }}"
-          echo "CommitsSinceVersionSource: ${{ steps.gitversion.outputs.commitsSinceVersionSource }}"
-          echo "CommitsSinceVersionSourcePadded: ${{ steps.gitversion.outputs.commitsSinceVersionSourcePadded }}"
-          echo "UncommittedChanges: ${{ steps.gitversion.outputs.uncommittedChanges }}"
-          echo "CommitDate: ${{ steps.gitversion.outputs.commitDate }}"
+          echo "SemVer:          ${{ steps.gitversion.outputs.semVer }}"
+          echo "AssemblySemVer:  ${{ steps.gitversion.outputs.assemblySemVer }}"
+          echo "Major:           ${{ steps.gitversion.outputs.major }}"
+          echo "Minor:           ${{ steps.gitversion.outputs.minor }}"
+          echo "Patch:           ${{ steps.gitversion.outputs.patch }}"
+          echo "PreReleaseTag:   ${{ steps.gitversion.outputs.preReleaseTag }}"
+          echo "FullSemVer:      ${{ steps.gitversion.outputs.fullSemVer }}"
+          echo "BranchName:      ${{ steps.gitversion.outputs.branchName }}"
+          echo "CommitsSince:    ${{ steps.gitversion.outputs.commitsSinceVersionSource }}"
 
   build:
     runs-on: ubuntu-latest
@@ -135,6 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: version
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.10', '3.11', '3.12']
     steps:
@@ -149,14 +132,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
-          pip install pytest pytest-cov
+          pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
-          # Add your test commands here
-          # pytest tests/ --cov=mcp_mikrotik --cov-report=xml
-          echo "Tests would run here"
+          python -m pytest -m "not integration" -v
 
   publish:
     runs-on: ubuntu-latest
@@ -175,14 +155,18 @@ jobs:
           path: dist/
 
       - name: Publish to PyPI
+        # skip-existing: true means a duplicate version is silently skipped
+        # instead of failing the pipeline with a 400 error.
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           print-hash: true
+          skip-existing: true
 
   create-release:
     runs-on: ubuntu-latest
     needs: [version, publish]
-    if: needs.version.outputs.should_publish == 'true'
+    # Run even when publish was skipped due to a duplicate version.
+    if: always() && needs.version.outputs.should_publish == 'true' && needs.build.result == 'success'
     permissions:
       contents: write
     steps:
@@ -193,21 +177,26 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ needs.version.outputs.assemblySemVer }}" -m "Release v${{ needs.version.outputs.assemblySemVer }}"
-          git push origin "v${{ needs.version.outputs.assemblySemVer }}"
+          # Skip tag creation if it already exists (idempotent)
+          if git rev-parse "v${{ needs.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ needs.version.outputs.version }} already exists — skipping."
+          else
+            git tag -a "v${{ needs.version.outputs.version }}" -m "Release v${{ needs.version.outputs.version }}"
+            git push origin "v${{ needs.version.outputs.version }}"
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.version.outputs.assemblySemVer }}
-          name: Release v${{ needs.version.outputs.assemblySemVer }}
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Release v${{ needs.version.outputs.version }}
           body: |
-            ## Changes in v${{ needs.version.outputs.assemblySemVer }}
-            
+            ## Changes in v${{ needs.version.outputs.version }}
+
             This release was automatically created by GitHub Actions.
-            
-            **Version:** ${{ needs.version.outputs.version }}
-            **Assembly Version:** ${{ needs.version.outputs.assemblySemVer }}
+
+            **Package version:** ${{ needs.version.outputs.version }}
+            **SemVer:** ${{ needs.version.outputs.semVer }}
             **Commit:** ${{ github.sha }}
           draft: false
           prerelease: false

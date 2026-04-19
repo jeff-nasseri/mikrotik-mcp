@@ -1,38 +1,32 @@
 mode: ContinuousDelivery
 next-version: 0.5.0
 
+# Conventional-commit-driven version bumping.
+# GitVersion scans all commits since the last version source and applies the
+# highest matching rule (Minor wins over Patch; Patch wins over None).
+commit-message-incrementing: Enabled
+
+# Major is intentionally never bumped automatically.
+# To force a major bump, use "+semver: breaking" or "+semver: major" in the
+# commit footer (emergency use only — major version is frozen at 0).
+major-version-bump-message: '^\+semver:\s*(breaking|major)\s*$'
+
+# feat: → Minor (second digit): 0.x.0
+minor-version-bump-message: '^feat(\(.+\))?!?:'
+
+# fix / chore / refactor / perf / style / ci / test / build → Patch (third digit): 0.0.x
+patch-version-bump-message: '^(fix|chore|refactor|perf|style|ci|test|build|revert)(\(.+\))?!?:'
+
+# docs / doc / documentation → NO version bump
+no-bump-message: '^(docs?|documentation)(\(.+\))?!?:'
+
 branches:
   master:
     regex: ^master$
     mode: ContinuousDelivery
     label: ''
+    # Fallback for commits that don't match any pattern above (e.g. bare messages).
+    # Set to Patch so every untyped commit still produces a new version.
     increment: Patch
     is-release-branch: true
-
-  develop:
-    regex: ^dev(elop)?(ment)?$
-    mode: ContinuousDeployment
-    label: alpha
-    increment: Minor
-    is-release-branch: false
-
-  release:
-    regex: ^releases?[/-]
-    mode: ContinuousDelivery
-    label: beta
-    increment: None
-    is-release-branch: true
-  feature:
-    regex: ^features?[/-]
-    mode: ContinuousDelivery
-    label: useBranchName
-    increment: Inherit
-    is-release-branch: false
-
-  pull-request:
-    regex: ^(pull|pull\-requests|pr)[/-]
-    mode: ContinuousDelivery
-    label: PullRequest
-    increment: Inherit
-    is-release-branch: false
-
+    prevent-increment-of-merged-branch-version: true
