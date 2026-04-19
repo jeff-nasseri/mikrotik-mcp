@@ -16,3 +16,5 @@ Complete reference documentation for all MikroTik MCP tools.
 - **[DNS](dns/README.md)** - DNS Management
 - **[Users](users/README.md)** - User Management
 - **[WireGuard](wireguard/README.md)** - WireGuard VPN Management
+- **[Queue](queue/README.md)** - Queue Types, Trees, and Simple Queues
+- **[Safe Mode](safe-mode/README.md)** - Safe Mode Session Management

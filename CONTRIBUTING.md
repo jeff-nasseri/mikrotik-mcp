@@ -182,105 +182,39 @@ Configure via CLI (`--mcp.transport`) or environment variable (`MIKROTIK_MCP__TR
 
 ## Commit Message Format and Versioning
 
-This project uses [GitVersion](https://gitversion.net/) for automatic semantic versioning based on commit messages. We follow [Conventional Commits](https://www.conventionalcommits.org/) specification for commit message structure.
+This project uses [GitVersion](https://gitversion.net/) for automatic semantic versioning based on commit messages. We follow [Conventional Commits](https://www.conventionalcommits.org/) specification.
 
-### Automatic Version Bumping
+All pull requests merge directly to `master`. There are no `develop` or `release` branches. Every merge that contains a non-`docs` commit will publish a new package version automatically.
 
-Your commit messages directly control which version number gets incremented when merged to `master`.
+### Version Format
 
-**Default behavior on master branch:** Any commit without an explicit `+semver:` tag will increment the **minor** version by default.
+Published versions use a **4-part** format: `MAJOR.MINOR.PATCH.BUILD`
 
-#### Quick Reference Table
+| Position | Label | Incremented by |
+|---|---|---|
+| 1 (MAJOR) | `x.0.0.0` | **Never** — frozen at `0` |
+| 2 (MINOR) | `0.x.0.0` | `feat:` commits |
+| 3 (PATCH) | `0.0.x.0` | `fix:`, `chore:`, and other change commits |
+| 4 (BUILD) | `0.0.0.x` | Auto — commit count since last version tag |
+| — | no change | `docs:` commits |
 
-| Commit Type | Example | Version Bump | Notes |
-|-------------|---------|--------------|-------|
-| `feat:` | `feat: add new tool` | **Minor** (0.2.0 → 0.3.0) | Automatic |
-| `fix:` | `fix: resolve bug` | **Minor** (0.2.0 → 0.3.0) | Automatic |
-| Any commit on master | `docs: update README` | **Minor** (0.2.0 → 0.3.0) | Default behavior |
-| `+semver: breaking` | `feat: redesign API`<br>`+semver: breaking` | **Major** (0.2.0 → 1.0.0) | Explicit tag required |
-| `+semver: major` | `refactor: breaking change`<br>`+semver: major` | **Major** (0.2.0 → 1.0.0) | Explicit tag required |
-| `+semver: patch` | `docs: fix typo`<br>`+semver: patch` | **Patch** (0.2.0 → 0.2.1) | Explicit tag required |
-| `+semver: fix` | `style: format code`<br>`+semver: fix` | **Patch** (0.2.0 → 0.2.1) | Explicit tag required |
-| `+semver: none` | `ci: update workflow`<br>`+semver: none` | **No bump** | Explicit tag required |
-| `+semver: skip` | `test: add tests`<br>`+semver: skip` | **No bump** | Explicit tag required |
+### Quick Reference Table
 
-#### Minor Version Bump (0.2.0 → 0.3.0)
-These commit types will increment the **minor** version:
+| Commit prefix | Example | Version change |
+|---|---|---|
+| `feat:` | `feat: add queue management tools` | Minor bump: `0.5.0 → 0.6.0` |
+| `fix:` | `fix: handle empty SSH response` | Patch bump: `0.5.0 → 0.5.1` |
+| `chore:` | `chore: update dependencies` | Patch bump: `0.5.0 → 0.5.1` |
+| `refactor:` | `refactor: simplify connector` | Patch bump: `0.5.0 → 0.5.1` |
+| `perf:` | `perf: cache SSH connection` | Patch bump: `0.5.0 → 0.5.1` |
+| `ci:` | `ci: add Python 3.13 to matrix` | Patch bump: `0.5.0 → 0.5.1` |
+| `test:` | `test: add queue smoke tests` | Patch bump: `0.5.0 → 0.5.1` |
+| `docs:` | `docs: update safe mode guide` | **No bump** |
+| `doc:` | `doc: fix typo` | **No bump** |
+| (untyped) | `update something` | Patch bump (fallback) |
+| `+semver: breaking` | footer tag | Major bump (emergency only) |
 
-```bash
-# Using conventional commit prefixes (automatically triggers minor bump)
-feat: add wireless interface management tools
-feat(dhcp): implement DHCP network configuration
-fix: resolve connection timeout in SSH client
-fix(firewall): correct rule ordering logic
-
-# Any commit without explicit +semver tag (defaults to minor on master)
-docs: update installation guide
-refactor: reorganize scope modules
-chore: update dependencies
-
-# Using explicit semver tags
-docs: update installation guide
-
-+semver: minor
-
-# Or
-chore: update dependencies
-
-+semver: feature
-```
-
-**When to use:** New features, bug fixes, enhancements, or any backward-compatible changes. This is the **default** for commits on the master branch.
-
-#### Major Version Bump (0.2.0 → 1.0.0)
-These commit messages will increment the **major** version:
-
-```bash
-# Using explicit semver tags (required for major bumps)
-refactor: redesign API authentication system
-
-+semver: breaking
-
-# Or
-feat: migrate to new MikroTik API protocol
-
-+semver: major
-```
-
-**When to use:** Breaking changes, API redesigns, or incompatible updates.
-
-#### Patch Version Bump (0.2.0 → 0.2.1)
-These commit messages will increment the **patch** version:
-
-```bash
-# Using explicit semver tags
-docs: fix typo in README
-
-+semver: patch
-
-# Or
-style: format code with black
-
-+semver: fix
-```
-
-**When to use:** Documentation updates, code formatting, or minor non-functional changes.
-
-#### No Version Bump
-Prevent any version increment:
-
-```bash
-ci: update GitHub Actions workflow
-
-+semver: none
-
-# Or
-test: add missing unit tests
-
-+semver: skip
-```
-
-**When to use:** CI/CD changes, test updates, or internal tooling changes that don't affect the published package.
+> **Major version is intentionally frozen at `0`.** Never use `+semver: breaking` or `+semver: major` without explicit approval.
 
 ### Commit Message Structure
 
@@ -288,85 +222,77 @@ test: add missing unit tests
 <type>[optional scope]: <description>
 
 [optional body]
-
-[optional footer with +semver tag]
 ```
 
 #### Types
-- `feat`: A new feature (triggers minor bump)
-- `fix`: A bug fix (triggers minor bump)
-- `docs`: Documentation only changes
-- `style`: Code formatting, missing semicolons, etc.
-- `refactor`: Code change that neither fixes a bug nor adds a feature
-- `perf`: Performance improvement
-- `test`: Adding or updating tests
-- `chore`: Build process, tooling, or dependency updates
-- `ci`: CI/CD configuration changes
+
+| Type | Description | Version effect |
+|---|---|---|
+| `feat` | New feature or tool | Minor bump |
+| `fix` | Bug fix | Patch bump |
+| `chore` | Dependency updates, tooling | Patch bump |
+| `refactor` | Code restructuring | Patch bump |
+| `perf` | Performance improvement | Patch bump |
+| `ci` | CI/CD pipeline changes | Patch bump |
+| `test` | Test additions or updates | Patch bump |
+| `style` | Code formatting | Patch bump |
+| `build` | Build system changes | Patch bump |
+| `revert` | Reverting a previous commit | Patch bump |
+| `docs` / `doc` | Documentation only | **No bump** |
 
 #### Scopes (optional)
-Use scopes to indicate which area of the codebase is affected:
-- `dhcp`, `dns`, `firewall`, `wireless`, `users`, `backup`, etc.
-- `api`, `cli`, `config`, `docs`
+
+Scopes help indicate which area of the codebase is affected:
+- Feature areas: `dhcp`, `dns`, `firewall`, `wireless`, `users`, `backup`, `queue`, `safe-mode`, `wireguard`, etc.
+- Infrastructure: `api`, `cli`, `config`, `ssh`, `connector`
 
 ### Examples
 
-#### Example 1: Adding a New Feature
+#### Example 1: New Feature → Minor Bump
+
 ```bash
-git commit -m "feat(wireless): add WPA3 security profile support
+git commit -m "feat(queue): add simple queue and queue tree management
 
-Implement WPA3-Personal and WPA3-Enterprise security profiles
-for wireless interfaces. Includes validation and migration path
-from WPA2."
+Implements create, list, get, update, remove, enable, and disable
+operations for queue types, queue trees, and simple queues."
 ```
-**Result:** Minor version bump (e.g., 0.2.0 → 0.3.0)
+**Result:** `0.5.0.0 → 0.6.0.0`
 
-#### Example 2: Bug Fix
+#### Example 2: Bug Fix → Patch Bump
+
 ```bash
-git commit -m "fix(dns): handle empty DNS cache gracefully
-
-Prevent crash when querying DNS cache on devices with
-no cached entries. Returns empty list instead of error."
+git commit -m "fix(safe-mode): handle ANSI escape sequences in <SAFE> prompt detection"
 ```
-**Result:** Minor version bump (e.g., 0.2.0 → 0.3.0)
+**Result:** `0.5.0.0 → 0.5.1.0`
 
-#### Example 3: Breaking Change
+#### Example 3: Chore / Maintenance → Patch Bump
+
 ```bash
-git commit -m "feat(api): migrate to FastMCP async patterns
-
-BREAKING CHANGE: All tool functions now require Context parameter
-as first argument. Legacy synchronous API is removed.
-
-+semver: breaking"
+git commit -m "chore: bump paramiko to 3.5.1 for CVE-2024-xxxx"
 ```
-**Result:** Major version bump (e.g., 0.2.0 → 1.0.0)
+**Result:** `0.5.0.0 → 0.5.1.0`
 
-#### Example 4: Documentation Update
+#### Example 4: Documentation → No Bump
+
 ```bash
-git commit -m "docs: improve DHCP configuration examples
-
-Add complete working examples for DHCP server setup
-including network configuration and pool management.
-
-+semver: patch"
+git commit -m "docs: add queue and safe-mode reference pages"
 ```
-**Result:** Patch version bump (e.g., 0.2.0 → 0.2.1)
+**Result:** version unchanged — pipeline skips PyPI publish
 
-#### Example 5: CI/CD Change
-```bash
-git commit -m "ci: add Python 3.13 to test matrix
+#### Example 5: Mixed PR (feat + docs commits)
 
-+semver: none"
-```
-**Result:** No version bump
+When a PR contains both `feat:` and `docs:` commits, GitVersion picks the **highest** increment across all commits. The result is a Minor bump.
 
 ### Version Release Process
 
-1. **Commits are merged to `master`** → GitVersion calculates the new version
-2. **GitHub Actions workflow runs** → Builds and publishes to PyPI
-3. **Git tag is created automatically** → Version tag (e.g., `v0.3.0`) is pushed
-4. **GitHub Release is generated** → With changelog and artifacts
+1. PR is merged to `master`
+2. GitVersion calculates the new version from commit history
+3. GitHub Actions builds the package with the calculated version
+4. Unit tests run across Python 3.10 / 3.11 / 3.12
+5. Package is published to PyPI (`skip-existing: true` — duplicate versions are silently skipped, never fail the pipeline)
+6. Git tag and GitHub Release are created automatically
 
-You don't need to manually tag releases or update version numbers in code—GitVersion and CI/CD handle this automatically based on your commit messages.
+You never need to manually bump version numbers or create tags.
 
 ### Best Practices
 

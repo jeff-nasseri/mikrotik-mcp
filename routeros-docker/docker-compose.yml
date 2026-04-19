@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   routeros:
     image: ${ROUTEROS_IMAGE:-evilfreelancer/docker-routeros:latest}
@@ -9,53 +7,50 @@ services:
     restart: ${RESTART_POLICY:-unless-stopped}
     platform: ${PLATFORM:-linux/amd64}
 
-    # Healthcheck configuration
+    # Healthcheck: with eth1 present, QEMU enables hostfwd so 127.0.0.1:8728 is valid
     healthcheck:
-      # Try netcat first (preferred)
       test: ["CMD-SHELL", "nc -z 127.0.0.1 ${API_PORT:-8728} || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 60       # ~5 minutes max
-      start_period: 30s # give RouterOS time to boot
-    
-    # Environment variables for initial configuration
+      interval: 15s
+      timeout: 5s
+      retries: 40        # ~10 minutes max
+      start_period: 120s # RouterOS needs ~2 min to boot inside QEMU
+
     environment:
       ROUTEROS_USER: ${ROUTEROS_USER:-admin}
       ROUTEROS_PASS: ${ROUTEROS_PASS:-admin}
       ROUTEROS_LICENSE: ${ROUTEROS_LICENSE:-true}
-    
-    # Ports to expose
+
     ports:
-      - "${WINBOX_PORT:-8291}:8291"       # Winbox
-      - "${API_PORT:-8728}:8728"          # API
-      - "${API_SSL_PORT:-8729}:8729"      # API-SSL
-      - "${FTP_PORT:-21}:21"              # FTP
-      - "${SSH_PORT:-22}:22"              # SSH
-      - "${TELNET_PORT:-23}:23"           # Telnet
-      - "${HTTP_PORT:-80}:80"             # HTTP
-      - "${HTTPS_PORT:-443}:443"          # HTTPS
-      - "${HTTP_PROXY_PORT:-8080}:8080"   # HTTP Proxy
-      - "${OPENVPN_PORT:-1194}:1194"      # OpenVPN
-    
-    # Network configuration
+      - "${WINBOX_PORT:-8291}:8291"
+      - "${API_PORT:-8728}:8728"
+      - "${API_SSL_PORT:-8729}:8729"
+      - "${FTP_PORT:-21}:21"
+      - "${SSH_PORT:-2222}:22"
+      - "${TELNET_PORT:-23}:23"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTP_PROXY_PORT:-8080}:8080"
+      - "${OPENVPN_PORT:-1194}:1194"
+
     networks:
+      # Primary network: eth0 — Docker port mappings use this IP
       routeros-net:
         ipv4_address: ${ROUTEROS_IP:-172.20.0.2}
-    
-    # Volumes for persistent storage
+      # Secondary network: eth1 — entrypoint uses this for the bridge so eth0
+      # keeps its IP and QEMU enables user-mode hostfwd for the health check
+      routeros-wan-net:
+        ipv4_address: ${ROUTEROS_WAN_IP:-172.21.0.2}
+
     volumes:
       - ${VOLUME_NAME:-routeros-data}:/routeros
-    
-    # Additional capabilities
+
     cap_add:
       - NET_ADMIN
       - NET_RAW
-    
-    # Device access for networking
+
     devices:
       - /dev/net/tun
 
-# Network definition
 networks:
   routeros-net:
     driver: bridge
@@ -63,8 +58,13 @@ networks:
       config:
         - subnet: ${NETWORK_SUBNET:-172.20.0.0/24}
           gateway: ${NETWORK_GATEWAY:-172.20.0.1}
+  routeros-wan-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${WAN_NETWORK_SUBNET:-172.21.0.0/24}
+          gateway: ${WAN_NETWORK_GATEWAY:-172.21.0.1}
 
-# Volume for persistent storage
 volumes:
   routeros-data:
     driver: local
