@@ -1,32 +1,28 @@
-mode: ContinuousDelivery
+# GitVersion configuration for GitVersion 6.x
+#
+# Workflow: GitHub Flow — all PRs merge directly to master, no develop/release branches.
+# Version format published to PyPI: MAJOR.MINOR.PATCH (semVer) / MAJOR.MINOR.PATCH.BUILD (assemblySemVer)
+#
+# Conventional commit rules:
+#   feat:                       → Minor bump  (0.x.0)
+#   fix | chore | refactor | …  → Patch bump  (0.0.x)
+#   docs | doc | documentation  → No bump     (version unchanged)
+#   untyped commit              → Patch bump  (fallback)
+#   +semver: breaking/major     → Major bump  (EMERGENCY ONLY — major is frozen at 0)
+
+# GitHubFlow/v1 provides sensible defaults for master-only workflows:
+#   - ContinuousDelivery mode on main/master (clean versions, no pre-release labels)
+#   - Feature branches get a pre-release label derived from the branch name
+workflow: GitHubFlow/v1
+
+# Floor version — GitVersion will never calculate a version below this.
 next-version: 0.5.0
 
-# Conventional-commit-driven version bumping.
-# GitVersion scans all commits since the last version source and applies the
-# highest matching rule (Minor wins over Patch; Patch wins over None).
+# Parse every commit message on the path from HEAD to the last version tag.
+# The highest matching rule wins (Minor > Patch > None).
 commit-message-incrementing: Enabled
 
-# Major is intentionally never bumped automatically.
-# To force a major bump, use "+semver: breaking" or "+semver: major" in the
-# commit footer (emergency use only — major version is frozen at 0).
-major-version-bump-message: '^\+semver:\s*(breaking|major)\s*$'
-
-# feat: → Minor (second digit): 0.x.0
+major-version-bump-message: '^\+semver:\s*(breaking|major)'
 minor-version-bump-message: '^feat(\(.+\))?!?:'
-
-# fix / chore / refactor / perf / style / ci / test / build → Patch (third digit): 0.0.x
 patch-version-bump-message: '^(fix|chore|refactor|perf|style|ci|test|build|revert)(\(.+\))?!?:'
-
-# docs / doc / documentation → NO version bump
 no-bump-message: '^(docs?|documentation)(\(.+\))?!?:'
-
-branches:
-  master:
-    regex: ^master$
-    mode: ContinuousDelivery
-    label: ''
-    # Fallback for commits that don't match any pattern above (e.g. bare messages).
-    # Set to Patch so every untyped commit still produces a new version.
-    increment: Patch
-    is-release-branch: true
-    prevent-increment-of-merged-branch-version: true
