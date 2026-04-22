@@ -5,6 +5,8 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/jeff-nasseri/mikrotik-mcp/publish.yml?branch=master&label=build&style=flat-square&color=%23007ACC)](https://github.com/jeff-nasseri/mikrotik-mcp/actions/workflows/publish.yml)
 [![Tests](https://img.shields.io/github/actions/workflow/status/jeff-nasseri/mikrotik-mcp/publish.yml?branch=master&label=tests&style=flat-square&color=%2300C853)](https://github.com/jeff-nasseri/mikrotik-mcp/actions/workflows/publish.yml)
 [![MIT License](https://img.shields.io/github/license/jeff-nasseri/mikrotik-mcp?style=flat-square&color=%23FF6B35)](https://github.com/jeff-nasseri/mikrotik-mcp/blob/master/LICENSE)
+[![Listed on Spark](https://spark.entire.vc/badges/listed.svg)](https://spark.entire.vc/assets/vb-mikrotik?utm_source=github&utm_medium=readme)
+[![Install via Spark](https://spark.entire.vc/badges/vb-mikrotik/install.svg)](https://spark.entire.vc/assets/vb-mikrotik?utm_source=github&utm_medium=readme)
 
 ## Overview
 
