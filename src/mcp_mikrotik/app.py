@@ -22,4 +22,5 @@ async def health_check(request: Request) -> Response:
 from mcp_mikrotik.scope import (  # noqa: F401, E402
     backup, dhcp, dns, firewall_filter, firewall_nat,
     ip_address, ip_pool, logs, queue, safe_mode, routes, users, vlan, wireless, wireguard,
+    fleet,
 )
