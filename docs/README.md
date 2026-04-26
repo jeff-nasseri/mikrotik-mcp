@@ -17,6 +17,7 @@ Complete documentation for MikroTik MCP.
 
 Complete tool documentation organized by category:
 
+- **[Fleet](reference/fleet/README.md)** - Multi-Device Fleet Management
 - **[VLAN](reference/vlan/README.md)** - VLAN Interface Management
 - **[IP Address](reference/ip-address/README.md)** - IP Address Management
 - **[DHCP](reference/dhcp/README.md)** - DHCP Server Management
