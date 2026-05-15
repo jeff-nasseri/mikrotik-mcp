@@ -6,6 +6,7 @@ Complete documentation for MikroTik MCP.
 
 - **[Installation](getting-started/installation.md)** - Install MikroTik MCP
 - **[Testing](getting-started/testing.md)** - Run integration tests
+- **[Context Length Optimization](getting-started/context-optimization.md)** - Reduce token usage for local LLMs
 
 ## Integrations
 

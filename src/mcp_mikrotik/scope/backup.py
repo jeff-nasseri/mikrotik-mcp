@@ -1,12 +1,12 @@
 from typing import Literal, Optional, List
-from ..app import mcp, READ, WRITE, DANGEROUS
+from ..app import mcp, READ, WRITE, DANGEROUS, annotate
 from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
 import base64
 import time
 import os
 
-@mcp.tool(name="create_backup", annotations=WRITE)
+@mcp.tool(name="create_backup", annotations=annotate(WRITE, "Create Backup"))
 async def mikrotik_create_backup(
     ctx: Context,
     name: Optional[str] = None,
@@ -14,18 +14,7 @@ async def mikrotik_create_backup(
     include_password: bool = True,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Creates a system backup on MikroTik device.
-
-    Args:
-        name: Backup filename (without extension). If not specified, uses timestamp
-        dont_encrypt: Don't encrypt the backup file
-        include_password: Include passwords in export
-        comment: Optional comment for the backup
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a system backup on the MikroTik device."""
     # Generate filename if not provided
     if not name:
         name = f"backup_{int(time.time())}"
@@ -60,22 +49,13 @@ async def mikrotik_create_backup(
     else:
         return f"Failed to create backup: {result}"
 
-@mcp.tool(name="list_backups", annotations=READ)
+@mcp.tool(name="list_backups", annotations=annotate(READ, "List Backups"))
 async def mikrotik_list_backups(
     ctx: Context,
     name_filter: Optional[str] = None,
     include_exports: bool = False
 ) -> str:
-    """
-    Lists backup files on MikroTik device.
-
-    Args:
-        name_filter: Filter by filename (partial match)
-        include_exports: Also list export (.rsc) files
-
-    Returns:
-        List of backup files
-    """
+    """Lists backup files on the MikroTik device."""
     await ctx.info(f"Listing backups with filter: name={name_filter}")
 
     # Build the command
@@ -98,7 +78,7 @@ async def mikrotik_list_backups(
 
     return f"BACKUP FILES:\n\n{result}"
 
-@mcp.tool(name="create_export", annotations=READ)
+@mcp.tool(name="create_export", annotations=annotate(READ, "Create Config Export"))
 async def mikrotik_create_export(
     ctx: Context,
     name: Optional[str] = None,
@@ -109,21 +89,7 @@ async def mikrotik_create_export(
     compact: bool = False,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Creates a configuration export on MikroTik device.
-
-    Args:
-        name: Export filename (without extension). If not specified, uses timestamp
-        file_format: Export format ('rsc' for script, 'json', 'xml')
-        export_type: Export type ('full', 'compact', 'verbose')
-        hide_sensitive: Hide sensitive information (passwords, certificates)
-        verbose: Include default values in export
-        compact: Use compact export format
-        comment: Optional comment for the export
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a configuration export file (rsc/json/xml) on the MikroTik device."""
     # Generate filename if not provided
     if not name:
         name = f"export_{int(time.time())}"
@@ -169,7 +135,7 @@ async def mikrotik_create_export(
     else:
         return f"Failed to create export: {result}"
 
-@mcp.tool(name="export_section", annotations=READ)
+@mcp.tool(name="export_section", annotations=annotate(READ, "Export Config Section"))
 async def mikrotik_export_section(
     ctx: Context,
     section: str,
@@ -177,18 +143,7 @@ async def mikrotik_export_section(
     hide_sensitive: bool = True,
     compact: bool = False
 ) -> str:
-    """
-    Exports a specific configuration section.
-
-    Args:
-        section: Section to export (e.g., 'ip address', 'interface', 'system')
-        name: Export filename. If not specified, uses section name and timestamp
-        hide_sensitive: Hide sensitive information
-        compact: Use compact export format
-
-    Returns:
-        Command output or error message
-    """
+    """Exports a specific RouterOS configuration section (e.g. 'ip address', 'interface') to a file."""
     # Generate filename if not provided
     if not name:
         clean_section = section.replace(" ", "_").replace("/", "_")
@@ -220,22 +175,13 @@ async def mikrotik_export_section(
     else:
         return f"Failed to export section: {result}"
 
-@mcp.tool(name="download_file", annotations=READ)
+@mcp.tool(name="download_file", annotations=annotate(READ, "Download File"))
 async def mikrotik_download_file(
     ctx: Context,
     filename: str,
     file_type: Literal["backup", "export"] = "backup"
 ) -> str:
-    """
-    Downloads a file from MikroTik device (backup or export).
-
-    Args:
-        filename: Name of the file to download
-        file_type: Type of file ('backup' or 'export')
-
-    Returns:
-        Base64 encoded file content or error message
-    """
+    """Downloads a backup or export file from the MikroTik device as base64-encoded content."""
     await ctx.info(f"Downloading file: filename={filename}, type={file_type}")
 
     # First, check if file exists
@@ -257,22 +203,13 @@ async def mikrotik_download_file(
     else:
         return f"Failed to download file '{filename}'."
 
-@mcp.tool(name="upload_file", annotations=WRITE)
+@mcp.tool(name="upload_file", annotations=annotate(WRITE, "Upload File"))
 async def mikrotik_upload_file(
     ctx: Context,
     filename: str,
     content_base64: str
 ) -> str:
-    """
-    Uploads a file to MikroTik device (for restore operations).
-
-    Args:
-        filename: Name for the uploaded file
-        content_base64: Base64 encoded file content
-
-    Returns:
-        Command output or error message
-    """
+    """Uploads a base64-encoded file to the MikroTik device (for restore operations)."""
     await ctx.info(f"Uploading file: filename={filename}")
 
     # Decode base64 content
@@ -285,22 +222,13 @@ async def mikrotik_upload_file(
     # For now, we'll simulate it
     return f"File '{filename}' uploaded successfully (simulated)."
 
-@mcp.tool(name="restore_backup", annotations=DANGEROUS)
+@mcp.tool(name="restore_backup", annotations=annotate(DANGEROUS, "Restore Backup"))
 async def mikrotik_restore_backup(
     ctx: Context,
     filename: str,
     password: Optional[str] = None
 ) -> str:
-    """
-    Restores a system backup on MikroTik device.
-
-    Args:
-        filename: Backup filename to restore
-        password: Password for encrypted backup (if applicable)
-
-    Returns:
-        Command output or error message
-    """
+    """Restores a system backup on the MikroTik device; triggers a reboot."""
     await ctx.info(f"Restoring backup: filename={filename}")
 
     # Check if backup file exists
@@ -323,24 +251,14 @@ async def mikrotik_restore_backup(
     else:
         return f"Failed to restore backup: {result}"
 
-@mcp.tool(name="import_configuration", annotations=DANGEROUS)
+@mcp.tool(name="import_configuration", annotations=annotate(DANGEROUS, "Import Configuration"))
 async def mikrotik_import_configuration(
     ctx: Context,
     filename: str,
     run_after_reset: bool = False,
     verbose: bool = False
 ) -> str:
-    """
-    Imports a configuration script (.rsc file).
-
-    Args:
-        filename: Script filename to import
-        run_after_reset: Run script after system reset
-        verbose: Show verbose output during import
-
-    Returns:
-        Command output or error message
-    """
+    """Imports and executes a RouterOS configuration script (.rsc file) on the device."""
     await ctx.info(f"Importing configuration: filename={filename}")
 
     # Check if file exists
@@ -366,20 +284,12 @@ async def mikrotik_import_configuration(
     else:
         return f"Import result:\n{result}"
 
-@mcp.tool(name="remove_file", annotations=DANGEROUS)
+@mcp.tool(name="remove_file", annotations=annotate(DANGEROUS, "Remove File"))
 async def mikrotik_remove_file(
     ctx: Context,
     filename: str
 ) -> str:
-    """
-    Removes a file from MikroTik device.
-
-    Args:
-        filename: Name of the file to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes a file from the MikroTik device filesystem."""
     await ctx.info(f"Removing file: filename={filename}")
 
     # Check if file exists
@@ -398,20 +308,12 @@ async def mikrotik_remove_file(
     else:
         return f"Failed to remove file: {result}"
 
-@mcp.tool(name="backup_info", annotations=READ)
+@mcp.tool(name="backup_info", annotations=annotate(READ, "Backup File Info"))
 async def mikrotik_backup_info(
     ctx: Context,
     filename: str
 ) -> str:
-    """
-    Gets detailed information about a backup file.
-
-    Args:
-        filename: Backup filename
-
-    Returns:
-        Detailed information about the backup
-    """
+    """Gets detailed information about a backup file on the MikroTik device."""
     await ctx.info(f"Getting backup info: filename={filename}")
 
     # Get file details

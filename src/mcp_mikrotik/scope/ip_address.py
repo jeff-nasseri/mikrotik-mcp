@@ -2,9 +2,9 @@ from typing import Optional
 
 from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
-from ..app import mcp, READ, WRITE, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, DESTRUCTIVE, annotate
 
-@mcp.tool(name="add_ip_address", annotations=WRITE)
+@mcp.tool(name="add_ip_address", annotations=annotate(WRITE, "Add IP Address"))
 async def mikrotik_add_ip_address(
     ctx: Context,
     address: str,
@@ -14,20 +14,7 @@ async def mikrotik_add_ip_address(
     comment: Optional[str] = None,
     disabled: bool = False
 ) -> str:
-    """
-    Adds an IP address to an interface on MikroTik device.
-
-    Args:
-        address: IP address with prefix (e.g., "192.168.1.1/24")
-        interface: Interface name (e.g., "ether1", "vlan100")
-        network: Network address (optional, calculated automatically)
-        broadcast: Broadcast address (optional, calculated automatically)
-        comment: Optional comment
-        disabled: Whether to disable the address after creation
-
-    Returns:
-        Command output or error message
-    """
+    """Adds an IP address to an interface on the MikroTik device."""
     await ctx.info(f"Adding IP address: address={address}, interface={interface}")
 
     # Build the command
@@ -57,7 +44,7 @@ async def mikrotik_add_ip_address(
 
     return f"IP address added successfully:\n\n{details}"
 
-@mcp.tool(name="list_ip_addresses", annotations=READ)
+@mcp.tool(name="list_ip_addresses", annotations=annotate(READ, "List IP Addresses"))
 async def mikrotik_list_ip_addresses(
     ctx: Context,
     interface_filter: Optional[str] = None,
@@ -66,19 +53,7 @@ async def mikrotik_list_ip_addresses(
     disabled_only: bool = False,
     dynamic_only: bool = False
 ) -> str:
-    """
-    Lists IP addresses on MikroTik device.
-
-    Args:
-        interface_filter: Filter by interface name
-        address_filter: Filter by IP address (partial match)
-        network_filter: Filter by network
-        disabled_only: Show only disabled addresses
-        dynamic_only: Show only dynamic addresses
-
-    Returns:
-        List of IP addresses
-    """
+    """Lists IP addresses on the MikroTik device."""
     await ctx.info(f"Listing IP addresses with filters: interface={interface_filter}, address={address_filter}")
 
     # Build the command
@@ -107,17 +82,9 @@ async def mikrotik_list_ip_addresses(
 
     return f"IP ADDRESSES:\n\n{result}"
 
-@mcp.tool(name="get_ip_address", annotations=READ)
+@mcp.tool(name="get_ip_address", annotations=annotate(READ, "Get IP Address"))
 async def mikrotik_get_ip_address(ctx: Context, address_id: str) -> str:
-    """
-    Gets detailed information about a specific IP address.
-
-    Args:
-        address_id: IP address ID or address value
-
-    Returns:
-        Detailed information about the IP address
-    """
+    """Gets detailed information about a specific IP address by ID or address value."""
     await ctx.info(f"Getting IP address details: address_id={address_id}")
 
     # Try to find by ID first, then by address
@@ -134,17 +101,9 @@ async def mikrotik_get_ip_address(ctx: Context, address_id: str) -> str:
 
     return f"IP ADDRESS DETAILS:\n\n{result}"
 
-@mcp.tool(name="remove_ip_address", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_ip_address", annotations=annotate(DESTRUCTIVE, "Remove IP Address"))
 async def mikrotik_remove_ip_address(ctx: Context, address_id: str) -> str:
-    """
-    Removes an IP address from MikroTik device.
-
-    Args:
-        address_id: IP address ID or address value to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes an IP address from the MikroTik device by ID or address value."""
     await ctx.info(f"Removing IP address: address_id={address_id}")
 
     # Try to find by ID first

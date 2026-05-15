@@ -5,11 +5,37 @@ from starlette.responses import Response
 
 mcp = FastMCP("mcp-mikrotik")
 
+# ── Behaviour presets ──────────────────────────────────────────────────────
+# These capture the *risk profile* of a tool (MCP spec §Tool Annotations).
+# Always pass them through annotate() so every tool also carries a short
+# human-readable title, which allows MCP clients to surface compact tool
+# lists without re-rendering full descriptions — shrinking prompt context.
 READ = ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False)
 WRITE = ToolAnnotations(destructiveHint=False, openWorldHint=False)
 WRITE_IDEMPOTENT = ToolAnnotations(destructiveHint=False, idempotentHint=True, openWorldHint=False)
 DESTRUCTIVE = ToolAnnotations(destructiveHint=True, idempotentHint=True, openWorldHint=False)
 DANGEROUS = ToolAnnotations(destructiveHint=True, openWorldHint=False)
+
+
+def annotate(base: ToolAnnotations, title: str) -> ToolAnnotations:
+    """Return a copy of *base* with a human-readable *title* attached.
+
+    The ``title`` field (MCP spec 2025-03-26) gives MCP clients a short
+    display name they can show in place of the full description, reducing
+    the number of tokens sent to the LLM when listing available tools.
+
+    Usage::
+
+        @mcp.tool(name="get_dns_settings", annotations=annotate(READ, "DNS Settings"))
+        async def mikrotik_get_dns_settings(ctx: Context) -> str: ...
+    """
+    return ToolAnnotations(
+        title=title,
+        readOnlyHint=base.readOnlyHint,
+        destructiveHint=base.destructiveHint,
+        idempotentHint=base.idempotentHint,
+        openWorldHint=base.openWorldHint,
+    )
 
 
 # Only available on HTTP transports (sse, streamable-http)

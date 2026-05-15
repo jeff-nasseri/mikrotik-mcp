@@ -3,9 +3,9 @@ from typing import Optional, List
 from mcp.server.fastmcp import Context
 
 from ..connector import execute_mikrotik_command
-from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
-@mcp.tool(name="set_dns_servers", annotations=WRITE)
+@mcp.tool(name="set_dns_servers", annotations=annotate(WRITE, "Set DNS Servers"))
 async def mikrotik_set_dns_servers(
     ctx: Context,
     servers: List[str],
@@ -53,7 +53,7 @@ async def mikrotik_set_dns_servers(
     else:
         return f"Failed to update DNS settings: {result}"
 
-@mcp.tool(name="get_dns_settings", annotations=READ)
+@mcp.tool(name="get_dns_settings", annotations=annotate(READ, "DNS Settings"))
 async def mikrotik_get_dns_settings(ctx: Context) -> str:
     """Gets current DNS configuration."""
     await ctx.info("Getting DNS settings")
@@ -66,7 +66,7 @@ async def mikrotik_get_dns_settings(ctx: Context) -> str:
 
     return f"DNS SETTINGS:\n\n{result}"
 
-@mcp.tool(name="add_dns_static", annotations=WRITE)
+@mcp.tool(name="add_dns_static", annotations=annotate(WRITE, "Add DNS Static Entry"))
 async def mikrotik_add_dns_static(
     ctx: Context,
     name: str,
@@ -140,7 +140,7 @@ async def mikrotik_add_dns_static(
         else:
             return "Static DNS entry addition completed but unable to verify."
 
-@mcp.tool(name="list_dns_static", annotations=READ)
+@mcp.tool(name="list_dns_static", annotations=annotate(READ, "List DNS Static Entries"))
 async def mikrotik_list_dns_static(
     ctx: Context,
     name_filter: Optional[str] = None,
@@ -176,7 +176,7 @@ async def mikrotik_list_dns_static(
 
     return f"STATIC DNS ENTRIES:\n\n{result}"
 
-@mcp.tool(name="get_dns_static", annotations=READ)
+@mcp.tool(name="get_dns_static", annotations=annotate(READ, "Get DNS Static Entry"))
 async def mikrotik_get_dns_static(ctx: Context, entry_id: str) -> str:
     """Gets details of a specific static DNS entry."""
     await ctx.info(f"Getting static DNS entry details: entry_id={entry_id}")
@@ -189,7 +189,7 @@ async def mikrotik_get_dns_static(ctx: Context, entry_id: str) -> str:
 
     return f"STATIC DNS ENTRY DETAILS:\n\n{result}"
 
-@mcp.tool(name="update_dns_static", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_dns_static", annotations=annotate(WRITE_IDEMPOTENT, "Update DNS Static Entry"))
 async def mikrotik_update_dns_static(
     ctx: Context,
     entry_id: str,
@@ -279,7 +279,7 @@ async def mikrotik_update_dns_static(
 
     return f"Static DNS entry updated successfully:\n\n{details}"
 
-@mcp.tool(name="remove_dns_static", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_dns_static", annotations=annotate(DESTRUCTIVE, "Remove DNS Static Entry"))
 async def mikrotik_remove_dns_static(ctx: Context, entry_id: str) -> str:
     """Removes a static DNS entry."""
     await ctx.info(f"Removing static DNS entry: entry_id={entry_id}")
@@ -298,17 +298,17 @@ async def mikrotik_remove_dns_static(ctx: Context, entry_id: str) -> str:
 
     return f"Static DNS entry with ID '{entry_id}' removed successfully."
 
-@mcp.tool(name="enable_dns_static", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="enable_dns_static", annotations=annotate(WRITE_IDEMPOTENT, "Enable DNS Static Entry"))
 async def mikrotik_enable_dns_static(ctx: Context, entry_id: str) -> str:
     """Enables a static DNS entry."""
     return await mikrotik_update_dns_static(entry_id, disabled=False, ctx=ctx)
 
-@mcp.tool(name="disable_dns_static", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="disable_dns_static", annotations=annotate(WRITE_IDEMPOTENT, "Disable DNS Static Entry"))
 async def mikrotik_disable_dns_static(ctx: Context, entry_id: str) -> str:
     """Disables a static DNS entry."""
     return await mikrotik_update_dns_static(entry_id, disabled=True, ctx=ctx)
 
-@mcp.tool(name="get_dns_cache", annotations=READ)
+@mcp.tool(name="get_dns_cache", annotations=annotate(READ, "DNS Cache"))
 async def mikrotik_get_dns_cache(ctx: Context) -> str:
     """Gets the current DNS cache."""
     await ctx.info("Getting DNS cache")
@@ -321,7 +321,7 @@ async def mikrotik_get_dns_cache(ctx: Context) -> str:
 
     return f"DNS CACHE:\n\n{result}"
 
-@mcp.tool(name="flush_dns_cache", annotations=DESTRUCTIVE)
+@mcp.tool(name="flush_dns_cache", annotations=annotate(DESTRUCTIVE, "Flush DNS Cache"))
 async def mikrotik_flush_dns_cache(ctx: Context) -> str:
     """Flushes the DNS cache."""
     await ctx.info("Flushing DNS cache")
@@ -334,7 +334,7 @@ async def mikrotik_flush_dns_cache(ctx: Context) -> str:
     else:
         return f"Flush result: {result}"
 
-@mcp.tool(name="get_dns_cache_statistics", annotations=READ)
+@mcp.tool(name="get_dns_cache_statistics", annotations=annotate(READ, "DNS Cache Statistics"))
 async def mikrotik_get_dns_cache_statistics(ctx: Context) -> str:
     """Gets DNS cache statistics."""
     await ctx.info("Getting DNS cache statistics")
@@ -347,7 +347,7 @@ async def mikrotik_get_dns_cache_statistics(ctx: Context) -> str:
 
     return f"DNS CACHE STATISTICS:\n\n{result}"
 
-@mcp.tool(name="add_dns_regexp", annotations=WRITE)
+@mcp.tool(name="add_dns_regexp", annotations=annotate(WRITE, "Add DNS Regexp Entry"))
 async def mikrotik_add_dns_regexp(
     ctx: Context,
     regexp: str,
@@ -369,7 +369,7 @@ async def mikrotik_add_dns_regexp(
         ctx=ctx
     )
 
-@mcp.tool(name="test_dns_query", annotations=READ)
+@mcp.tool(name="test_dns_query", annotations=annotate(READ, "Test DNS Query"))
 async def mikrotik_test_dns_query(
     ctx: Context,
     name: str,
@@ -394,7 +394,7 @@ async def mikrotik_test_dns_query(
 
     return f"DNS QUERY RESULT for {name}:\n\n{result}"
 
-@mcp.tool(name="export_dns_config", annotations=READ)
+@mcp.tool(name="export_dns_config", annotations=annotate(READ, "Export DNS Config"))
 async def mikrotik_export_dns_config(ctx: Context, filename: Optional[str] = None) -> str:
     """Exports DNS configuration to a file."""
     await ctx.info("Exporting DNS configuration")
