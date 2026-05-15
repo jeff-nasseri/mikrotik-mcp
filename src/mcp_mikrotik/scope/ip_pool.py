@@ -3,9 +3,9 @@ from typing import Optional, List
 from mcp.server.fastmcp import Context
 
 from ..connector import execute_mikrotik_command
-from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
-@mcp.tool(name="create_ip_pool", annotations=WRITE)
+@mcp.tool(name="create_ip_pool", annotations=annotate(WRITE, "Add IP Pool"))
 async def mikrotik_create_ip_pool(
     ctx: Context,
     name: str,
@@ -13,18 +13,7 @@ async def mikrotik_create_ip_pool(
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Creates an IP pool on MikroTik device.
-
-    Args:
-        name: Name of the IP pool
-        ranges: IP address ranges (e.g., "192.168.1.10-192.168.1.50")
-        next_pool: Name of the next pool to use when this one is exhausted
-        comment: Optional comment for the pool
-
-    Returns:
-        Command output or error message
-    """
+    """Creates an IP pool with the given address ranges on the MikroTik device."""
     await ctx.info(f"Creating IP pool: name={name}, ranges={ranges}")
 
     # Build the command
@@ -64,24 +53,14 @@ async def mikrotik_create_ip_pool(
         else:
             return "IP pool creation completed but unable to verify."
 
-@mcp.tool(name="list_ip_pools", annotations=READ)
+@mcp.tool(name="list_ip_pools", annotations=annotate(READ, "List IP Pools"))
 async def mikrotik_list_ip_pools(
     ctx: Context,
     name_filter: Optional[str] = None,
     ranges_filter: Optional[str] = None,
     include_used: bool = False
 ) -> str:
-    """
-    Lists IP pools on MikroTik device.
-
-    Args:
-        name_filter: Filter by pool name (partial match)
-        ranges_filter: Filter by IP ranges
-        include_used: Include information about used addresses
-
-    Returns:
-        List of IP pools
-    """
+    """Lists IP pools on the MikroTik device."""
     await ctx.info(f"Listing IP pools with filters: name={name_filter}, ranges={ranges_filter}")
 
     # Build the command
@@ -129,17 +108,9 @@ async def mikrotik_list_ip_pools(
 
     return f"IP POOLS:\n\n{result}"
 
-@mcp.tool(name="get_ip_pool", annotations=READ)
+@mcp.tool(name="get_ip_pool", annotations=annotate(READ, "Get IP Pool"))
 async def mikrotik_get_ip_pool(ctx: Context, name: str) -> str:
-    """
-    Gets detailed information about a specific IP pool.
-
-    Args:
-        name: Name of the IP pool
-
-    Returns:
-        Detailed information about the IP pool
-    """
+    """Gets detailed information about a specific IP pool including used address count."""
     await ctx.info(f"Getting IP pool details: name={name}")
 
     cmd = f'/ip pool print detail where name="{name}"'
@@ -157,7 +128,7 @@ async def mikrotik_get_ip_pool(ctx: Context, name: str) -> str:
 
     return f"IP POOL DETAILS:\n\n{result}"
 
-@mcp.tool(name="update_ip_pool", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_ip_pool", annotations=annotate(WRITE_IDEMPOTENT, "Update IP Pool"))
 async def mikrotik_update_ip_pool(
     ctx: Context,
     name: str,
@@ -166,19 +137,7 @@ async def mikrotik_update_ip_pool(
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Updates an existing IP pool on MikroTik device.
-
-    Args:
-        name: Current name of the IP pool
-        new_name: New name for the pool
-        ranges: New IP address ranges
-        next_pool: New next pool reference
-        comment: New comment
-
-    Returns:
-        Command output or error message
-    """
+    """Updates an existing IP pool's name, ranges, or next-pool reference."""
     await ctx.info(f"Updating IP pool: name={name}")
 
     # Build the command
@@ -216,17 +175,9 @@ async def mikrotik_update_ip_pool(
 
     return f"IP pool updated successfully:\n\n{details}"
 
-@mcp.tool(name="remove_ip_pool", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_ip_pool", annotations=annotate(DESTRUCTIVE, "Remove IP Pool"))
 async def mikrotik_remove_ip_pool(ctx: Context, name: str) -> str:
-    """
-    Removes an IP pool from MikroTik device.
-
-    Args:
-        name: Name of the IP pool to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes an IP pool from the MikroTik device (fails if pool is in use)."""
     await ctx.info(f"Removing IP pool: name={name}")
 
     # First check if the pool exists
@@ -259,7 +210,7 @@ async def mikrotik_remove_ip_pool(ctx: Context, name: str) -> str:
 
     return f"IP pool '{name}' removed successfully."
 
-@mcp.tool(name="list_ip_pool_used", annotations=READ)
+@mcp.tool(name="list_ip_pool_used", annotations=annotate(READ, "List IP Pool Used"))
 async def mikrotik_list_ip_pool_used(
     ctx: Context,
     pool_name: Optional[str] = None,
@@ -267,18 +218,7 @@ async def mikrotik_list_ip_pool_used(
     mac_filter: Optional[str] = None,
     info_filter: Optional[str] = None
 ) -> str:
-    """
-    Lists used addresses from IP pools.
-
-    Args:
-        pool_name: Filter by pool name
-        address_filter: Filter by IP address
-        mac_filter: Filter by MAC address
-        info_filter: Filter by info field
-
-    Returns:
-        List of used addresses
-    """
+    """Lists currently used (allocated) addresses from IP pools."""
     await ctx.info(f"Listing used IP pool addresses: pool={pool_name}, address={address_filter}")
 
     cmd = "/ip pool used print"
@@ -304,18 +244,9 @@ async def mikrotik_list_ip_pool_used(
 
     return f"USED IP POOL ADDRESSES:\n\n{result}"
 
-@mcp.tool(name="expand_ip_pool", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="expand_ip_pool", annotations=annotate(WRITE_IDEMPOTENT, "Expand IP Pool"))
 async def mikrotik_expand_ip_pool(ctx: Context, name: str, additional_ranges: str) -> str:
-    """
-    Expands an existing IP pool by adding more ranges.
-
-    Args:
-        name: Name of the IP pool to expand
-        additional_ranges: Additional IP ranges to add
-
-    Returns:
-        Command output or error message
-    """
+    """Expands an existing IP pool by appending additional address ranges."""
     await ctx.info(f"Expanding IP pool: name={name}, additional_ranges={additional_ranges}")
 
     # Get current ranges

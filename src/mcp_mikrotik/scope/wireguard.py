@@ -3,14 +3,14 @@ from typing import Optional
 from mcp.server.fastmcp import Context
 
 from ..connector import execute_mikrotik_command
-from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
 
 # ---------------------------------------------------------------------------
 # WireGuard Interface Management
 # ---------------------------------------------------------------------------
 
-@mcp.tool(name="create_wireguard_interface", annotations=WRITE)
+@mcp.tool(name="create_wireguard_interface", annotations=annotate(WRITE, "Create WireGuard Interface"))
 async def mikrotik_create_wireguard_interface(
     ctx: Context,
     name: str,
@@ -20,17 +20,7 @@ async def mikrotik_create_wireguard_interface(
     comment: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """
-    Creates a WireGuard interface on MikroTik device.
-
-    Args:
-        name: Interface name (e.g. "wg0")
-        listen_port: UDP port to listen on (default: 13231)
-        private_key: Base64-encoded private key. If omitted RouterOS generates one automatically.
-        mtu: MTU size (default: 1420)
-        comment: Optional comment
-        disabled: Whether to disable the interface after creation
-    """
+    """Creates a WireGuard interface on the MikroTik device."""
     await ctx.info(f"Creating WireGuard interface: name={name}")
 
     cmd = f"/interface wireguard add name={name}"
@@ -59,21 +49,14 @@ async def mikrotik_create_wireguard_interface(
     return "WireGuard interface created successfully."
 
 
-@mcp.tool(name="list_wireguard_interfaces", annotations=READ)
+@mcp.tool(name="list_wireguard_interfaces", annotations=annotate(READ, "List WireGuard Interfaces"))
 async def mikrotik_list_wireguard_interfaces(
     ctx: Context,
     name_filter: Optional[str] = None,
     disabled_only: bool = False,
     running_only: bool = False,
 ) -> str:
-    """
-    Lists WireGuard interfaces on MikroTik device.
-
-    Args:
-        name_filter: Filter by interface name (partial match)
-        disabled_only: Show only disabled interfaces
-        running_only: Show only running interfaces
-    """
+    """Lists WireGuard interfaces on the MikroTik device."""
     await ctx.info("Listing WireGuard interfaces")
 
     cmd = "/interface wireguard print"
@@ -97,14 +80,9 @@ async def mikrotik_list_wireguard_interfaces(
     return f"WIREGUARD INTERFACES:\n\n{result}"
 
 
-@mcp.tool(name="get_wireguard_interface", annotations=READ)
+@mcp.tool(name="get_wireguard_interface", annotations=annotate(READ, "Get WireGuard Interface"))
 async def mikrotik_get_wireguard_interface(ctx: Context, name: str) -> str:
-    """
-    Gets detailed information about a specific WireGuard interface.
-
-    Args:
-        name: Interface name
-    """
+    """Gets detailed information about a specific WireGuard interface."""
     await ctx.info(f"Getting WireGuard interface details: name={name}")
 
     cmd = f'/interface wireguard print detail where name="{name}"'
@@ -116,7 +94,7 @@ async def mikrotik_get_wireguard_interface(ctx: Context, name: str) -> str:
     return f"WIREGUARD INTERFACE DETAILS:\n\n{result}"
 
 
-@mcp.tool(name="update_wireguard_interface", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_wireguard_interface", annotations=annotate(WRITE_IDEMPOTENT, "Update WireGuard Interface"))
 async def mikrotik_update_wireguard_interface(
     ctx: Context,
     name: str,
@@ -127,18 +105,7 @@ async def mikrotik_update_wireguard_interface(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
 ) -> str:
-    """
-    Updates an existing WireGuard interface on MikroTik device.
-
-    Args:
-        name: Current interface name
-        new_name: New name for the interface
-        listen_port: New UDP listen port
-        private_key: New Base64-encoded private key
-        mtu: New MTU size
-        comment: New comment
-        disabled: Enable (False) or disable (True) the interface
-    """
+    """Updates an existing WireGuard interface's settings on the MikroTik device."""
     await ctx.info(f"Updating WireGuard interface: name={name}")
 
     updates = []
@@ -171,14 +138,9 @@ async def mikrotik_update_wireguard_interface(
     return f"WireGuard interface updated successfully:\n\n{details}"
 
 
-@mcp.tool(name="remove_wireguard_interface", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_wireguard_interface", annotations=annotate(DESTRUCTIVE, "Remove WireGuard Interface"))
 async def mikrotik_remove_wireguard_interface(ctx: Context, name: str) -> str:
-    """
-    Removes a WireGuard interface from MikroTik device.
-
-    Args:
-        name: Interface name to remove
-    """
+    """Removes a WireGuard interface from the MikroTik device."""
     await ctx.info(f"Removing WireGuard interface: name={name}")
 
     check_cmd = f'/interface wireguard print count-only where name="{name}"'
@@ -196,14 +158,9 @@ async def mikrotik_remove_wireguard_interface(ctx: Context, name: str) -> str:
     return f"WireGuard interface '{name}' removed successfully."
 
 
-@mcp.tool(name="enable_wireguard_interface", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="enable_wireguard_interface", annotations=annotate(WRITE_IDEMPOTENT, "Enable WireGuard Interface"))
 async def mikrotik_enable_wireguard_interface(ctx: Context, name: str) -> str:
-    """
-    Enables a WireGuard interface.
-
-    Args:
-        name: Interface name
-    """
+    """Enables a WireGuard interface."""
     await ctx.info(f"Enabling WireGuard interface: name={name}")
 
     cmd = f'/interface wireguard enable [find name="{name}"]'
@@ -215,14 +172,9 @@ async def mikrotik_enable_wireguard_interface(ctx: Context, name: str) -> str:
     return f"WireGuard interface '{name}' enabled successfully."
 
 
-@mcp.tool(name="disable_wireguard_interface", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="disable_wireguard_interface", annotations=annotate(WRITE_IDEMPOTENT, "Disable WireGuard Interface"))
 async def mikrotik_disable_wireguard_interface(ctx: Context, name: str) -> str:
-    """
-    Disables a WireGuard interface.
-
-    Args:
-        name: Interface name
-    """
+    """Disables a WireGuard interface."""
     await ctx.info(f"Disabling WireGuard interface: name={name}")
 
     cmd = f'/interface wireguard disable [find name="{name}"]'
@@ -238,7 +190,7 @@ async def mikrotik_disable_wireguard_interface(ctx: Context, name: str) -> str:
 # WireGuard Peer Management
 # ---------------------------------------------------------------------------
 
-@mcp.tool(name="add_wireguard_peer", annotations=WRITE)
+@mcp.tool(name="add_wireguard_peer", annotations=annotate(WRITE, "Add WireGuard Peer"))
 async def mikrotik_add_wireguard_peer(
     ctx: Context,
     interface: str,
@@ -251,20 +203,7 @@ async def mikrotik_add_wireguard_peer(
     comment: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """
-    Adds a WireGuard peer to an interface on MikroTik device.
-
-    Args:
-        interface: WireGuard interface name the peer belongs to
-        public_key: Base64-encoded public key of the remote peer
-        allowed_address: Comma-separated list of allowed IP addresses/subnets (e.g. "10.0.0.2/32")
-        endpoint_address: Remote peer IP address or hostname
-        endpoint_port: Remote peer UDP port
-        preshared_key: Optional Base64-encoded preshared key for extra security
-        persistent_keepalive: Keepalive interval (e.g. "25s")
-        comment: Optional comment
-        disabled: Whether to disable the peer after creation
-    """
+    """Adds a WireGuard peer (with public key and allowed addresses) to an interface on the MikroTik device."""
     await ctx.info(f"Adding WireGuard peer: interface={interface}, public_key={public_key[:12]}...")
 
     cmd = (
@@ -302,19 +241,13 @@ async def mikrotik_add_wireguard_peer(
     return "WireGuard peer added successfully."
 
 
-@mcp.tool(name="list_wireguard_peers", annotations=READ)
+@mcp.tool(name="list_wireguard_peers", annotations=annotate(READ, "List WireGuard Peers"))
 async def mikrotik_list_wireguard_peers(
     ctx: Context,
     interface_filter: Optional[str] = None,
     disabled_only: bool = False,
 ) -> str:
-    """
-    Lists WireGuard peers on MikroTik device.
-
-    Args:
-        interface_filter: Filter by WireGuard interface name
-        disabled_only: Show only disabled peers
-    """
+    """Lists WireGuard peers on the MikroTik device."""
     await ctx.info("Listing WireGuard peers")
 
     cmd = "/interface wireguard peers print"
@@ -336,14 +269,9 @@ async def mikrotik_list_wireguard_peers(
     return f"WIREGUARD PEERS:\n\n{result}"
 
 
-@mcp.tool(name="get_wireguard_peer", annotations=READ)
+@mcp.tool(name="get_wireguard_peer", annotations=annotate(READ, "Get WireGuard Peer"))
 async def mikrotik_get_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """
-    Gets detailed information about a specific WireGuard peer.
-
-    Args:
-        peer_id: Peer ID (e.g. "*1" or the numeric ID from list output)
-    """
+    """Gets detailed information about a specific WireGuard peer by ID."""
     await ctx.info(f"Getting WireGuard peer details: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers print detail where .id={peer_id}"
@@ -355,7 +283,7 @@ async def mikrotik_get_wireguard_peer(ctx: Context, peer_id: str) -> str:
     return f"WIREGUARD PEER DETAILS:\n\n{result}"
 
 
-@mcp.tool(name="update_wireguard_peer", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_wireguard_peer", annotations=annotate(WRITE_IDEMPOTENT, "Update WireGuard Peer"))
 async def mikrotik_update_wireguard_peer(
     ctx: Context,
     peer_id: str,
@@ -367,19 +295,7 @@ async def mikrotik_update_wireguard_peer(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
 ) -> str:
-    """
-    Updates an existing WireGuard peer on MikroTik device.
-
-    Args:
-        peer_id: Peer ID (e.g. "*1")
-        allowed_address: New comma-separated allowed IP addresses/subnets
-        endpoint_address: New remote peer address
-        endpoint_port: New remote peer UDP port
-        preshared_key: New preshared key (pass empty string "" to remove)
-        persistent_keepalive: New keepalive interval (e.g. "25s", "0s" to disable)
-        comment: New comment
-        disabled: Enable (False) or disable (True) the peer
-    """
+    """Updates an existing WireGuard peer's allowed addresses, endpoint, keepalive, or enabled state."""
     await ctx.info(f"Updating WireGuard peer: peer_id={peer_id}")
 
     updates = []
@@ -419,14 +335,9 @@ async def mikrotik_update_wireguard_peer(
     return f"WireGuard peer updated successfully:\n\n{details}"
 
 
-@mcp.tool(name="remove_wireguard_peer", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_wireguard_peer", annotations=annotate(DESTRUCTIVE, "Remove WireGuard Peer"))
 async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """
-    Removes a WireGuard peer from MikroTik device.
-
-    Args:
-        peer_id: Peer ID (e.g. "*1")
-    """
+    """Removes a WireGuard peer from the MikroTik device."""
     await ctx.info(f"Removing WireGuard peer: peer_id={peer_id}")
 
     check_cmd = f"/interface wireguard peers print count-only where .id={peer_id}"
@@ -444,14 +355,9 @@ async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str) -> str:
     return f"WireGuard peer '{peer_id}' removed successfully."
 
 
-@mcp.tool(name="enable_wireguard_peer", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="enable_wireguard_peer", annotations=annotate(WRITE_IDEMPOTENT, "Enable WireGuard Peer"))
 async def mikrotik_enable_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """
-    Enables a WireGuard peer.
-
-    Args:
-        peer_id: Peer ID (e.g. "*1")
-    """
+    """Enables a WireGuard peer."""
     await ctx.info(f"Enabling WireGuard peer: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers enable {peer_id}"
@@ -463,14 +369,9 @@ async def mikrotik_enable_wireguard_peer(ctx: Context, peer_id: str) -> str:
     return f"WireGuard peer '{peer_id}' enabled successfully."
 
 
-@mcp.tool(name="disable_wireguard_peer", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="disable_wireguard_peer", annotations=annotate(WRITE_IDEMPOTENT, "Disable WireGuard Peer"))
 async def mikrotik_disable_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """
-    Disables a WireGuard peer.
-
-    Args:
-        peer_id: Peer ID (e.g. "*1")
-    """
+    """Disables a WireGuard peer."""
     await ctx.info(f"Disabling WireGuard peer: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers disable {peer_id}"
@@ -482,7 +383,7 @@ async def mikrotik_disable_wireguard_peer(ctx: Context, peer_id: str) -> str:
     return f"WireGuard peer '{peer_id}' disabled successfully."
 
 
-@mcp.tool(name="generate_wireguard_client_config", annotations=READ)
+@mcp.tool(name="generate_wireguard_client_config", annotations=annotate(READ, "Generate WireGuard Client Config"))
 async def mikrotik_generate_wireguard_client_config(
     ctx: Context,
     client_private_key: str,
@@ -494,36 +395,7 @@ async def mikrotik_generate_wireguard_client_config(
     dns: Optional[str] = None,
     persistent_keepalive: int = 25,
 ) -> str:
-    """
-    Generates a WireGuard client configuration file (wg0.conf format).
-
-    This tool only formats configuration text – it does not communicate with
-    the router.  Use list_wireguard_interfaces / get_wireguard_interface to
-    obtain the server public key, and use add_wireguard_peer to register the
-    client's public key on the server side.
-
-    Args:
-        client_private_key: Client's Base64-encoded WireGuard private key.
-        client_address: IP address (with prefix) assigned to the client inside
-                        the VPN tunnel (e.g. "10.0.0.2/24").
-        server_public_key: Server's Base64-encoded WireGuard public key
-                           (visible in get_wireguard_interface output).
-        server_endpoint: Public IP or hostname of the MikroTik router
-                         (e.g. "203.0.113.1").
-        server_port: UDP port the server listens on (default: 51820).
-        allowed_ips: Comma-separated list of destination CIDRs routed through
-                     the tunnel.  Use "0.0.0.0/0, ::/0" for full-tunnel (all
-                     traffic) or a specific subnet like "10.0.0.0/24" for
-                     split-tunnel (default: "0.0.0.0/0").
-        dns: Optional DNS server address(es) for the client to use while
-             connected (e.g. "1.1.1.1" or "10.0.0.1").
-        persistent_keepalive: Seconds between keepalive packets sent to the
-                              server.  Recommended when the client is behind
-                              NAT (default: 25, use 0 to disable).
-
-    Returns:
-        Ready-to-use WireGuard client configuration file content.
-    """
+    """Generates a wg0.conf client config string from the given keys and server endpoint. Does not communicate with the router."""
     await ctx.info("Generating WireGuard client configuration")
 
     lines = [

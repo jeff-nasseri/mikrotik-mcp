@@ -2,11 +2,11 @@ import time
 from typing import Literal, Optional, List, Dict
 from mcp.server.fastmcp import Context
 from ..connector import execute_mikrotik_command
-from ..app import mcp, READ, DESTRUCTIVE
+from ..app import mcp, READ, DESTRUCTIVE, annotate
 import re
 from datetime import datetime, timedelta
 
-@mcp.tool(name="get_logs", annotations=READ)
+@mcp.tool(name="get_logs", annotations=annotate(READ, "Get Logs"))
 async def mikrotik_get_logs(
     ctx: Context,
     topics: Optional[str] = None,
@@ -18,22 +18,7 @@ async def mikrotik_get_logs(
     follow: bool = False,
     print_as: Literal["value", "detail", "terse"] = "value"
 ) -> str:
-    """
-    Gets logs from MikroTik device with various filtering options.
-
-    Args:
-        topics: Filter by log topics (e.g., "info", "warning", "error", "system", "dhcp")
-        action: Filter by action type (e.g., "login", "logout", "error")
-        time_filter: Time filter (e.g., "5m", "1h", "1d" for last 5 minutes, 1 hour, 1 day)
-        message_filter: Filter by message content (partial match)
-        prefix_filter: Filter by message prefix
-        limit: Maximum number of log entries to return
-        follow: Follow log in real-time (not recommended for API use)
-        print_as: Output format ("value", "detail", "terse")
-
-    Returns:
-        Filtered log entries
-    """
+    """Gets logs from the MikroTik device with optional topic, time, and message filters."""
     await ctx.info(f"Getting logs with filters: topics={topics}, action={action}, time={time_filter}")
 
     # Build the command
@@ -80,24 +65,14 @@ async def mikrotik_get_logs(
 
     return f"LOG ENTRIES:\n\n{result}"
 
-@mcp.tool(name="get_logs_by_severity", annotations=READ)
+@mcp.tool(name="get_logs_by_severity", annotations=annotate(READ, "Get Logs by Severity"))
 async def mikrotik_get_logs_by_severity(
     ctx: Context,
     severity: Literal["debug", "info", "warning", "error", "critical"],
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
 ) -> str:
-    """
-    Gets logs filtered by severity level.
-
-    Args:
-        severity: Severity level (debug, info, warning, error, critical)
-        time_filter: Time filter (e.g., "5m", "1h", "1d")
-        limit: Maximum number of entries
-
-    Returns:
-        Log entries of specified severity
-    """
+    """Gets logs filtered by severity level (debug/info/warning/error/critical)."""
     await ctx.info(f"Getting logs by severity: severity={severity}")
 
     # Map severity to topics
@@ -118,24 +93,14 @@ async def mikrotik_get_logs_by_severity(
         ctx=ctx
     )
 
-@mcp.tool(name="get_logs_by_topic", annotations=READ)
+@mcp.tool(name="get_logs_by_topic", annotations=annotate(READ, "Get Logs by Topic"))
 async def mikrotik_get_logs_by_topic(
     ctx: Context,
     topic: str,
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
 ) -> str:
-    """
-    Gets logs for a specific topic/facility.
-
-    Args:
-        topic: Log topic (system, info, script, dhcp, interface, etc.)
-        time_filter: Time filter (e.g., "5m", "1h", "1d")
-        limit: Maximum number of entries
-
-    Returns:
-        Log entries for the specified topic
-    """
+    """Gets logs for a specific topic/facility (system, dhcp, interface, firewall, etc.)."""
     await ctx.info(f"Getting logs by topic: topic={topic}")
 
     return await mikrotik_get_logs(
@@ -145,7 +110,7 @@ async def mikrotik_get_logs_by_topic(
         ctx=ctx
     )
 
-@mcp.tool(name="search_logs", annotations=READ)
+@mcp.tool(name="search_logs", annotations=annotate(READ, "Search Logs"))
 async def mikrotik_search_logs(
     ctx: Context,
     search_term: str,
@@ -153,18 +118,7 @@ async def mikrotik_search_logs(
     case_sensitive: bool = False,
     limit: Optional[int] = None
 ) -> str:
-    """
-    Searches logs for a specific term.
-
-    Args:
-        search_term: Term to search for in log messages
-        time_filter: Time filter (e.g., "5m", "1h", "1d")
-        case_sensitive: Whether search should be case-sensitive
-        limit: Maximum number of entries
-
-    Returns:
-        Log entries containing the search term
-    """
+    """Searches log messages for a specific term."""
     await ctx.info(f"Searching logs for: term={search_term}")
 
     # Adjust search term for case sensitivity
@@ -182,24 +136,14 @@ async def mikrotik_search_logs(
         ctx=ctx
     )
 
-@mcp.tool(name="get_system_events", annotations=READ)
+@mcp.tool(name="get_system_events", annotations=annotate(READ, "System Events"))
 async def mikrotik_get_system_events(
     ctx: Context,
     event_type: Optional[str] = None,
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
 ) -> str:
-    """
-    Gets system-related log events.
-
-    Args:
-        event_type: Type of system event (login, reboot, config-change, etc.)
-        time_filter: Time filter (e.g., "5m", "1h", "1d")
-        limit: Maximum number of entries
-
-    Returns:
-        System event log entries
-    """
+    """Gets system-related log events (login, reboot, config-change, etc.)."""
     await ctx.info(f"Getting system events: type={event_type}")
 
     # Build filter based on event type
@@ -230,22 +174,13 @@ async def mikrotik_get_system_events(
         ctx=ctx
     )
 
-@mcp.tool(name="get_security_logs", annotations=READ)
+@mcp.tool(name="get_security_logs", annotations=annotate(READ, "Security Logs"))
 async def mikrotik_get_security_logs(
     ctx: Context,
     time_filter: Optional[str] = None,
     limit: Optional[int] = None
 ) -> str:
-    """
-    Gets security-related log entries.
-
-    Args:
-        time_filter: Time filter (e.g., "5m", "1h", "1d")
-        limit: Maximum number of entries
-
-    Returns:
-        Security-related log entries
-    """
+    """Gets security-related log entries (login failures, blocked connections, etc.)."""
     await ctx.info("Getting security logs")
 
     # Security-related topics and keywords
@@ -267,15 +202,9 @@ async def mikrotik_get_security_logs(
 
     return f"SECURITY LOG ENTRIES:\n\n{result}"
 
-@mcp.tool(name="clear_logs", annotations=DESTRUCTIVE)
+@mcp.tool(name="clear_logs", annotations=annotate(DESTRUCTIVE, "Clear Logs"))
 async def mikrotik_clear_logs(ctx: Context) -> str:
-    """
-    Clears all logs from MikroTik device.
-    Note: This action cannot be undone!
-
-    Returns:
-        Command result
-    """
+    """Clears all logs from the MikroTik device. This action cannot be undone."""
     await ctx.info("Clearing all logs")
 
     cmd = "/log print follow-only"
@@ -286,14 +215,9 @@ async def mikrotik_clear_logs(ctx: Context) -> str:
     else:
         return f"Log clear result: {result}"
 
-@mcp.tool(name="get_log_statistics", annotations=READ)
+@mcp.tool(name="get_log_statistics", annotations=annotate(READ, "Log Statistics"))
 async def mikrotik_get_log_statistics(ctx: Context) -> str:
-    """
-    Gets statistics about log entries.
-
-    Returns:
-        Log statistics including counts by topic and severity
-    """
+    """Gets log entry counts by topic and severity from the MikroTik device."""
     await ctx.info("Getting log statistics")
 
     # Get total count
@@ -322,7 +246,7 @@ async def mikrotik_get_log_statistics(ctx: Context) -> str:
 
     return "LOG STATISTICS:\n\n" + "\n".join(stats)
 
-@mcp.tool(name="export_logs", annotations=READ)
+@mcp.tool(name="export_logs", annotations=annotate(READ, "Export Logs"))
 async def mikrotik_export_logs(
     ctx: Context,
     filename: Optional[str] = None,
@@ -330,18 +254,7 @@ async def mikrotik_export_logs(
     time_filter: Optional[str] = None,
     format: Literal["plain", "csv"] = "plain"
 ) -> str:
-    """
-    Exports logs to a file on the MikroTik device.
-
-    Args:
-        filename: Export filename (without extension)
-        topics: Filter by topics before export
-        time_filter: Time filter for export
-        format: Export format (plain, csv)
-
-    Returns:
-        Export result
-    """
+    """Exports logs to a file on the MikroTik device with optional topic and time filters."""
     if not filename:
         filename = f"logs_export_{int(time.time())}"
 
@@ -367,24 +280,14 @@ async def mikrotik_export_logs(
     else:
         return f"Export result: {result}"
 
-@mcp.tool(name="monitor_logs", annotations=READ)
+@mcp.tool(name="monitor_logs", annotations=annotate(READ, "Monitor Logs"))
 async def mikrotik_monitor_logs(
     ctx: Context,
     topics: Optional[str] = None,
     action: Optional[str] = None,
     duration: int = 10
 ) -> str:
-    """
-    Monitors logs in real-time for a specified duration.
-
-    Args:
-        topics: Topics to monitor
-        action: Actions to monitor
-        duration: Duration in seconds (limited for safety)
-
-    Returns:
-        Recent log entries
-    """
+    """Monitors MikroTik logs in near-real-time for a limited duration (max 60s)."""
     await ctx.info(f"Monitoring logs for {duration} seconds")
 
     # Limit duration for safety

@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from mcp.server.fastmcp import Context
-from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 from ..connector import execute_mikrotik_command
 
 
@@ -8,7 +8,7 @@ from ..connector import execute_mikrotik_command
 # Queue Types
 # ───────────────────────────────────────────────
 
-@mcp.tool(name="create_queue_type", annotations=WRITE)
+@mcp.tool(name="create_queue_type", annotations=annotate(WRITE, "Create Queue Type"))
 async def mikrotik_create_queue_type(
     ctx: Context,
     name: str,
@@ -41,41 +41,7 @@ async def mikrotik_create_queue_type(
     red_burst: Optional[int] = None,
     red_avg_packet: Optional[int] = None,
 ) -> str:
-    """
-    Creates a queue type on MikroTik device.
-
-    Args:
-        name: Name of the queue type
-        kind: Queue discipline (cake, fq-codel, sfq, red, pcq, pfifo, bfifo, etc.)
-        cake_flowmode: CAKE flow isolation mode (triple-isolate, dual-srchost, dual-dsthost, host, flow, none)
-        cake_nat: CAKE NAT awareness (for correct flow identification behind NAT)
-        cake_overhead: CAKE per-packet overhead in bytes (e.g., 34 for PPPoE)
-        cake_mpu: CAKE minimum packet unit in bytes (e.g., 84 for PPPoE)
-        cake_diffserv: CAKE DSCP priority scheme (besteffort, diffserv3, diffserv4, diffserv8)
-        cake_ack_filter: CAKE ACK filter mode (filter, aggressive, none)
-        cake_rtt: CAKE RTT estimate (e.g., "100ms")
-        cake_wash: CAKE DSCP wash (clear DSCP on egress)
-        cake_overhead_scheme: CAKE overhead scheme preset (e.g., "ethernet", "pppoe-ptm")
-        pcq_rate: PCQ per-connection rate limit
-        pcq_limit: PCQ queue size limit
-        pcq_classifier: PCQ classifier (src-address, dst-address, both-addresses, etc.)
-        pfifo_limit: PFIFO packet limit
-        bfifo_limit: BFIFO byte limit
-        sfq_perturb: SFQ hash perturbation interval
-        sfq_allot: SFQ allotment
-        fq_codel_limit: FQ-CoDel queue limit
-        fq_codel_quantum: FQ-CoDel quantum
-        fq_codel_target: FQ-CoDel target delay (e.g., "5ms")
-        fq_codel_interval: FQ-CoDel interval (e.g., "100ms")
-        red_limit: RED queue limit
-        red_min_threshold: RED minimum threshold
-        red_max_threshold: RED maximum threshold
-        red_burst: RED burst size
-        red_avg_packet: RED average packet size
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a queue type (qdisc). kind selects the discipline (cake, fq-codel, sfq, red, pcq, pfifo, bfifo); remaining params are per-discipline options."""
     await ctx.info(f"Creating queue type: name={name}, kind={kind}")
 
     cmd = f"/queue type add name={name} kind={kind}"
@@ -163,22 +129,13 @@ async def mikrotik_create_queue_type(
     return "Queue type creation completed but unable to verify."
 
 
-@mcp.tool(name="list_queue_types", annotations=READ)
+@mcp.tool(name="list_queue_types", annotations=annotate(READ, "List Queue Types"))
 async def mikrotik_list_queue_types(
     ctx: Context,
     name_filter: Optional[str] = None,
     kind_filter: Optional[str] = None,
 ) -> str:
-    """
-    Lists queue types on MikroTik device.
-
-    Args:
-        name_filter: Filter by name (partial match)
-        kind_filter: Filter by kind (cake, fq-codel, sfq, etc.)
-
-    Returns:
-        List of queue types
-    """
+    """Lists queue types on the MikroTik device."""
     await ctx.info("Listing queue types")
 
     cmd = "/queue type print"
@@ -197,17 +154,9 @@ async def mikrotik_list_queue_types(
     return f"QUEUE TYPES:\n\n{result}"
 
 
-@mcp.tool(name="get_queue_type", annotations=READ)
+@mcp.tool(name="get_queue_type", annotations=annotate(READ, "Get Queue Type"))
 async def mikrotik_get_queue_type(ctx: Context, name: str) -> str:
-    """
-    Gets detailed information about a specific queue type.
-
-    Args:
-        name: Name of the queue type
-
-    Returns:
-        Detailed information about the queue type
-    """
+    """Gets detailed information about a specific queue type."""
     await ctx.info(f"Getting queue type details: name={name}")
 
     cmd = f'/queue type print detail where name="{name}"'
@@ -217,7 +166,7 @@ async def mikrotik_get_queue_type(ctx: Context, name: str) -> str:
     return f"QUEUE TYPE DETAILS:\n\n{result}"
 
 
-@mcp.tool(name="update_queue_type", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_queue_type", annotations=annotate(WRITE_IDEMPOTENT, "Update Queue Type"))
 async def mikrotik_update_queue_type(
     ctx: Context,
     name: str,
@@ -235,28 +184,7 @@ async def mikrotik_update_queue_type(
     pcq_limit: Optional[int] = None,
     pcq_classifier: Optional[str] = None,
 ) -> str:
-    """
-    Updates an existing queue type on MikroTik device.
-
-    Args:
-        name: Current name of the queue type
-        new_name: New name for the queue type
-        cake_flowmode: New CAKE flow mode
-        cake_nat: New CAKE NAT setting
-        cake_overhead: New CAKE overhead value
-        cake_mpu: New CAKE MPU value
-        cake_diffserv: New CAKE diffserv scheme
-        cake_ack_filter: New CAKE ACK filter mode (filter, aggressive, none)
-        cake_rtt: New CAKE RTT estimate
-        cake_wash: New CAKE wash setting
-        cake_overhead_scheme: New CAKE overhead scheme
-        pcq_rate: New PCQ rate
-        pcq_limit: New PCQ limit
-        pcq_classifier: New PCQ classifier
-
-    Returns:
-        Command output or error message
-    """
+    """Updates an existing queue type's discipline-specific settings."""
     await ctx.info(f"Updating queue type: name={name}")
 
     cmd = f'/queue type set [find name="{name}"]'
@@ -304,17 +232,9 @@ async def mikrotik_update_queue_type(
     return f"Queue type updated successfully:\n\n{details}"
 
 
-@mcp.tool(name="remove_queue_type", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_queue_type", annotations=annotate(DESTRUCTIVE, "Remove Queue Type"))
 async def mikrotik_remove_queue_type(ctx: Context, name: str) -> str:
-    """
-    Removes a queue type from MikroTik device.
-
-    Args:
-        name: Name of the queue type to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes a queue type from the MikroTik device."""
     await ctx.info(f"Removing queue type: name={name}")
 
     cmd = f'/queue type remove [find name="{name}"]'
@@ -329,7 +249,7 @@ async def mikrotik_remove_queue_type(ctx: Context, name: str) -> str:
 # Queue Trees
 # ───────────────────────────────────────────────
 
-@mcp.tool(name="create_queue_tree", annotations=WRITE)
+@mcp.tool(name="create_queue_tree", annotations=annotate(WRITE, "Create Queue Tree"))
 async def mikrotik_create_queue_tree(
     ctx: Context,
     name: str,
@@ -346,27 +266,7 @@ async def mikrotik_create_queue_tree(
     comment: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """
-    Creates a queue tree on MikroTik device.
-
-    Args:
-        name: Name of the queue tree
-        parent: Parent interface or queue (e.g., "bridge", "pppoe-out1", "global")
-        queue: Queue type name to use (e.g., "cake-upload", "default-small")
-        packet_mark: Packet mark to match (e.g., "no-mark", or a mangle mark)
-        max_limit: Maximum bandwidth limit (e.g., "100M", "1G")
-        limit_at: Guaranteed bandwidth (CIR)
-        burst_limit: Burst bandwidth limit
-        burst_threshold: Burst threshold
-        burst_time: Burst time
-        bucket_size: Bucket size for shaping (e.g., "0.01")
-        priority: Queue priority (1-8, lower = higher priority)
-        comment: Optional comment
-        disabled: Whether to disable after creation
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a hierarchical queue tree entry attached to a parent interface or queue."""
     await ctx.info(f"Creating queue tree: name={name}, parent={parent}")
 
     cmd = f"/queue tree add name={name} parent={parent}"
@@ -414,7 +314,7 @@ async def mikrotik_create_queue_tree(
     return "Queue tree creation completed but unable to verify."
 
 
-@mcp.tool(name="list_queue_trees", annotations=READ)
+@mcp.tool(name="list_queue_trees", annotations=annotate(READ, "List Queue Trees"))
 async def mikrotik_list_queue_trees(
     ctx: Context,
     name_filter: Optional[str] = None,
@@ -422,18 +322,7 @@ async def mikrotik_list_queue_trees(
     disabled_only: bool = False,
     invalid_only: bool = False,
 ) -> str:
-    """
-    Lists queue trees on MikroTik device.
-
-    Args:
-        name_filter: Filter by name (partial match)
-        parent_filter: Filter by parent interface or queue
-        disabled_only: Show only disabled queue trees
-        invalid_only: Show only invalid queue trees
-
-    Returns:
-        List of queue trees
-    """
+    """Lists queue trees on the MikroTik device."""
     await ctx.info("Listing queue trees")
 
     cmd = "/queue tree print"
@@ -456,17 +345,9 @@ async def mikrotik_list_queue_trees(
     return f"QUEUE TREES:\n\n{result}"
 
 
-@mcp.tool(name="get_queue_tree", annotations=READ)
+@mcp.tool(name="get_queue_tree", annotations=annotate(READ, "Get Queue Tree"))
 async def mikrotik_get_queue_tree(ctx: Context, name: str) -> str:
-    """
-    Gets detailed information about a specific queue tree.
-
-    Args:
-        name: Name of the queue tree
-
-    Returns:
-        Detailed information about the queue tree
-    """
+    """Gets detailed information about a specific queue tree."""
     await ctx.info(f"Getting queue tree details: name={name}")
 
     cmd = f'/queue tree print detail where name="{name}"'
@@ -476,7 +357,7 @@ async def mikrotik_get_queue_tree(ctx: Context, name: str) -> str:
     return f"QUEUE TREE DETAILS:\n\n{result}"
 
 
-@mcp.tool(name="update_queue_tree", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_queue_tree", annotations=annotate(WRITE_IDEMPOTENT, "Update Queue Tree"))
 async def mikrotik_update_queue_tree(
     ctx: Context,
     name: str,
@@ -494,28 +375,7 @@ async def mikrotik_update_queue_tree(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
 ) -> str:
-    """
-    Updates an existing queue tree on MikroTik device.
-
-    Args:
-        name: Current name of the queue tree
-        new_name: New name for the queue tree
-        parent: New parent interface or queue
-        queue: New queue type name
-        packet_mark: New packet mark
-        max_limit: New maximum bandwidth limit
-        limit_at: New guaranteed bandwidth
-        burst_limit: New burst limit
-        burst_threshold: New burst threshold
-        burst_time: New burst time
-        bucket_size: New bucket size
-        priority: New priority (1-8)
-        comment: New comment
-        disabled: Enable/disable the queue tree
-
-    Returns:
-        Command output or error message
-    """
+    """Updates an existing queue tree entry (bandwidth limits, parent, priority, etc.)."""
     await ctx.info(f"Updating queue tree: name={name}")
 
     cmd = f'/queue tree set [find name="{name}"]'
@@ -563,17 +423,9 @@ async def mikrotik_update_queue_tree(
     return f"Queue tree updated successfully:\n\n{details}"
 
 
-@mcp.tool(name="remove_queue_tree", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_queue_tree", annotations=annotate(DESTRUCTIVE, "Remove Queue Tree"))
 async def mikrotik_remove_queue_tree(ctx: Context, name: str) -> str:
-    """
-    Removes a queue tree from MikroTik device.
-
-    Args:
-        name: Name of the queue tree to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes a queue tree from the MikroTik device."""
     await ctx.info(f"Removing queue tree: name={name}")
 
     cmd = f'/queue tree remove [find name="{name}"]'
@@ -584,17 +436,9 @@ async def mikrotik_remove_queue_tree(ctx: Context, name: str) -> str:
     return f"Queue tree '{name}' removed successfully."
 
 
-@mcp.tool(name="enable_queue_tree", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="enable_queue_tree", annotations=annotate(WRITE_IDEMPOTENT, "Enable Queue Tree"))
 async def mikrotik_enable_queue_tree(ctx: Context, name: str) -> str:
-    """
-    Enables a queue tree.
-
-    Args:
-        name: Name of the queue tree to enable
-
-    Returns:
-        Command output or error message
-    """
+    """Enables a queue tree."""
     await ctx.info(f"Enabling queue tree: name={name}")
 
     cmd = f'/queue tree set [find name="{name}"] disabled=no'
@@ -608,17 +452,9 @@ async def mikrotik_enable_queue_tree(ctx: Context, name: str) -> str:
     return f"Queue tree enabled:\n\n{details}"
 
 
-@mcp.tool(name="disable_queue_tree", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="disable_queue_tree", annotations=annotate(WRITE_IDEMPOTENT, "Disable Queue Tree"))
 async def mikrotik_disable_queue_tree(ctx: Context, name: str) -> str:
-    """
-    Disables a queue tree.
-
-    Args:
-        name: Name of the queue tree to disable
-
-    Returns:
-        Command output or error message
-    """
+    """Disables a queue tree."""
     await ctx.info(f"Disabling queue tree: name={name}")
 
     cmd = f'/queue tree set [find name="{name}"] disabled=yes'
@@ -636,7 +472,7 @@ async def mikrotik_disable_queue_tree(ctx: Context, name: str) -> str:
 # Simple Queues
 # ───────────────────────────────────────────────
 
-@mcp.tool(name="create_simple_queue", annotations=WRITE)
+@mcp.tool(name="create_simple_queue", annotations=annotate(WRITE, "Create Simple Queue"))
 async def mikrotik_create_simple_queue(
     ctx: Context,
     name: str,
@@ -655,29 +491,7 @@ async def mikrotik_create_simple_queue(
     comment: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """
-    Creates a simple queue on MikroTik device.
-
-    Args:
-        name: Name of the simple queue
-        target: Target address or interface (e.g., "192.168.1.0/24", "ether1")
-        dst: Destination address (e.g., "0.0.0.0/0")
-        max_limit: Max upload/download limit (e.g., "10M/10M")
-        limit_at: Guaranteed upload/download rate (e.g., "5M/5M")
-        burst_limit: Burst upload/download limit
-        burst_threshold: Burst threshold
-        burst_time: Burst time
-        bucket_size: Bucket size (e.g., "0.1/0.1")
-        queue: Queue type for upload/download (e.g., "default-small/default-small")
-        parent: Parent queue name
-        priority: Priority for upload/download (e.g., "8/8")
-        packet_marks: Packet marks to match
-        comment: Optional comment
-        disabled: Whether to disable after creation
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a simple queue to rate-limit a target address or interface."""
     await ctx.info(f"Creating simple queue: name={name}, target={target}")
 
     cmd = f"/queue simple add name={name} target={target}"
@@ -729,7 +543,7 @@ async def mikrotik_create_simple_queue(
     return "Simple queue creation completed but unable to verify."
 
 
-@mcp.tool(name="list_simple_queues", annotations=READ)
+@mcp.tool(name="list_simple_queues", annotations=annotate(READ, "List Simple Queues"))
 async def mikrotik_list_simple_queues(
     ctx: Context,
     name_filter: Optional[str] = None,
@@ -737,18 +551,7 @@ async def mikrotik_list_simple_queues(
     disabled_only: bool = False,
     invalid_only: bool = False,
 ) -> str:
-    """
-    Lists simple queues on MikroTik device.
-
-    Args:
-        name_filter: Filter by name (partial match)
-        target_filter: Filter by target address
-        disabled_only: Show only disabled queues
-        invalid_only: Show only invalid queues
-
-    Returns:
-        List of simple queues
-    """
+    """Lists simple queues on the MikroTik device."""
     await ctx.info("Listing simple queues")
 
     cmd = "/queue simple print"
@@ -771,17 +574,9 @@ async def mikrotik_list_simple_queues(
     return f"SIMPLE QUEUES:\n\n{result}"
 
 
-@mcp.tool(name="get_simple_queue", annotations=READ)
+@mcp.tool(name="get_simple_queue", annotations=annotate(READ, "Get Simple Queue"))
 async def mikrotik_get_simple_queue(ctx: Context, name: str) -> str:
-    """
-    Gets detailed information about a specific simple queue.
-
-    Args:
-        name: Name of the simple queue
-
-    Returns:
-        Detailed information about the simple queue
-    """
+    """Gets detailed information about a specific simple queue."""
     await ctx.info(f"Getting simple queue details: name={name}")
 
     cmd = f'/queue simple print detail where name="{name}"'
@@ -791,7 +586,7 @@ async def mikrotik_get_simple_queue(ctx: Context, name: str) -> str:
     return f"SIMPLE QUEUE DETAILS:\n\n{result}"
 
 
-@mcp.tool(name="update_simple_queue", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_simple_queue", annotations=annotate(WRITE_IDEMPOTENT, "Update Simple Queue"))
 async def mikrotik_update_simple_queue(
     ctx: Context,
     name: str,
@@ -811,30 +606,7 @@ async def mikrotik_update_simple_queue(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
 ) -> str:
-    """
-    Updates an existing simple queue on MikroTik device.
-
-    Args:
-        name: Current name of the simple queue
-        new_name: New name
-        target: New target address
-        dst: New destination address
-        max_limit: New max upload/download limit
-        limit_at: New guaranteed rate
-        burst_limit: New burst limit
-        burst_threshold: New burst threshold
-        burst_time: New burst time
-        bucket_size: New bucket size
-        queue: New queue type
-        parent: New parent queue
-        priority: New priority
-        packet_marks: New packet marks
-        comment: New comment
-        disabled: Enable/disable the queue
-
-    Returns:
-        Command output or error message
-    """
+    """Updates an existing simple queue's rate limits, target, or scheduling settings."""
     await ctx.info(f"Updating simple queue: name={name}")
 
     cmd = f'/queue simple set [find name="{name}"]'
@@ -886,17 +658,9 @@ async def mikrotik_update_simple_queue(
     return f"Simple queue updated successfully:\n\n{details}"
 
 
-@mcp.tool(name="remove_simple_queue", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_simple_queue", annotations=annotate(DESTRUCTIVE, "Remove Simple Queue"))
 async def mikrotik_remove_simple_queue(ctx: Context, name: str) -> str:
-    """
-    Removes a simple queue from MikroTik device.
-
-    Args:
-        name: Name of the simple queue to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes a simple queue from the MikroTik device."""
     await ctx.info(f"Removing simple queue: name={name}")
 
     cmd = f'/queue simple remove [find name="{name}"]'
@@ -907,17 +671,9 @@ async def mikrotik_remove_simple_queue(ctx: Context, name: str) -> str:
     return f"Simple queue '{name}' removed successfully."
 
 
-@mcp.tool(name="enable_simple_queue", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="enable_simple_queue", annotations=annotate(WRITE_IDEMPOTENT, "Enable Simple Queue"))
 async def mikrotik_enable_simple_queue(ctx: Context, name: str) -> str:
-    """
-    Enables a simple queue.
-
-    Args:
-        name: Name of the simple queue to enable
-
-    Returns:
-        Command output or error message
-    """
+    """Enables a simple queue."""
     await ctx.info(f"Enabling simple queue: name={name}")
 
     cmd = f'/queue simple set [find name="{name}"] disabled=no'
@@ -931,17 +687,9 @@ async def mikrotik_enable_simple_queue(ctx: Context, name: str) -> str:
     return f"Simple queue enabled:\n\n{details}"
 
 
-@mcp.tool(name="disable_simple_queue", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="disable_simple_queue", annotations=annotate(WRITE_IDEMPOTENT, "Disable Simple Queue"))
 async def mikrotik_disable_simple_queue(ctx: Context, name: str) -> str:
-    """
-    Disables a simple queue.
-
-    Args:
-        name: Name of the simple queue to disable
-
-    Returns:
-        Command output or error message
-    """
+    """Disables a simple queue."""
     await ctx.info(f"Disabling simple queue: name={name}")
 
     cmd = f'/queue simple set [find name="{name}"] disabled=yes'

@@ -2,11 +2,11 @@ from typing import List, Literal, Optional
 
 from mcp.server.fastmcp import Context
 
-from ..app import mcp, READ, WRITE, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, DESTRUCTIVE, annotate
 from ..connector import execute_mikrotik_command
 
 
-@mcp.tool(name="create_dhcp_server", annotations=WRITE)
+@mcp.tool(name="create_dhcp_server", annotations=annotate(WRITE, "Create DHCP Server"))
 async def mikrotik_create_dhcp_server(
     ctx: Context,
     name: str,
@@ -18,22 +18,7 @@ async def mikrotik_create_dhcp_server(
     delay_threshold: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Creates a DHCP server on MikroTik device.
-
-    Args:
-        name: Name of the DHCP server
-        interface: Interface to bind the DHCP server to
-        lease_time: Default lease time (default: "1d")
-        address_pool: Address pool name (optional)
-        disabled: Whether to disable the server after creation
-        authoritative: Authoritative mode (yes/no/after-2sec-delay)
-        delay_threshold: Delay threshold for authoritative mode
-        comment: Optional comment
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a DHCP server bound to the specified interface on the MikroTik device."""
     await ctx.info(f"Creating DHCP server: name={name}, interface={interface}")
 
     # Build the command
@@ -66,7 +51,7 @@ async def mikrotik_create_dhcp_server(
 
     return f"DHCP server created successfully:\n\n{details}"
 
-@mcp.tool(name="list_dhcp_servers", annotations=READ)
+@mcp.tool(name="list_dhcp_servers", annotations=annotate(READ, "List DHCP Servers"))
 async def mikrotik_list_dhcp_servers(
     ctx: Context,
     name_filter: Optional[str] = None,
@@ -74,18 +59,7 @@ async def mikrotik_list_dhcp_servers(
     disabled_only: bool = False,
     invalid_only: bool = False
 ) -> str:
-    """
-    Lists DHCP servers on MikroTik device.
-
-    Args:
-        name_filter: Filter by server name (partial match)
-        interface_filter: Filter by interface
-        disabled_only: Show only disabled servers
-        invalid_only: Show only invalid servers
-
-    Returns:
-        List of DHCP servers
-    """
+    """Lists DHCP servers on the MikroTik device."""
     await ctx.info(f"Listing DHCP servers with filters: name={name_filter}, interface={interface_filter}")
 
     # Build the command
@@ -112,17 +86,9 @@ async def mikrotik_list_dhcp_servers(
 
     return f"DHCP SERVERS:\n\n{result}"
 
-@mcp.tool(name="get_dhcp_server", annotations=READ)
+@mcp.tool(name="get_dhcp_server", annotations=annotate(READ, "Get DHCP Server"))
 async def mikrotik_get_dhcp_server(ctx: Context, name: str) -> str:
-    """
-    Gets detailed information about a specific DHCP server.
-
-    Args:
-        name: Name of the DHCP server
-
-    Returns:
-        Detailed information about the DHCP server
-    """
+    """Gets detailed information about a specific DHCP server."""
     await ctx.info(f"Getting DHCP server details: name={name}")
 
     cmd = f'/ip dhcp-server print detail where name="{name}"'
@@ -133,7 +99,7 @@ async def mikrotik_get_dhcp_server(ctx: Context, name: str) -> str:
 
     return f"DHCP SERVER DETAILS:\n\n{result}"
 
-@mcp.tool(name="create_dhcp_network", annotations=WRITE)
+@mcp.tool(name="create_dhcp_network", annotations=annotate(WRITE, "Create DHCP Network"))
 async def mikrotik_create_dhcp_network(
     ctx: Context,
     network: str,
@@ -146,23 +112,7 @@ async def mikrotik_create_dhcp_network(
     dhcp_option: Optional[List[str]] = None,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Creates a DHCP network configuration on MikroTik device.
-
-    Args:
-        network: Network address (e.g., "192.168.1.0/24")
-        gateway: Default gateway
-        netmask: Network mask (optional, derived from network)
-        dns_servers: List of DNS servers
-        domain: Domain name
-        wins_servers: List of WINS servers
-        ntp_servers: List of NTP servers
-        dhcp_option: List of additional DHCP options
-        comment: Optional comment
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a DHCP network configuration (gateway, DNS, domain, etc.) on the MikroTik device."""
     await ctx.info(f"Creating DHCP network: network={network}, gateway={gateway}")
 
     # Build the command
@@ -201,7 +151,7 @@ async def mikrotik_create_dhcp_network(
 
     return f"DHCP network created successfully:\n\n{details}"
 
-@mcp.tool(name="create_dhcp_pool", annotations=WRITE)
+@mcp.tool(name="create_dhcp_pool", annotations=annotate(WRITE, "Create DHCP Pool"))
 async def mikrotik_create_dhcp_pool(
     ctx: Context,
     name: str,
@@ -209,18 +159,7 @@ async def mikrotik_create_dhcp_pool(
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """
-    Creates a DHCP address pool on MikroTik device.
-
-    Args:
-        name: Name of the address pool
-        ranges: IP address ranges (e.g., "192.168.1.10-192.168.1.100")
-        next_pool: Name of the next pool in chain
-        comment: Optional comment
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a DHCP address pool with the given IP ranges on the MikroTik device."""
     await ctx.info(f"Creating DHCP pool: name={name}, ranges={ranges}")
 
     # Build the command
@@ -244,17 +183,9 @@ async def mikrotik_create_dhcp_pool(
 
     return f"DHCP pool created successfully:\n\n{details}"
 
-@mcp.tool(name="remove_dhcp_server", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_dhcp_server", annotations=annotate(DESTRUCTIVE, "Remove DHCP Server"))
 async def mikrotik_remove_dhcp_server(ctx: Context, name: str) -> str:
-    """
-    Removes a DHCP server from MikroTik device.
-
-    Args:
-        name: Name of the DHCP server to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes a DHCP server from the MikroTik device."""
     await ctx.info(f"Removing DHCP server: name={name}")
 
     # First check if the server exists

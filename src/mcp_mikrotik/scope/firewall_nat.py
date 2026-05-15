@@ -1,9 +1,9 @@
 from typing import Literal, Optional
 from mcp.server.fastmcp import Context
 from ..connector import execute_mikrotik_command
-from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
-@mcp.tool(name="create_nat_rule", annotations=WRITE)
+@mcp.tool(name="create_nat_rule", annotations=annotate(WRITE, "Create NAT Rule"))
 async def mikrotik_create_nat_rule(
     ctx: Context,
     chain: Literal["srcnat", "dstnat"],
@@ -23,30 +23,7 @@ async def mikrotik_create_nat_rule(
     log_prefix: Optional[str] = None,
     place_before: Optional[str] = None
 ) -> str:
-    """
-    Creates a NAT rule on MikroTik device.
-
-    Args:
-        chain: NAT chain (srcnat, dstnat)
-        action: Action to take (accept, drop, masquerade, dst-nat, src-nat, etc.)
-        src_address: Source IP address or range
-        dst_address: Destination IP address or range
-        src_port: Source port or range
-        dst_port: Destination port or range
-        protocol: Protocol (tcp, udp, icmp, etc.)
-        in_interface: Input interface
-        out_interface: Output interface
-        to_addresses: Target address for translation
-        to_ports: Target port for translation
-        comment: Optional comment for the rule
-        disabled: Whether to disable the rule after creation
-        log: Whether to log packets matching this rule
-        log_prefix: Prefix for log entries
-        place_before: Place this rule before another rule (by number)
-
-    Returns:
-        Command output or error message
-    """
+    """Creates a NAT rule (srcnat or dstnat) on the MikroTik device."""
     await ctx.info(f"Creating NAT rule: chain={chain}, action={action}")
 
     # Validate action based on chain
@@ -134,7 +111,7 @@ async def mikrotik_create_nat_rule(
         else:
             return "NAT rule creation completed but unable to verify."
 
-@mcp.tool(name="list_nat_rules", annotations=READ)
+@mcp.tool(name="list_nat_rules", annotations=annotate(READ, "List NAT Rules"))
 async def mikrotik_list_nat_rules(
     ctx: Context,
     chain_filter: Optional[str] = None,
@@ -146,22 +123,7 @@ async def mikrotik_list_nat_rules(
     disabled_only: bool = False,
     invalid_only: bool = False
 ) -> str:
-    """
-    Lists NAT rules on MikroTik device.
-
-    Args:
-        chain_filter: Filter by chain (srcnat, dstnat)
-        action_filter: Filter by action
-        src_address_filter: Filter by source address
-        dst_address_filter: Filter by destination address
-        protocol_filter: Filter by protocol
-        interface_filter: Filter by interface (in or out)
-        disabled_only: Show only disabled rules
-        invalid_only: Show only invalid rules
-
-    Returns:
-        List of NAT rules
-    """
+    """Lists NAT rules on the MikroTik device."""
     await ctx.info(f"Listing NAT rules with filters: chain={chain_filter}, action={action_filter}")
 
     # Build the command
@@ -197,17 +159,9 @@ async def mikrotik_list_nat_rules(
 
     return f"NAT RULES:\n\n{result}"
 
-@mcp.tool(name="get_nat_rule", annotations=READ)
+@mcp.tool(name="get_nat_rule", annotations=annotate(READ, "Get NAT Rule"))
 async def mikrotik_get_nat_rule(ctx: Context, rule_id: str) -> str:
-    """
-    Gets detailed information about a specific NAT rule.
-
-    Args:
-        rule_id: ID of the NAT rule (can be number or *number format)
-
-    Returns:
-        Detailed information about the NAT rule
-    """
+    """Gets detailed information about a specific NAT rule."""
     await ctx.info(f"Getting NAT rule details: rule_id={rule_id}")
 
     cmd = f"/ip firewall nat print detail where .id={rule_id}"
@@ -218,7 +172,7 @@ async def mikrotik_get_nat_rule(ctx: Context, rule_id: str) -> str:
 
     return f"NAT RULE DETAILS:\n\n{result}"
 
-@mcp.tool(name="update_nat_rule", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Update NAT Rule"))
 async def mikrotik_update_nat_rule(
     ctx: Context,
     rule_id: str,
@@ -238,30 +192,7 @@ async def mikrotik_update_nat_rule(
     log: Optional[bool] = None,
     log_prefix: Optional[str] = None
 ) -> str:
-    """
-    Updates an existing NAT rule on MikroTik device.
-
-    Args:
-        rule_id: ID of the NAT rule to update
-        chain: New chain
-        action: New action
-        src_address: New source address
-        dst_address: New destination address
-        src_port: New source port
-        dst_port: New destination port
-        protocol: New protocol
-        in_interface: New input interface
-        out_interface: New output interface
-        to_addresses: New target address
-        to_ports: New target port
-        comment: New comment
-        disabled: Enable/disable the rule
-        log: Enable/disable logging
-        log_prefix: New log prefix
-
-    Returns:
-        Command output or error message
-    """
+    """Updates an existing NAT rule on the MikroTik device."""
     await ctx.info(f"Updating NAT rule: rule_id={rule_id}")
 
     # Build the command
@@ -344,17 +275,9 @@ async def mikrotik_update_nat_rule(
 
     return f"NAT rule updated successfully:\n\n{details}"
 
-@mcp.tool(name="remove_nat_rule", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_nat_rule", annotations=annotate(DESTRUCTIVE, "Remove NAT Rule"))
 async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str) -> str:
-    """
-    Removes a NAT rule from MikroTik device.
-
-    Args:
-        rule_id: ID of the NAT rule to remove
-
-    Returns:
-        Command output or error message
-    """
+    """Removes a NAT rule from the MikroTik device."""
     await ctx.info(f"Removing NAT rule: rule_id={rule_id}")
 
     # First check if the rule exists
@@ -373,18 +296,9 @@ async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str) -> str:
 
     return f"NAT rule with ID '{rule_id}' removed successfully."
 
-@mcp.tool(name="move_nat_rule", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="move_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Move NAT Rule"))
 async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int) -> str:
-    """
-    Moves a NAT rule to a different position in the chain.
-
-    Args:
-        rule_id: ID of the NAT rule to move
-        destination: Destination position (0-based index)
-
-    Returns:
-        Command output or error message
-    """
+    """Moves a NAT rule to a different position in the chain."""
     await ctx.info(f"Moving NAT rule: rule_id={rule_id} to position {destination}")
 
     # Check if the rule exists
@@ -403,28 +317,12 @@ async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int) -
 
     return f"NAT rule with ID '{rule_id}' moved to position {destination}."
 
-@mcp.tool(name="enable_nat_rule", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="enable_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Enable NAT Rule"))
 async def mikrotik_enable_nat_rule(ctx: Context, rule_id: str) -> str:
-    """
-    Enables a NAT rule.
-
-    Args:
-        rule_id: ID of the NAT rule to enable
-
-    Returns:
-        Command output or error message
-    """
+    """Enables a NAT rule."""
     return await mikrotik_update_nat_rule(rule_id, disabled=False, ctx=ctx)
 
-@mcp.tool(name="disable_nat_rule", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="disable_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Disable NAT Rule"))
 async def mikrotik_disable_nat_rule(ctx: Context, rule_id: str) -> str:
-    """
-    Disables a NAT rule.
-
-    Args:
-        rule_id: ID of the NAT rule to disable
-
-    Returns:
-        Command output or error message
-    """
+    """Disables a NAT rule."""
     return await mikrotik_update_nat_rule(rule_id, disabled=True, ctx=ctx)

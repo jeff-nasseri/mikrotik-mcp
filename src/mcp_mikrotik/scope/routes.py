@@ -1,9 +1,9 @@
 from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
-from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
-@mcp.tool(name="add_route", annotations=WRITE)
+@mcp.tool(name="add_route", annotations=annotate(WRITE, "Add Route"))
 async def mikrotik_add_route(
     ctx: Context,
     dst_address: str,
@@ -65,7 +65,7 @@ async def mikrotik_add_route(
         else:
             return "Route addition completed but unable to verify."
 
-@mcp.tool(name="list_routes", annotations=READ)
+@mcp.tool(name="list_routes", annotations=annotate(READ, "List Routes"))
 async def mikrotik_list_routes(
     ctx: Context,
     dst_filter: Optional[str] = None,
@@ -110,7 +110,7 @@ async def mikrotik_list_routes(
 
     return f"ROUTES:\n\n{result}"
 
-@mcp.tool(name="get_route", annotations=READ)
+@mcp.tool(name="get_route", annotations=annotate(READ, "Get Route"))
 async def mikrotik_get_route(ctx: Context, route_id: str) -> str:
     """Gets detailed information about a specific route."""
     await ctx.info(f"Getting route details: route_id={route_id}")
@@ -123,7 +123,7 @@ async def mikrotik_get_route(ctx: Context, route_id: str) -> str:
 
     return f"ROUTE DETAILS:\n\n{result}"
 
-@mcp.tool(name="update_route", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="update_route", annotations=annotate(WRITE_IDEMPOTENT, "Update Route"))
 async def mikrotik_update_route(
     ctx: Context,
     route_id: str,
@@ -192,7 +192,7 @@ async def mikrotik_update_route(
 
     return f"Route updated successfully:\n\n{details}"
 
-@mcp.tool(name="remove_route", annotations=DESTRUCTIVE)
+@mcp.tool(name="remove_route", annotations=annotate(DESTRUCTIVE, "Remove Route"))
 async def mikrotik_remove_route(ctx: Context, route_id: str) -> str:
     """Removes a route."""
     await ctx.info(f"Removing route: route_id={route_id}")
@@ -211,17 +211,17 @@ async def mikrotik_remove_route(ctx: Context, route_id: str) -> str:
 
     return f"Route with ID '{route_id}' removed successfully."
 
-@mcp.tool(name="enable_route", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="enable_route", annotations=annotate(WRITE_IDEMPOTENT, "Enable Route"))
 async def mikrotik_enable_route(ctx: Context, route_id: str) -> str:
     """Enables a route."""
     return await mikrotik_update_route(route_id, disabled=False, ctx=ctx)
 
-@mcp.tool(name="disable_route", annotations=WRITE_IDEMPOTENT)
+@mcp.tool(name="disable_route", annotations=annotate(WRITE_IDEMPOTENT, "Disable Route"))
 async def mikrotik_disable_route(ctx: Context, route_id: str) -> str:
     """Disables a route."""
     return await mikrotik_update_route(route_id, disabled=True, ctx=ctx)
 
-@mcp.tool(name="get_routing_table", annotations=READ)
+@mcp.tool(name="get_routing_table", annotations=annotate(READ, "Routing Table"))
 async def mikrotik_get_routing_table(
     ctx: Context,
     table_name: Optional[str] = "main",
@@ -251,7 +251,7 @@ async def mikrotik_get_routing_table(
 
     return f"ROUTING TABLE ({table_name}):\n\n{result}"
 
-@mcp.tool(name="check_route_path", annotations=READ)
+@mcp.tool(name="check_route_path", annotations=annotate(READ, "Check Route Path"))
 async def mikrotik_check_route_path(
     ctx: Context,
     destination: str,
@@ -275,7 +275,7 @@ async def mikrotik_check_route_path(
 
     return f"ROUTE PATH TO {destination}:\n\n{result}"
 
-@mcp.tool(name="get_route_cache", annotations=READ)
+@mcp.tool(name="get_route_cache", annotations=annotate(READ, "Get Route Cache"))
 async def mikrotik_get_route_cache(ctx: Context) -> str:
     """Gets the route cache."""
     await ctx.info("Getting route cache")
@@ -288,7 +288,7 @@ async def mikrotik_get_route_cache(ctx: Context) -> str:
 
     return f"ROUTE CACHE:\n\n{result}"
 
-@mcp.tool(name="flush_route_cache", annotations=DESTRUCTIVE)
+@mcp.tool(name="flush_route_cache", annotations=annotate(DESTRUCTIVE, "Flush Route Cache"))
 async def mikrotik_flush_route_cache(ctx: Context) -> str:
     """Flushes the route cache."""
     await ctx.info("Flushing route cache")
@@ -301,7 +301,7 @@ async def mikrotik_flush_route_cache(ctx: Context) -> str:
     else:
         return f"Flush result: {result}"
 
-@mcp.tool(name="add_default_route", annotations=WRITE)
+@mcp.tool(name="add_default_route", annotations=annotate(WRITE, "Add Default Route"))
 async def mikrotik_add_default_route(
     ctx: Context,
     gateway: str,
@@ -319,7 +319,7 @@ async def mikrotik_add_default_route(
         ctx=ctx
     )
 
-@mcp.tool(name="add_blackhole_route", annotations=WRITE)
+@mcp.tool(name="add_blackhole_route", annotations=annotate(WRITE, "Add Blackhole Route"))
 async def mikrotik_add_blackhole_route(
     ctx: Context,
     dst_address: str,
@@ -344,7 +344,7 @@ async def mikrotik_add_blackhole_route(
     else:
         return "Blackhole route added successfully."
 
-@mcp.tool(name="get_route_statistics", annotations=READ)
+@mcp.tool(name="get_route_statistics", annotations=annotate(READ, "Route Statistics"))
 async def mikrotik_get_route_statistics(ctx: Context) -> str:
     """Gets routing table statistics."""
     await ctx.info("Getting route statistics")
