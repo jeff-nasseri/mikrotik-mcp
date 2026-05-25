@@ -163,6 +163,39 @@ jobs:
           print-hash: true
           skip-existing: true
 
+  publish-mcp-registry:
+    runs-on: ubuntu-latest
+    needs: [version, publish]
+    # Only run when PyPI publish actually succeeded (not skipped or failed).
+    if: needs.version.outputs.should_publish == 'true' && needs.publish.result == 'success'
+    permissions:
+      id-token: write   # required for GitHub OIDC authentication
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download mcp-publisher
+        run: |
+          curl -fsSL -o mcp-publisher.tar.gz \
+            "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz"
+          tar xf mcp-publisher.tar.gz mcp-publisher
+          chmod +x mcp-publisher
+
+      - name: Update server.json version
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          # Update both the top-level "version" and the package-level "version" fields.
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/g" server.json
+          echo "server.json version set to $VERSION"
+          cat server.json
+
+      - name: Authenticate with MCP Registry (GitHub OIDC)
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to MCP Registry
+        run: ./mcp-publisher publish
+
   create-release:
     runs-on: ubuntu-latest
     needs: [version, build, publish]
