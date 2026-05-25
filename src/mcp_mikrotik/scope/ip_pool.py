@@ -13,7 +13,12 @@ async def mikrotik_create_ip_pool(
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """Creates an IP pool with the given address ranges on the MikroTik device."""
+    """Creates an IP pool with the given address ranges on the MikroTik device.
+
+    Notes:
+        ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
+            Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
+    """
     await ctx.info(f"Creating IP pool: name={name}, ranges={ranges}")
 
     # Build the command
@@ -137,7 +142,13 @@ async def mikrotik_update_ip_pool(
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """Updates an existing IP pool's name, ranges, or next-pool reference."""
+    """Updates an existing IP pool's name, ranges, or next-pool reference.
+
+    Notes:
+        ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
+            Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
+        Pass "" for next_pool to clear it.
+    """
     await ctx.info(f"Updating IP pool: name={name}")
 
     # Build the command
@@ -246,7 +257,12 @@ async def mikrotik_list_ip_pool_used(
 
 @mcp.tool(name="expand_ip_pool", annotations=annotate(WRITE_IDEMPOTENT, "Expand IP Pool"))
 async def mikrotik_expand_ip_pool(ctx: Context, name: str, additional_ranges: str) -> str:
-    """Expands an existing IP pool by appending additional address ranges."""
+    """Expands an existing IP pool by appending additional address ranges.
+
+    Notes:
+        additional_ranges: hyphen-separated range(s) e.g. "192.168.1.101-192.168.1.150"
+            Multiple ranges comma-separated: "10.0.0.51-10.0.0.60,10.0.0.70-10.0.0.80"
+    """
     await ctx.info(f"Expanding IP pool: name={name}, additional_ranges={additional_ranges}")
 
     # Get current ranges

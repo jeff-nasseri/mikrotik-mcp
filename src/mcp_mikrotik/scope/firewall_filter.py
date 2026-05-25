@@ -27,7 +27,14 @@ async def mikrotik_create_filter_rule(
     log_prefix: Optional[str] = None,
     place_before: Optional[str] = None
 ) -> str:
-    """Creates a firewall filter rule in the specified chain on the MikroTik device."""
+    """Creates a firewall filter rule in the specified chain on the MikroTik device.
+
+    Notes:
+        connection_state: comma-separated e.g. "established,related,new,invalid"
+        limit: RouterOS rate/burst string e.g. "10,5:packet" or "10/1s:packet"
+        tcp_flags: RouterOS flag expression e.g. "syn,!ack"
+        place_before: rule number or ID (*N) to insert before e.g. "0" or "*3"
+    """
     await ctx.info(f"Creating firewall filter rule: chain={chain}, action={action}")
 
     # Build the command
@@ -171,7 +178,11 @@ async def mikrotik_list_filter_rules(
 
 @mcp.tool(name="get_filter_rule", annotations=annotate(READ, "Get Firewall Filter Rule"))
 async def mikrotik_get_filter_rule(ctx: Context, rule_id: str) -> str:
-    """Gets detailed information about a specific firewall filter rule."""
+    """Gets detailed information about a specific firewall filter rule.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+    """
     await ctx.info(f"Getting firewall filter rule details: rule_id={rule_id}")
 
     cmd = f"/ip firewall filter print detail where .id={rule_id}"
@@ -206,7 +217,15 @@ async def mikrotik_update_filter_rule(
     log: Optional[bool] = None,
     log_prefix: Optional[str] = None
 ) -> str:
-    """Updates an existing firewall filter rule on the MikroTik device."""
+    """Updates an existing firewall filter rule on the MikroTik device.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+        connection_state: comma-separated e.g. "established,related"
+        limit: RouterOS rate string e.g. "10,5:packet"
+        tcp_flags: RouterOS flag expression e.g. "syn,!ack"
+        Pass "" to clear an optional field (e.g. src_address="").
+    """
     await ctx.info(f"Updating firewall filter rule: rule_id={rule_id}")
 
     # Build the command
@@ -311,7 +330,11 @@ async def mikrotik_update_filter_rule(
 
 @mcp.tool(name="remove_filter_rule", annotations=annotate(DESTRUCTIVE, "Remove Firewall Filter Rule"))
 async def mikrotik_remove_filter_rule(ctx: Context, rule_id: str) -> str:
-    """Removes a firewall filter rule from the MikroTik device."""
+    """Removes a firewall filter rule from the MikroTik device.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+    """
     await ctx.info(f"Removing firewall filter rule: rule_id={rule_id}")
 
     # First check if the rule exists
@@ -332,7 +355,12 @@ async def mikrotik_remove_filter_rule(ctx: Context, rule_id: str) -> str:
 
 @mcp.tool(name="move_filter_rule", annotations=annotate(WRITE_IDEMPOTENT, "Move Filter Rule"))
 async def mikrotik_move_filter_rule(ctx: Context, rule_id: str, destination: int) -> str:
-    """Moves a firewall filter rule to a different position in the chain."""
+    """Moves a firewall filter rule to a different position in the chain.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+        destination: 0-based target position index
+    """
     await ctx.info(f"Moving firewall filter rule: rule_id={rule_id} to position {destination}")
 
     # Check if the rule exists

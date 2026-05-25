@@ -23,7 +23,13 @@ async def mikrotik_create_nat_rule(
     log_prefix: Optional[str] = None,
     place_before: Optional[str] = None
 ) -> str:
-    """Creates a NAT rule (srcnat or dstnat) on the MikroTik device."""
+    """Creates a NAT rule (srcnat or dstnat) on the MikroTik device.
+
+    Notes:
+        to_addresses: single IP or range e.g. "10.0.0.1" or "10.0.0.1-10.0.0.10"
+        to_ports: single port or range e.g. "8080" or "8080-8090"
+        place_before: rule number or ID (*N) to insert before e.g. "0" or "*3"
+    """
     await ctx.info(f"Creating NAT rule: chain={chain}, action={action}")
 
     # Validate action based on chain
@@ -161,7 +167,11 @@ async def mikrotik_list_nat_rules(
 
 @mcp.tool(name="get_nat_rule", annotations=annotate(READ, "Get NAT Rule"))
 async def mikrotik_get_nat_rule(ctx: Context, rule_id: str) -> str:
-    """Gets detailed information about a specific NAT rule."""
+    """Gets detailed information about a specific NAT rule.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+    """
     await ctx.info(f"Getting NAT rule details: rule_id={rule_id}")
 
     cmd = f"/ip firewall nat print detail where .id={rule_id}"
@@ -192,7 +202,14 @@ async def mikrotik_update_nat_rule(
     log: Optional[bool] = None,
     log_prefix: Optional[str] = None
 ) -> str:
-    """Updates an existing NAT rule on the MikroTik device."""
+    """Updates an existing NAT rule on the MikroTik device.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+        to_addresses: single IP or range e.g. "10.0.0.1" or "10.0.0.1-10.0.0.10"
+        to_ports: single port or range e.g. "8080" or "8080-8090"
+        Pass "" to clear an optional field.
+    """
     await ctx.info(f"Updating NAT rule: rule_id={rule_id}")
 
     # Build the command
@@ -277,7 +294,11 @@ async def mikrotik_update_nat_rule(
 
 @mcp.tool(name="remove_nat_rule", annotations=annotate(DESTRUCTIVE, "Remove NAT Rule"))
 async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str) -> str:
-    """Removes a NAT rule from the MikroTik device."""
+    """Removes a NAT rule from the MikroTik device.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+    """
     await ctx.info(f"Removing NAT rule: rule_id={rule_id}")
 
     # First check if the rule exists
@@ -298,7 +319,12 @@ async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str) -> str:
 
 @mcp.tool(name="move_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Move NAT Rule"))
 async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int) -> str:
-    """Moves a NAT rule to a different position in the chain."""
+    """Moves a NAT rule to a different position in the chain.
+
+    Notes:
+        rule_id: use the ID from list output e.g. "*1" or "0"
+        destination: 0-based target position index
+    """
     await ctx.info(f"Moving NAT rule: rule_id={rule_id} to position {destination}")
 
     # Check if the rule exists

@@ -18,7 +18,13 @@ async def mikrotik_add_route(
     pref_src: Optional[str] = None,
     check_gateway: Optional[str] = None
 ) -> str:
-    """Adds a route to the routing table."""
+    """Adds a route to the routing table.
+
+    Notes:
+        dst_address: CIDR e.g. "0.0.0.0/0", "192.168.1.0/24"
+        check_gateway: "ping" or "arp"
+        distance: 1-255 (lower = higher priority)
+    """
     await ctx.info(f"Adding route: dst={dst_address}, gateway={gateway}")
 
     cmd = f"/ip route add dst-address={dst_address} gateway={gateway}"
@@ -112,7 +118,11 @@ async def mikrotik_list_routes(
 
 @mcp.tool(name="get_route", annotations=annotate(READ, "Get Route"))
 async def mikrotik_get_route(ctx: Context, route_id: str) -> str:
-    """Gets detailed information about a specific route."""
+    """Gets detailed information about a specific route.
+
+    Notes:
+        route_id: "*N" or "N" from list output e.g. "*3"
+    """
     await ctx.info(f"Getting route details: route_id={route_id}")
 
     cmd = f"/ip route print detail where .id={route_id}"
@@ -139,7 +149,15 @@ async def mikrotik_update_route(
     pref_src: Optional[str] = None,
     check_gateway: Optional[str] = None
 ) -> str:
-    """Updates a route."""
+    """Updates a route.
+
+    Notes:
+        route_id: "*N" or "N" from list output e.g. "*3"
+        dst_address: CIDR e.g. "192.168.1.0/24"
+        check_gateway: "ping" or "arp"
+        distance: 1-255
+        Pass "" to routing_mark, vrf_interface, or pref_src to clear them.
+    """
     await ctx.info(f"Updating route: route_id={route_id}")
 
     cmd = f"/ip route set {route_id}"
@@ -194,7 +212,11 @@ async def mikrotik_update_route(
 
 @mcp.tool(name="remove_route", annotations=annotate(DESTRUCTIVE, "Remove Route"))
 async def mikrotik_remove_route(ctx: Context, route_id: str) -> str:
-    """Removes a route."""
+    """Removes a route.
+
+    Notes:
+        route_id: "*N" or "N" from list output e.g. "*3"
+    """
     await ctx.info(f"Removing route: route_id={route_id}")
 
     check_cmd = f"/ip route print count-only where .id={route_id}"
@@ -213,12 +235,20 @@ async def mikrotik_remove_route(ctx: Context, route_id: str) -> str:
 
 @mcp.tool(name="enable_route", annotations=annotate(WRITE_IDEMPOTENT, "Enable Route"))
 async def mikrotik_enable_route(ctx: Context, route_id: str) -> str:
-    """Enables a route."""
+    """Enables a route.
+
+    Notes:
+        route_id: "*N" or "N" from list output e.g. "*3"
+    """
     return await mikrotik_update_route(route_id, disabled=False, ctx=ctx)
 
 @mcp.tool(name="disable_route", annotations=annotate(WRITE_IDEMPOTENT, "Disable Route"))
 async def mikrotik_disable_route(ctx: Context, route_id: str) -> str:
-    """Disables a route."""
+    """Disables a route.
+
+    Notes:
+        route_id: "*N" or "N" from list output e.g. "*3"
+    """
     return await mikrotik_update_route(route_id, disabled=True, ctx=ctx)
 
 @mcp.tool(name="get_routing_table", annotations=annotate(READ, "Routing Table"))
@@ -326,7 +356,12 @@ async def mikrotik_add_blackhole_route(
     distance: int = 1,
     comment: Optional[str] = None
 ) -> str:
-    """Adds a blackhole route."""
+    """Adds a blackhole route.
+
+    Notes:
+        dst_address: CIDR e.g. "10.0.0.0/8"
+        distance: 1-255
+    """
     await ctx.info(f"Adding blackhole route: dst={dst_address}")
 
     cmd = f"/ip route add dst-address={dst_address} type=blackhole distance={distance}"
