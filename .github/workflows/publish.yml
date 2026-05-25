@@ -41,6 +41,7 @@ jobs:
     outputs:
       version: ${{ steps.gitversion.outputs.assemblySemVer }}
       semVer: ${{ steps.gitversion.outputs.semVer }}
+      majorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}
       should_publish: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
     steps:
       - name: Checkout
