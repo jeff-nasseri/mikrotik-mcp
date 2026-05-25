@@ -1,5 +1,19 @@
 # Installation
 
+## MCP Registry (Recommended)
+
+MikroTik MCP is listed on the [MCP Registry](https://registry.modelcontextprotocol.io) — a community-driven catalog of MCP servers. Registry-aware clients (Claude Desktop, VS Code, Cursor) can install it in one command without manual config file editing.
+
+```bash
+claude mcp add io.github.jeff-nasseri/mikrotik-mcp
+```
+
+The client fetches the server metadata from the registry, installs `mcp-server-mikrotik` from PyPI, and prompts you for the required environment variables (`MIKROTIK_HOST`, `MIKROTIK_USERNAME`, `MIKROTIK_PASSWORD`).
+
+> **PyPI install only:** If your client does not support registry-based install, use one of the manual methods below.
+
+---
+
 ## Prerequisites
 - Python 3.8+
 - MikroTik RouterOS device with API access enabled
