@@ -203,7 +203,13 @@ async def mikrotik_add_wireguard_peer(
     comment: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """Adds a WireGuard peer (with public key and allowed addresses) to an interface on the MikroTik device."""
+    """Adds a WireGuard peer (with public key and allowed addresses) to an interface on the MikroTik device.
+
+    Notes:
+        allowed_address: CIDR, comma-separated for multiple e.g. "10.0.0.2/32" or "10.0.0.0/24,192.168.0.0/24"
+        endpoint_address: remote host IP or hostname e.g. "203.0.113.1"
+        persistent_keepalive: seconds as string e.g. "25"
+    """
     await ctx.info(f"Adding WireGuard peer: interface={interface}, public_key={public_key[:12]}...")
 
     cmd = (
@@ -271,7 +277,11 @@ async def mikrotik_list_wireguard_peers(
 
 @mcp.tool(name="get_wireguard_peer", annotations=annotate(READ, "Get WireGuard Peer"))
 async def mikrotik_get_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """Gets detailed information about a specific WireGuard peer by ID."""
+    """Gets detailed information about a specific WireGuard peer by ID.
+
+    Notes:
+        peer_id: "*N" or "N" from list output e.g. "*2"
+    """
     await ctx.info(f"Getting WireGuard peer details: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers print detail where .id={peer_id}"
@@ -295,7 +305,14 @@ async def mikrotik_update_wireguard_peer(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
 ) -> str:
-    """Updates an existing WireGuard peer's allowed addresses, endpoint, keepalive, or enabled state."""
+    """Updates an existing WireGuard peer's allowed addresses, endpoint, keepalive, or enabled state.
+
+    Notes:
+        peer_id: "*N" or "N" from list output e.g. "*2"
+        allowed_address: CIDR, comma-separated e.g. "10.0.0.2/32" or "10.0.0.0/24,192.168.0.0/24"
+        persistent_keepalive: seconds as string e.g. "25"
+        Pass "" for endpoint_address or preshared_key to clear them.
+    """
     await ctx.info(f"Updating WireGuard peer: peer_id={peer_id}")
 
     updates = []
@@ -337,7 +354,11 @@ async def mikrotik_update_wireguard_peer(
 
 @mcp.tool(name="remove_wireguard_peer", annotations=annotate(DESTRUCTIVE, "Remove WireGuard Peer"))
 async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """Removes a WireGuard peer from the MikroTik device."""
+    """Removes a WireGuard peer from the MikroTik device.
+
+    Notes:
+        peer_id: "*N" or "N" from list output e.g. "*2"
+    """
     await ctx.info(f"Removing WireGuard peer: peer_id={peer_id}")
 
     check_cmd = f"/interface wireguard peers print count-only where .id={peer_id}"
@@ -357,7 +378,11 @@ async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str) -> str:
 
 @mcp.tool(name="enable_wireguard_peer", annotations=annotate(WRITE_IDEMPOTENT, "Enable WireGuard Peer"))
 async def mikrotik_enable_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """Enables a WireGuard peer."""
+    """Enables a WireGuard peer.
+
+    Notes:
+        peer_id: "*N" or "N" from list output e.g. "*2"
+    """
     await ctx.info(f"Enabling WireGuard peer: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers enable {peer_id}"
@@ -371,7 +396,11 @@ async def mikrotik_enable_wireguard_peer(ctx: Context, peer_id: str) -> str:
 
 @mcp.tool(name="disable_wireguard_peer", annotations=annotate(WRITE_IDEMPOTENT, "Disable WireGuard Peer"))
 async def mikrotik_disable_wireguard_peer(ctx: Context, peer_id: str) -> str:
-    """Disables a WireGuard peer."""
+    """Disables a WireGuard peer.
+
+    Notes:
+        peer_id: "*N" or "N" from list output e.g. "*2"
+    """
     await ctx.info(f"Disabling WireGuard peer: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers disable {peer_id}"

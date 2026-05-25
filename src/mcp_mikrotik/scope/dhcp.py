@@ -18,7 +18,11 @@ async def mikrotik_create_dhcp_server(
     delay_threshold: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """Creates a DHCP server bound to the specified interface on the MikroTik device."""
+    """Creates a DHCP server bound to the specified interface on the MikroTik device.
+
+    Notes:
+        lease_time: duration e.g. "1d", "12h", "30m", "1h30m"
+    """
     await ctx.info(f"Creating DHCP server: name={name}, interface={interface}")
 
     # Build the command
@@ -159,7 +163,12 @@ async def mikrotik_create_dhcp_pool(
     next_pool: Optional[str] = None,
     comment: Optional[str] = None
 ) -> str:
-    """Creates a DHCP address pool with the given IP ranges on the MikroTik device."""
+    """Creates a DHCP address pool with the given IP ranges on the MikroTik device.
+
+    Notes:
+        ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
+            Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
+    """
     await ctx.info(f"Creating DHCP pool: name={name}, ranges={ranges}")
 
     # Build the command

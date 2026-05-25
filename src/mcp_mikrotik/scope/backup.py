@@ -143,7 +143,12 @@ async def mikrotik_export_section(
     hide_sensitive: bool = True,
     compact: bool = False
 ) -> str:
-    """Exports a specific RouterOS configuration section (e.g. 'ip address', 'interface') to a file."""
+    """Exports a specific RouterOS configuration section to a file.
+
+    Notes:
+        section: RouterOS path without leading slash e.g. "ip address", "interface vlan",
+            "ip firewall filter", "ip firewall nat", "queue simple"
+    """
     # Generate filename if not provided
     if not name:
         clean_section = section.replace(" ", "_").replace("/", "_")

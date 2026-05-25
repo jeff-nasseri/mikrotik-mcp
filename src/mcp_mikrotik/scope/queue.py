@@ -41,7 +41,14 @@ async def mikrotik_create_queue_type(
     red_burst: Optional[int] = None,
     red_avg_packet: Optional[int] = None,
 ) -> str:
-    """Creates a queue type (qdisc). kind selects the discipline (cake, fq-codel, sfq, red, pcq, pfifo, bfifo); remaining params are per-discipline options."""
+    """Creates a queue type (qdisc). kind selects the discipline (cake, fq-codel, sfq, red, pcq, pfifo, bfifo); remaining params are per-discipline options.
+
+    Notes:
+        pcq_rate: bandwidth per flow e.g. "1M", "512k"
+        pcq_classifier: comma-separated classifiers e.g. "src-address,dst-address"
+        cake_rtt: round-trip time e.g. "50ms", "100ms"
+        fq_codel_target / fq_codel_interval: time e.g. "5ms", "100ms"
+    """
     await ctx.info(f"Creating queue type: name={name}, kind={kind}")
 
     cmd = f"/queue type add name={name} kind={kind}"
@@ -266,7 +273,14 @@ async def mikrotik_create_queue_tree(
     comment: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """Creates a hierarchical queue tree entry attached to a parent interface or queue."""
+    """Creates a hierarchical queue tree entry attached to a parent interface or queue.
+
+    Notes:
+        max_limit / limit_at / burst_limit / burst_threshold: bandwidth e.g. "10M", "512k", "1G"
+        burst_time: duration e.g. "8s"
+        parent: interface name e.g. "ether1" or parent queue name
+        priority: 1 (highest) – 8 (lowest)
+    """
     await ctx.info(f"Creating queue tree: name={name}, parent={parent}")
 
     cmd = f"/queue tree add name={name} parent={parent}"
@@ -375,7 +389,13 @@ async def mikrotik_update_queue_tree(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
 ) -> str:
-    """Updates an existing queue tree entry (bandwidth limits, parent, priority, etc.)."""
+    """Updates an existing queue tree entry (bandwidth limits, parent, priority, etc.).
+
+    Notes:
+        max_limit / limit_at / burst_limit / burst_threshold: bandwidth e.g. "10M", "512k"
+        burst_time: duration e.g. "8s"
+        priority: 1 (highest) – 8 (lowest)
+    """
     await ctx.info(f"Updating queue tree: name={name}")
 
     cmd = f'/queue tree set [find name="{name}"]'
@@ -491,7 +511,15 @@ async def mikrotik_create_simple_queue(
     comment: Optional[str] = None,
     disabled: bool = False,
 ) -> str:
-    """Creates a simple queue to rate-limit a target address or interface."""
+    """Creates a simple queue to rate-limit a target address or interface.
+
+    Notes:
+        target: IP/CIDR or interface e.g. "192.168.1.0/24" or "ether1"
+        max_limit / limit_at / burst_limit / burst_threshold: upload/download bandwidth
+            as "UL/DL" e.g. "10M/10M", or single value e.g. "10M"
+        burst_time: duration e.g. "8s"
+        priority: 1 (highest) – 8 (lowest)
+    """
     await ctx.info(f"Creating simple queue: name={name}, target={target}")
 
     cmd = f"/queue simple add name={name} target={target}"
@@ -606,7 +634,15 @@ async def mikrotik_update_simple_queue(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
 ) -> str:
-    """Updates an existing simple queue's rate limits, target, or scheduling settings."""
+    """Updates an existing simple queue's rate limits, target, or scheduling settings.
+
+    Notes:
+        target: IP/CIDR or interface e.g. "192.168.1.0/24" or "ether1"
+        max_limit / limit_at / burst_limit / burst_threshold: upload/download bandwidth
+            as "UL/DL" e.g. "10M/10M", or single value e.g. "10M"
+        burst_time: duration e.g. "8s"
+        priority: 1 (highest) – 8 (lowest)
+    """
     await ctx.info(f"Updating simple queue: name={name}")
 
     cmd = f'/queue simple set [find name="{name}"]'
