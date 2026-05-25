@@ -1,0 +1,57 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jeff-nasseri/mikrotik-mcp",
+  "description": "MCP server for MikroTik routers: firewall, NAT, routing, DHCP, DNS, WireGuard and more via SSH.",
+  "repository": {
+    "url": "https://github.com/jeff-nasseri/mikrotik-mcp",
+    "source": "github"
+  },
+  "version": "0.7.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "mcp-server-mikrotik",
+      "version": "0.7.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MIKROTIK_HOST",
+          "description": "IP address or hostname of the MikroTik router",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MIKROTIK_USERNAME",
+          "description": "SSH username for the MikroTik router (default: admin)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MIKROTIK_PASSWORD",
+          "description": "SSH password for the MikroTik router",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "MIKROTIK_PORT",
+          "description": "SSH port of the MikroTik router (default: 22)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MIKROTIK_KEY_FILENAME",
+          "description": "Path to SSH private key file for key-based authentication",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
