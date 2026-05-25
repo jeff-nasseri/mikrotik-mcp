@@ -3,6 +3,109 @@ import io
 import pytest
 
 
+# ---------------------------------------------------------------------------
+# _decode_output: encoding fallback (issue #58)
+# ---------------------------------------------------------------------------
+
+class TestDecodeOutput:
+    """Unit tests for MikroTikSSHClient._decode_output."""
+
+    def setup_method(self):
+        from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
+        self.decode = MikroTikSSHClient._decode_output
+
+    def test_empty_bytes_returns_empty_string(self):
+        assert self.decode(b"") == ""
+
+    def test_pure_ascii_decoded_correctly(self):
+        assert self.decode(b"hello world") == "hello world"
+
+    def test_valid_utf8_decoded_correctly(self):
+        # UTF-8 encoded euro sign and em-dash
+        data = "€—".encode("utf-8")
+        assert self.decode(data) == "€—"
+
+    def test_cp1252_swedish_chars_decoded_correctly(self):
+        # Swedish å ä ö — encoded as CP1252 / Latin-1 overlapping bytes
+        # CP1252: å=0xE5, ä=0xE4, ö=0xF6
+        data = "från Gör om ö".encode("cp1252")
+        result = self.decode(data)
+        assert "å" in result or "\xe5" in result  # å
+        assert "ö" in result or "\xf6" in result  # ö
+
+    def test_latin1_only_bytes_decoded_without_error(self):
+        # Bytes that are valid latin-1 but not valid UTF-8 or CP1252
+        # 0x9D is undefined in CP1252 but valid latin-1
+        data = bytes([0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x9D])
+        result = self.decode(data)
+        assert isinstance(result, str)
+        assert result.startswith("Hello")
+
+    def test_cp1252_nat_rule_comment_does_not_raise(self):
+        # Simulated RouterOS NAT print output with a Swedish comment
+        # b"\xf6" = ö in cp1252
+        raw = b"chain=srcnat action=masquerade comment=\"\xf6ppet n\xe4t\""
+        result = self.decode(raw)
+        assert isinstance(result, str)
+        assert "ppet" in result  # partial match regardless of exact char
+
+    def test_swedish_bytes_reported_in_issue_do_not_raise(self):
+        # Exact bytes mentioned in the issue: 0xf6 (ö) and 0xe5 (å)
+        raw = bytes([0xF6, 0x20, 0xE5])
+        result = self.decode(raw)
+        assert isinstance(result, str)
+
+
+# ---------------------------------------------------------------------------
+# execute_command with non-ASCII stdout/stderr
+# ---------------------------------------------------------------------------
+
+def test_execute_command_handles_cp1252_stdout(monkeypatch):
+    from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
+    import mcp_mikrotik.mikrotik_ssh_client as mod
+
+    # Simulate RouterOS returning CP1252-encoded bytes on stdout
+    cp1252_bytes = "comment=\"från\"".encode("cp1252")
+
+    class DummySSH:
+        def set_missing_host_key_policy(self, _): pass
+        def connect(self, **kwargs): pass
+        def exec_command(self, command):
+            return (None, io.BytesIO(cp1252_bytes), io.BytesIO(b""))
+        def close(self): pass
+
+    monkeypatch.setattr(mod.paramiko, "SSHClient", lambda: DummySSH())
+
+    client = MikroTikSSHClient(host="h", username="u", password="p", key_filename=None)
+    assert client.connect() is True
+    result = client.execute_command("/ip firewall nat print")
+    assert isinstance(result, str)
+    assert "comment=" in result
+
+
+def test_execute_command_handles_cp1252_stderr(monkeypatch):
+    from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
+    import mcp_mikrotik.mikrotik_ssh_client as mod
+
+    # Non-ASCII bytes on stderr, empty stdout → should return decoded stderr
+    cp1252_err = "failure: ej till\xe5ten".encode("cp1252")
+
+    class DummySSH:
+        def set_missing_host_key_policy(self, _): pass
+        def connect(self, **kwargs): pass
+        def exec_command(self, command):
+            return (None, io.BytesIO(b""), io.BytesIO(cp1252_err))
+        def close(self): pass
+
+    monkeypatch.setattr(mod.paramiko, "SSHClient", lambda: DummySSH())
+
+    client = MikroTikSSHClient(host="h", username="u", password="p", key_filename=None)
+    assert client.connect() is True
+    result = client.execute_command("/ip firewall nat print")
+    assert isinstance(result, str)
+    assert "failure" in result
+
+
 def test_ssh_client_requires_connect_for_execute():
     from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
 
