@@ -178,11 +178,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Tag uses semVer (3-part: v0.5.1) so GitVersion can parse it as a
-          # version source on the next run.  The PyPI package uses assemblySemVer
-          # (4-part: 0.5.1.0) which is a different value — both are exposed as
-          # separate outputs from the version job.
-          TAG="v${{ needs.version.outputs.semVer }}"
+          # Use majorMinorPatch (e.g. v0.7.0) — NOT semVer (e.g. v0.7.0-12).
+          # A stable tag is required so GitVersion treats it as a version source
+          # on the next run and correctly increments on the next feat:/fix: commit.
+          # Using a pre-release tag caused GitVersion to lock onto the same
+          # major.minor.patch indefinitely, regardless of commit type.
+          TAG="v${{ needs.version.outputs.majorMinorPatch }}"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists — skipping."
           else
@@ -193,15 +194,15 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.version.outputs.semVer }}
-          name: Release v${{ needs.version.outputs.semVer }}
+          tag_name: v${{ needs.version.outputs.majorMinorPatch }}
+          name: Release v${{ needs.version.outputs.majorMinorPatch }}
           body: |
-            ## Changes in v${{ needs.version.outputs.semVer }}
+            ## Changes in v${{ needs.version.outputs.majorMinorPatch }}
 
             This release was automatically created by GitHub Actions.
 
             **PyPI package version:** ${{ needs.version.outputs.version }}
-            **SemVer (git tag):** v${{ needs.version.outputs.semVer }}
+            **Git tag:** v${{ needs.version.outputs.majorMinorPatch }}
             **Commit:** ${{ github.sha }}
           draft: false
           prerelease: false

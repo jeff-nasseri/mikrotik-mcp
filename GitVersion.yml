@@ -15,7 +15,7 @@
 #   +semver: breaking  (footer)        → Major bump  (EMERGENCY — major frozen at 0)
 
 mode: ContinuousDelivery
-next-version: 0.5.0
+next-version: 0.7.0
 
 # Parse every commit on HEAD→version-source; the highest matching rule wins.
 commit-message-incrementing: Enabled
