@@ -4,6 +4,7 @@
 
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jeff-nasseri-mikrotik-mcp-badge.png)](https://mseep.ai/app/jeff-nasseri-mikrotik-mcp)
 
+[![Website](https://img.shields.io/badge/website-mikrotik--mcp.com-007ACC?style=flat-square&logo=googlechrome&logoColor=white)](https://www.mikrotik-mcp.com/)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/jeff-nasseri/mikrotik-mcp/publish.yml?branch=master&label=build&style=flat-square&color=%23007ACC)](https://github.com/jeff-nasseri/mikrotik-mcp/actions/workflows/publish.yml)
 [![Tests](https://img.shields.io/github/actions/workflow/status/jeff-nasseri/mikrotik-mcp/publish.yml?branch=master&label=tests&style=flat-square&color=%2300C853)](https://github.com/jeff-nasseri/mikrotik-mcp/actions/workflows/publish.yml)
 [![MIT License](https://img.shields.io/github/license/jeff-nasseri/mikrotik-mcp?style=flat-square&color=%23FF6B35)](https://github.com/jeff-nasseri/mikrotik-mcp/blob/master/LICENSE)
@@ -27,6 +28,8 @@ https://github.com/user-attachments/assets/e0301ff2-8144-4503-83d0-48589d95027d
 ## Documentation
 
 📚 **[Full Documentation](docs/README.md)** - Complete guides, API reference, and examples
+
+> 🌐 **Prefer to read online?** The same documentation is also published at **[www.mikrotik-mcp.com](https://www.mikrotik-mcp.com/)** ([docs](https://www.mikrotik-mcp.com/docs/)) — an optional, web-friendly way to explore the project while reviewing the repo.
 
 ### Quick Links
 
