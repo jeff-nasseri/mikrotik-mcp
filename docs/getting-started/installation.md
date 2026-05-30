@@ -23,8 +23,8 @@ The client fetches the server metadata from the registry, installs `mcp-server-m
 
 ```bash
 # Clone the repository
-git clone https://github.com/jeff-nasseri/mikrotik-mcp/tree/master
-cd mcp-mikrotik
+git clone https://github.com/jeff-nasseri/mikrotik-mcp.git
+cd mikrotik-mcp
 
 # Create virtual environment
 python -m venv .venv
