@@ -8,24 +8,23 @@ from mcp_mikrotik.config import MikrotikConfig
 
 
 def _warn_if_plaintext_password_in_container(cfg: MikrotikConfig, logger: logging.Logger) -> None:
-    """Emit a security warning when a plaintext password is detected inside a container.
+    """Warn when running inside a container with a plaintext password in the env.
 
-    Credential management is an infrastructure concern, not an MCP concern — the
-    MCP server cannot solve it on its own. This warning nudges operators toward
-    safer alternatives (SSH keys, Docker secrets, a vault) without blocking startup.
+    Environment variables are visible via ``docker inspect``, so a password
+    passed this way is exposed to anyone with host access. This is purely a
+    nudge — it does not block startup. Credential management is ultimately an
+    infrastructure concern (Docker secrets, a vault, restricted host access).
     """
     in_container = os.path.exists("/.dockerenv") or os.environ.get("container") == "docker"
-    if in_container and cfg.password and not cfg.key_filename:
+    if in_container and cfg.password:
         logger.warning(
-            "Security notice: a plaintext password is set as an environment "
-            "variable inside a container, so it is visible to anyone who can run "
-            "'docker inspect' on the host. Passing it via --env-file or "
-            "'export VAR=$(cat file)' does NOT help — the resolved value still "
-            "ends up in the container's environment. To keep it out of "
-            "'docker inspect', prefer SSH key-based authentication "
-            "(MIKROTIK_KEY_FILENAME) so no password is stored, or inject the "
-            "secret via Docker secrets / a secrets manager at runtime. "
-            "See SECURITY.md."
+            "Security notice: MikroTik MCP is running inside a container with a "
+            "plaintext password set as an environment variable. Environment "
+            "variables are visible via 'docker inspect', so anyone with access "
+            "to the host can read the credential. In shared or production "
+            "environments, manage the secret through your infrastructure "
+            "(e.g. Docker secrets or a secrets manager) and restrict host "
+            "access. See SECURITY.md."
         )
 
 
