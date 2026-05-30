@@ -42,11 +42,18 @@ MikroTik MCP uses SSH to connect to RouterOS devices. Be aware of the following:
   - Consider using SSH key-based authentication instead of passwords
   - Use SSH keys with passphrases for additional security
 
-### 2. Command Injection Risks
+### 2. Command Injection & Input Validation
 
 - The server executes SSH commands on MikroTik devices based on tool inputs
-- Always validate and sanitize inputs before passing them to MikroTik commands
-- Avoid constructing commands using unsanitized user input
+- **Built-in protection (zero dependencies, always active):** two layers block
+  injection without any configuration:
+  1. **Structural check** — rejects `;`, backtick, `{}`, and newlines from
+     the final command string, blocking the canonical breakout payloads
+  2. **Per-field allowlist** — each user-supplied string is validated against
+     a tight character allowlist matched to its RouterOS field type (interface
+     names, IPs, bandwidth strings, comments, …) before the command is built
+- See [docs/security/input-validation.md](docs/security/input-validation.md)
+  for the full field-type reference
 - Be cautious when using this server in environments where untrusted users have access
 
 ### 3. Access Control

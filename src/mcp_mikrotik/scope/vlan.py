@@ -3,6 +3,7 @@ from pydantic import Field
 from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 @mcp.tool(name="create_vlan_interface", annotations=annotate(WRITE, "Create VLAN"))
 async def mikrotik_create_vlan_interface(
@@ -18,6 +19,9 @@ async def mikrotik_create_vlan_interface(
     arp_timeout: Optional[str] = None
 ) -> str:
     """Creates a VLAN interface on the MikroTik device with the given VLAN ID and parent interface."""
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(interface, V.INTERFACE_NAME, "interface")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating VLAN interface: name={name}, vlan_id={vlan_id}, interface={interface}")
 
     # Build the command
@@ -78,6 +82,8 @@ async def mikrotik_list_vlan_interfaces(
     disabled_only: bool = False
 ) -> str:
     """Lists VLAN interfaces on the MikroTik device."""
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
+    validate_field(interface_filter, V.INTERFACE_NAME, "interface_filter")
     await ctx.info(f"Listing VLAN interfaces with filters: name={name_filter}, vlan_id={vlan_id_filter}, interface={interface_filter}")
 
     # Build the command
@@ -108,6 +114,7 @@ async def mikrotik_list_vlan_interfaces(
 @mcp.tool(name="get_vlan_interface", annotations=annotate(READ, "Get VLAN"))
 async def mikrotik_get_vlan_interface(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific VLAN interface."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting VLAN interface details: name={name}")
 
     cmd = f'/interface vlan print detail where name="{name}"'
@@ -133,6 +140,10 @@ async def mikrotik_update_vlan_interface(
     arp_timeout: Optional[str] = None
 ) -> str:
     """Updates an existing VLAN interface's settings on the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(new_name, V.INTERFACE_NAME, "new_name")
+    validate_field(interface, V.INTERFACE_NAME, "interface")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating VLAN interface: name={name}")
 
     # Build the command
@@ -180,6 +191,7 @@ async def mikrotik_update_vlan_interface(
 @mcp.tool(name="remove_vlan_interface", annotations=annotate(DESTRUCTIVE, "Remove VLAN"))
 async def mikrotik_remove_vlan_interface(ctx: Context, name: str) -> str:
     """Removes a VLAN interface from the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Removing VLAN interface: name={name}")
 
     # First check if the interface exists

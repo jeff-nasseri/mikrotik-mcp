@@ -3,6 +3,7 @@ from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
 import re
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 @mcp.tool(name="add_user", annotations=annotate(WRITE, "Add User"))
 async def mikrotik_add_user(
@@ -15,6 +16,9 @@ async def mikrotik_add_user(
     disabled: bool = False
 ) -> str:
     """Adds a user to MikroTik device."""
+    validate_field(name, V.USERNAME, "name")
+    validate_field(address, V.IP_CIDR, "address")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Adding user: name={name}, group={group}")
 
     cmd = f'/user add name="{name}" password="{password}" group={group}'
@@ -63,6 +67,7 @@ async def mikrotik_list_users(
     active_only: bool = False
 ) -> str:
     """Lists users on MikroTik device."""
+    validate_field(name_filter, V.USERNAME, "name_filter")
     await ctx.info(f"Listing users with filters: name={name_filter}, group={group_filter}")
 
     cmd = "/user print"
@@ -91,6 +96,7 @@ async def mikrotik_list_users(
 @mcp.tool(name="get_user", annotations=annotate(READ, "Get User"))
 async def mikrotik_get_user(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific user."""
+    validate_field(name, V.USERNAME, "name")
     await ctx.info(f"Getting user details: name={name}")
 
     cmd = f'/user print detail where name="{name}"'
@@ -116,6 +122,11 @@ async def mikrotik_update_user(
     disabled: Optional[bool] = None
 ) -> str:
     """Updates a user."""
+    validate_field(name, V.USERNAME, "name")
+    validate_field(new_name, V.USERNAME, "new_name")
+    if address:
+        validate_field(address, V.IP_CIDR, "address")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating user: name={name}")
 
     cmd = f'/user set [find name="{name}"]'
@@ -159,6 +170,7 @@ async def mikrotik_update_user(
 @mcp.tool(name="remove_user", annotations=annotate(DESTRUCTIVE, "Remove User"))
 async def mikrotik_remove_user(ctx: Context, name: str) -> str:
     """Removes a user."""
+    validate_field(name, V.USERNAME, "name")
     await ctx.info(f"Removing user: name={name}")
 
     # Don't allow removal of admin user
@@ -198,6 +210,8 @@ async def mikrotik_add_user_group(
     comment: Optional[str] = None
 ) -> str:
     """Adds a user group."""
+    validate_field(name, V.USERNAME, "name")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Adding user group: name={name}")
 
     # Valid policies
@@ -250,6 +264,7 @@ async def mikrotik_list_user_groups(
     policy_filter: Optional[str] = None
 ) -> str:
     """Lists user groups on MikroTik device."""
+    validate_field(name_filter, V.USERNAME, "name_filter")
     await ctx.info(f"Listing user groups with filters: name={name_filter}")
 
     cmd = "/user group print"
@@ -273,6 +288,7 @@ async def mikrotik_list_user_groups(
 @mcp.tool(name="get_user_group", annotations=annotate(READ, "Get User Group"))
 async def mikrotik_get_user_group(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific user group."""
+    validate_field(name, V.USERNAME, "name")
     await ctx.info(f"Getting user group details: name={name}")
 
     cmd = f'/user group print detail where name="{name}"'
@@ -293,6 +309,9 @@ async def mikrotik_update_user_group(
     comment: Optional[str] = None
 ) -> str:
     """Updates a user group."""
+    validate_field(name, V.USERNAME, "name")
+    validate_field(new_name, V.USERNAME, "new_name")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating user group: name={name}")
 
     # Don't allow modification of built-in groups
@@ -333,6 +352,7 @@ async def mikrotik_update_user_group(
 @mcp.tool(name="remove_user_group", annotations=annotate(DESTRUCTIVE, "Remove User Group"))
 async def mikrotik_remove_user_group(ctx: Context, name: str) -> str:
     """Removes a user group."""
+    validate_field(name, V.USERNAME, "name")
     await ctx.info(f"Removing user group: name={name}")
 
     # Don't allow removal of built-in groups
@@ -409,6 +429,7 @@ async def mikrotik_set_user_ssh_keys(
     key_file: str
 ) -> str:
     """Sets SSH keys for a specific user."""
+    validate_field(username, V.USERNAME, "username")
     await ctx.info(f"Setting SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys import user="{username}" public-key-file="{key_file}"'
@@ -422,6 +443,7 @@ async def mikrotik_set_user_ssh_keys(
 @mcp.tool(name="list_user_ssh_keys", annotations=annotate(READ, "List User SSH Keys"))
 async def mikrotik_list_user_ssh_keys(ctx: Context, username: str) -> str:
     """Lists SSH keys for a specific user."""
+    validate_field(username, V.USERNAME, "username")
     await ctx.info(f"Listing SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys print where user="{username}"'

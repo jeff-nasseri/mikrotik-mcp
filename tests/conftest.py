@@ -95,15 +95,53 @@ def make_dummy_value(param: inspect.Parameter) -> Any:
         return "test"
 
     if ann is str:
-        if "address" in name:
-            return "192.0.2.1"
+        # IP / network fields
+        if "address" in name and "list" not in name and "endpoint" not in name:
+            return "192.0.2.0/24"
+        if name in {"network", "destination"}:
+            return "192.0.2.0/24"
+        if "gateway" in name or "pref_src" in name:
+            return "192.0.2.254"
         if "dst" in name:
             return "203.0.113.0/24"
-        if "gateway" in name:
-            return "192.0.2.254"
-        if "interface" in name:
+        # Interface / bridge / parent
+        if "interface" in name or name in {"bridge", "parent"}:
             return "ether1"
-        if "name" == name:
+        # IP ranges (pool)
+        if "ranges" in name:
+            return "192.168.1.1-192.168.1.100"
+        # Endpoint (WireGuard peer) — can be host:port or plain host
+        if "endpoint" in name:
+            return "vpn.example.com"
+        # WireGuard keys — must be valid base64 (44 chars, ending =)
+        if "public_key" in name or "private_key" in name or "preshared_key" in name:
+            return "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        # Bandwidth strings
+        if any(k in name for k in ("max_limit", "limit_at", "burst_limit", "burst_threshold")):
+            return "10M/10M"
+        # Duration / time strings
+        if any(k in name for k in ("burst_time", "lease_time", "keepalive")):
+            return "30s"
+        # Comment / description / log prefix
+        if any(k in name for k in ("comment", "description", "log_prefix")):
+            return "test comment"
+        # Port specs
+        if "src_port" in name or "dst_port" in name:
+            return "80"
+        # Address-list names
+        if "address_list" in name:
+            return "my-list"
+        # Routing mark / table
+        if "routing_mark" in name or "table" in name:
+            return "main"
+        # Usernames
+        if "username" in name or name == "user":
+            return "admin"
+        # RouterOS IDs
+        if name.endswith("_id") or "_id" in name:
+            return "*1"
+        # Generic name
+        if name == "name":
             return "test-name"
         if "filename" in name:
             return "test.rsc"

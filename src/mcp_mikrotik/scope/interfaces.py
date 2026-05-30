@@ -2,6 +2,7 @@ from typing import Literal, Optional
 from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
 from ..app import mcp, READ, WRITE_IDEMPOTENT, annotate
+from ..security import SecurityError, V, validate_field
 
 
 @mcp.tool(name="list_interfaces", annotations=annotate(READ, "List Interfaces"))
@@ -23,6 +24,7 @@ async def mikrotik_list_interfaces(
             "wg", "pppoe-out", "wifi", "lte", "loopback"
         name_filter: partial name match e.g. "ether" matches ether1, ether2 …
     """
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
     await ctx.info("Listing all interfaces")
 
     cmd = "/interface print"
@@ -55,6 +57,7 @@ async def mikrotik_get_interface(ctx: Context, name: str) -> str:
     Notes:
         name: exact interface name e.g. "ether1", "bridge", "pppoe-out1", "wg0"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting interface details: name={name}")
 
     cmd = f'/interface print detail where name="{name}"'
@@ -73,6 +76,7 @@ async def mikrotik_enable_interface(ctx: Context, name: str) -> str:
     Notes:
         name: exact interface name e.g. "ether1", "bridge", "pppoe-out1"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Enabling interface: name={name}")
 
     cmd = f'/interface enable [find name="{name}"]'
@@ -98,6 +102,7 @@ async def mikrotik_disable_interface(ctx: Context, name: str) -> str:
     Notes:
         name: exact interface name e.g. "ether1", "bridge", "pppoe-out1"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Disabling interface: name={name}")
 
     cmd = f'/interface disable [find name="{name}"]'

@@ -2,6 +2,7 @@ from typing import Literal, Optional
 from mcp.server.fastmcp import Context
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 @mcp.tool(name="create_nat_rule", annotations=annotate(WRITE, "Create NAT Rule"))
 async def mikrotik_create_nat_rule(
@@ -30,6 +31,14 @@ async def mikrotik_create_nat_rule(
         to_ports: single port or range e.g. "8080" or "8080-8090"
         place_before: rule number or ID (*N) to insert before e.g. "0" or "*3"
     """
+    validate_field(src_address, V.IP_CIDR, "src_address")
+    validate_field(dst_address, V.IP_CIDR, "dst_address")
+    validate_field(src_port, V.PORT_SPEC, "src_port")
+    validate_field(dst_port, V.PORT_SPEC, "dst_port")
+    validate_field(in_interface, V.INTERFACE_NAME, "in_interface")
+    validate_field(out_interface, V.INTERFACE_NAME, "out_interface")
+    validate_field(comment, V.COMMENT, "comment")
+    validate_field(log_prefix, V.LOG_PREFIX, "log_prefix")
     await ctx.info(f"Creating NAT rule: chain={chain}, action={action}")
 
     # Validate action based on chain
@@ -130,6 +139,9 @@ async def mikrotik_list_nat_rules(
     invalid_only: bool = False
 ) -> str:
     """Lists NAT rules on the MikroTik device."""
+    validate_field(src_address_filter, V.IP_CIDR, "src_address_filter")
+    validate_field(dst_address_filter, V.IP_CIDR, "dst_address_filter")
+    validate_field(interface_filter, V.INTERFACE_NAME, "interface_filter")
     await ctx.info(f"Listing NAT rules with filters: chain={chain_filter}, action={action_filter}")
 
     # Build the command
@@ -172,6 +184,7 @@ async def mikrotik_get_nat_rule(ctx: Context, rule_id: str) -> str:
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
     """
+    validate_field(rule_id, V.ROUTEROS_ID, "rule_id")
     await ctx.info(f"Getting NAT rule details: rule_id={rule_id}")
 
     cmd = f"/ip firewall nat print detail where .id={rule_id}"
@@ -210,6 +223,22 @@ async def mikrotik_update_nat_rule(
         to_ports: single port or range e.g. "8080" or "8080-8090"
         Pass "" to clear an optional field.
     """
+    validate_field(rule_id, V.ROUTEROS_ID, "rule_id")
+    if src_address:
+        validate_field(src_address, V.IP_CIDR, "src_address")
+    if dst_address:
+        validate_field(dst_address, V.IP_CIDR, "dst_address")
+    if src_port:
+        validate_field(src_port, V.PORT_SPEC, "src_port")
+    if dst_port:
+        validate_field(dst_port, V.PORT_SPEC, "dst_port")
+    if in_interface:
+        validate_field(in_interface, V.INTERFACE_NAME, "in_interface")
+    if out_interface:
+        validate_field(out_interface, V.INTERFACE_NAME, "out_interface")
+    validate_field(comment, V.COMMENT, "comment")
+    if log_prefix:
+        validate_field(log_prefix, V.LOG_PREFIX, "log_prefix")
     await ctx.info(f"Updating NAT rule: rule_id={rule_id}")
 
     # Build the command
@@ -299,6 +328,7 @@ async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str) -> str:
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
     """
+    validate_field(rule_id, V.ROUTEROS_ID, "rule_id")
     await ctx.info(f"Removing NAT rule: rule_id={rule_id}")
 
     # First check if the rule exists
@@ -325,6 +355,7 @@ async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int) -
         rule_id: use the ID from list output e.g. "*1" or "0"
         destination: 0-based target position index
     """
+    validate_field(rule_id, V.ROUTEROS_ID, "rule_id")
     await ctx.info(f"Moving NAT rule: rule_id={rule_id} to position {destination}")
 
     # Check if the rule exists

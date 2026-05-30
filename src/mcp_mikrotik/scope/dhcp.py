@@ -4,6 +4,7 @@ from mcp.server.fastmcp import Context
 
 from ..app import mcp, READ, WRITE, DESTRUCTIVE, annotate
 from ..connector import execute_mikrotik_command
+from ..security import SecurityError, V, validate_field
 
 
 @mcp.tool(name="create_dhcp_server", annotations=annotate(WRITE, "Create DHCP Server"))
@@ -23,6 +24,10 @@ async def mikrotik_create_dhcp_server(
     Notes:
         lease_time: duration e.g. "1d", "12h", "30m", "1h30m"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(interface, V.INTERFACE_NAME, "interface")
+    validate_field(lease_time, V.DURATION, "lease_time")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating DHCP server: name={name}, interface={interface}")
 
     # Build the command
@@ -64,6 +69,8 @@ async def mikrotik_list_dhcp_servers(
     invalid_only: bool = False
 ) -> str:
     """Lists DHCP servers on the MikroTik device."""
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
+    validate_field(interface_filter, V.INTERFACE_NAME, "interface_filter")
     await ctx.info(f"Listing DHCP servers with filters: name={name_filter}, interface={interface_filter}")
 
     # Build the command
@@ -93,6 +100,7 @@ async def mikrotik_list_dhcp_servers(
 @mcp.tool(name="get_dhcp_server", annotations=annotate(READ, "Get DHCP Server"))
 async def mikrotik_get_dhcp_server(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific DHCP server."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting DHCP server details: name={name}")
 
     cmd = f'/ip dhcp-server print detail where name="{name}"'
@@ -117,6 +125,9 @@ async def mikrotik_create_dhcp_network(
     comment: Optional[str] = None
 ) -> str:
     """Creates a DHCP network configuration (gateway, DNS, domain, etc.) on the MikroTik device."""
+    validate_field(network, V.IP_CIDR, "network")
+    validate_field(gateway, V.IP_CIDR, "gateway")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating DHCP network: network={network}, gateway={gateway}")
 
     # Build the command
@@ -169,6 +180,9 @@ async def mikrotik_create_dhcp_pool(
         ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
             Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(ranges, V.IP_RANGES, "ranges")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating DHCP pool: name={name}, ranges={ranges}")
 
     # Build the command
@@ -195,6 +209,7 @@ async def mikrotik_create_dhcp_pool(
 @mcp.tool(name="remove_dhcp_server", annotations=annotate(DESTRUCTIVE, "Remove DHCP Server"))
 async def mikrotik_remove_dhcp_server(ctx: Context, name: str) -> str:
     """Removes a DHCP server from the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Removing DHCP server: name={name}")
 
     # First check if the server exists

@@ -4,6 +4,7 @@ from mcp.server.fastmcp import Context
 
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 @mcp.tool(name="set_dns_servers", annotations=annotate(WRITE, "Set DNS Servers"))
 async def mikrotik_set_dns_servers(
@@ -19,6 +20,9 @@ async def mikrotik_set_dns_servers(
     verify_doh_cert: bool = True
 ) -> str:
     """Sets DNS server configuration."""
+    for s in servers:
+        validate_field(s, V.HOSTNAME, "servers")
+    validate_field(doh_server, V.HOSTNAME, "doh_server")
     await ctx.info(f"Setting DNS servers: {', '.join(servers)}")
 
     cmd = "/ip dns set servers=" + ",".join(servers)
@@ -85,6 +89,11 @@ async def mikrotik_add_dns_static(
     regexp: Optional[str] = None
 ) -> str:
     """Adds a static DNS entry."""
+    validate_field(name, V.HOSTNAME, "name")
+    validate_field(address, V.IP_CIDR, "address")
+    validate_field(cname, V.HOSTNAME, "cname")
+    validate_field(srv_target, V.HOSTNAME, "srv_target")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Adding static DNS entry: name={name}")
 
     cmd = f'/ip dns static add name="{name}"'
@@ -150,6 +159,8 @@ async def mikrotik_list_dns_static(
     regexp_only: bool = False
 ) -> str:
     """Lists static DNS entries."""
+    validate_field(name_filter, V.HOSTNAME, "name_filter")
+    validate_field(address_filter, V.IP_CIDR, "address_filter")
     await ctx.info(f"Listing static DNS entries with filters: name={name_filter}")
 
     cmd = "/ip dns static print"
@@ -179,6 +190,7 @@ async def mikrotik_list_dns_static(
 @mcp.tool(name="get_dns_static", annotations=annotate(READ, "Get DNS Static Entry"))
 async def mikrotik_get_dns_static(ctx: Context, entry_id: str) -> str:
     """Gets details of a specific static DNS entry."""
+    validate_field(entry_id, V.ROUTEROS_ID, "entry_id")
     await ctx.info(f"Getting static DNS entry details: entry_id={entry_id}")
 
     cmd = f"/ip dns static print detail where .id={entry_id}"
@@ -209,6 +221,15 @@ async def mikrotik_update_dns_static(
     regexp: Optional[str] = None
 ) -> str:
     """Updates a static DNS entry."""
+    validate_field(entry_id, V.ROUTEROS_ID, "entry_id")
+    validate_field(name, V.HOSTNAME, "name")
+    if address:
+        validate_field(address, V.IP_CIDR, "address")
+    if cname:
+        validate_field(cname, V.HOSTNAME, "cname")
+    if srv_target:
+        validate_field(srv_target, V.HOSTNAME, "srv_target")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating static DNS entry: entry_id={entry_id}")
 
     cmd = f"/ip dns static set {entry_id}"
@@ -282,6 +303,7 @@ async def mikrotik_update_dns_static(
 @mcp.tool(name="remove_dns_static", annotations=annotate(DESTRUCTIVE, "Remove DNS Static Entry"))
 async def mikrotik_remove_dns_static(ctx: Context, entry_id: str) -> str:
     """Removes a static DNS entry."""
+    validate_field(entry_id, V.ROUTEROS_ID, "entry_id")
     await ctx.info(f"Removing static DNS entry: entry_id={entry_id}")
 
     check_cmd = f"/ip dns static print count-only where .id={entry_id}"
@@ -377,6 +399,8 @@ async def mikrotik_test_dns_query(
     type: str = "A"
 ) -> str:
     """Tests a DNS query."""
+    validate_field(name, V.HOSTNAME, "name")
+    validate_field(server, V.HOSTNAME, "server")
     await ctx.info(f"Testing DNS query: name={name}, type={type}")
 
     cmd = f"/resolve {name}"

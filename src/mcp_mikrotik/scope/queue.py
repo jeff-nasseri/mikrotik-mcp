@@ -2,6 +2,7 @@ from typing import Literal, Optional
 from mcp.server.fastmcp import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 from ..connector import execute_mikrotik_command
+from ..security import SecurityError, V, validate_field
 
 
 # ───────────────────────────────────────────────
@@ -49,6 +50,7 @@ async def mikrotik_create_queue_type(
         cake_rtt: round-trip time e.g. "50ms", "100ms"
         fq_codel_target / fq_codel_interval: time e.g. "5ms", "100ms"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Creating queue type: name={name}, kind={kind}")
 
     cmd = f"/queue type add name={name} kind={kind}"
@@ -143,6 +145,7 @@ async def mikrotik_list_queue_types(
     kind_filter: Optional[str] = None,
 ) -> str:
     """Lists queue types on the MikroTik device."""
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
     await ctx.info("Listing queue types")
 
     cmd = "/queue type print"
@@ -164,6 +167,7 @@ async def mikrotik_list_queue_types(
 @mcp.tool(name="get_queue_type", annotations=annotate(READ, "Get Queue Type"))
 async def mikrotik_get_queue_type(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific queue type."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting queue type details: name={name}")
 
     cmd = f'/queue type print detail where name="{name}"'
@@ -192,6 +196,8 @@ async def mikrotik_update_queue_type(
     pcq_classifier: Optional[str] = None,
 ) -> str:
     """Updates an existing queue type's discipline-specific settings."""
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(new_name, V.INTERFACE_NAME, "new_name")
     await ctx.info(f"Updating queue type: name={name}")
 
     cmd = f'/queue type set [find name="{name}"]'
@@ -242,6 +248,7 @@ async def mikrotik_update_queue_type(
 @mcp.tool(name="remove_queue_type", annotations=annotate(DESTRUCTIVE, "Remove Queue Type"))
 async def mikrotik_remove_queue_type(ctx: Context, name: str) -> str:
     """Removes a queue type from the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Removing queue type: name={name}")
 
     cmd = f'/queue type remove [find name="{name}"]'
@@ -281,6 +288,14 @@ async def mikrotik_create_queue_tree(
         parent: interface name e.g. "ether1" or parent queue name
         priority: 1 (highest) – 8 (lowest)
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(parent, V.INTERFACE_NAME, "parent")
+    validate_field(max_limit, V.BANDWIDTH, "max_limit")
+    validate_field(limit_at, V.BANDWIDTH, "limit_at")
+    validate_field(burst_limit, V.BANDWIDTH, "burst_limit")
+    validate_field(burst_threshold, V.BANDWIDTH, "burst_threshold")
+    validate_field(burst_time, V.DURATION, "burst_time")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating queue tree: name={name}, parent={parent}")
 
     cmd = f"/queue tree add name={name} parent={parent}"
@@ -337,6 +352,8 @@ async def mikrotik_list_queue_trees(
     invalid_only: bool = False,
 ) -> str:
     """Lists queue trees on the MikroTik device."""
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
+    validate_field(parent_filter, V.INTERFACE_NAME, "parent_filter")
     await ctx.info("Listing queue trees")
 
     cmd = "/queue tree print"
@@ -362,6 +379,7 @@ async def mikrotik_list_queue_trees(
 @mcp.tool(name="get_queue_tree", annotations=annotate(READ, "Get Queue Tree"))
 async def mikrotik_get_queue_tree(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific queue tree."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting queue tree details: name={name}")
 
     cmd = f'/queue tree print detail where name="{name}"'
@@ -396,6 +414,15 @@ async def mikrotik_update_queue_tree(
         burst_time: duration e.g. "8s"
         priority: 1 (highest) – 8 (lowest)
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(new_name, V.INTERFACE_NAME, "new_name")
+    validate_field(parent, V.INTERFACE_NAME, "parent")
+    validate_field(max_limit, V.BANDWIDTH, "max_limit")
+    validate_field(limit_at, V.BANDWIDTH, "limit_at")
+    validate_field(burst_limit, V.BANDWIDTH, "burst_limit")
+    validate_field(burst_threshold, V.BANDWIDTH, "burst_threshold")
+    validate_field(burst_time, V.DURATION, "burst_time")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating queue tree: name={name}")
 
     cmd = f'/queue tree set [find name="{name}"]'
@@ -446,6 +473,7 @@ async def mikrotik_update_queue_tree(
 @mcp.tool(name="remove_queue_tree", annotations=annotate(DESTRUCTIVE, "Remove Queue Tree"))
 async def mikrotik_remove_queue_tree(ctx: Context, name: str) -> str:
     """Removes a queue tree from the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Removing queue tree: name={name}")
 
     cmd = f'/queue tree remove [find name="{name}"]'
@@ -459,6 +487,7 @@ async def mikrotik_remove_queue_tree(ctx: Context, name: str) -> str:
 @mcp.tool(name="enable_queue_tree", annotations=annotate(WRITE_IDEMPOTENT, "Enable Queue Tree"))
 async def mikrotik_enable_queue_tree(ctx: Context, name: str) -> str:
     """Enables a queue tree."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Enabling queue tree: name={name}")
 
     cmd = f'/queue tree set [find name="{name}"] disabled=no'
@@ -475,6 +504,7 @@ async def mikrotik_enable_queue_tree(ctx: Context, name: str) -> str:
 @mcp.tool(name="disable_queue_tree", annotations=annotate(WRITE_IDEMPOTENT, "Disable Queue Tree"))
 async def mikrotik_disable_queue_tree(ctx: Context, name: str) -> str:
     """Disables a queue tree."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Disabling queue tree: name={name}")
 
     cmd = f'/queue tree set [find name="{name}"] disabled=yes'
@@ -520,6 +550,13 @@ async def mikrotik_create_simple_queue(
         burst_time: duration e.g. "8s"
         priority: 1 (highest) – 8 (lowest)
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(max_limit, V.BANDWIDTH, "max_limit")
+    validate_field(limit_at, V.BANDWIDTH, "limit_at")
+    validate_field(burst_limit, V.BANDWIDTH, "burst_limit")
+    validate_field(burst_threshold, V.BANDWIDTH, "burst_threshold")
+    validate_field(burst_time, V.DURATION, "burst_time")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating simple queue: name={name}, target={target}")
 
     cmd = f"/queue simple add name={name} target={target}"
@@ -580,6 +617,7 @@ async def mikrotik_list_simple_queues(
     invalid_only: bool = False,
 ) -> str:
     """Lists simple queues on the MikroTik device."""
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
     await ctx.info("Listing simple queues")
 
     cmd = "/queue simple print"
@@ -605,6 +643,7 @@ async def mikrotik_list_simple_queues(
 @mcp.tool(name="get_simple_queue", annotations=annotate(READ, "Get Simple Queue"))
 async def mikrotik_get_simple_queue(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific simple queue."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting simple queue details: name={name}")
 
     cmd = f'/queue simple print detail where name="{name}"'
@@ -643,6 +682,14 @@ async def mikrotik_update_simple_queue(
         burst_time: duration e.g. "8s"
         priority: 1 (highest) – 8 (lowest)
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(new_name, V.INTERFACE_NAME, "new_name")
+    validate_field(max_limit, V.BANDWIDTH, "max_limit")
+    validate_field(limit_at, V.BANDWIDTH, "limit_at")
+    validate_field(burst_limit, V.BANDWIDTH, "burst_limit")
+    validate_field(burst_threshold, V.BANDWIDTH, "burst_threshold")
+    validate_field(burst_time, V.DURATION, "burst_time")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating simple queue: name={name}")
 
     cmd = f'/queue simple set [find name="{name}"]'
@@ -697,6 +744,7 @@ async def mikrotik_update_simple_queue(
 @mcp.tool(name="remove_simple_queue", annotations=annotate(DESTRUCTIVE, "Remove Simple Queue"))
 async def mikrotik_remove_simple_queue(ctx: Context, name: str) -> str:
     """Removes a simple queue from the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Removing simple queue: name={name}")
 
     cmd = f'/queue simple remove [find name="{name}"]'
@@ -710,6 +758,7 @@ async def mikrotik_remove_simple_queue(ctx: Context, name: str) -> str:
 @mcp.tool(name="enable_simple_queue", annotations=annotate(WRITE_IDEMPOTENT, "Enable Simple Queue"))
 async def mikrotik_enable_simple_queue(ctx: Context, name: str) -> str:
     """Enables a simple queue."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Enabling simple queue: name={name}")
 
     cmd = f'/queue simple set [find name="{name}"] disabled=no'
@@ -726,6 +775,7 @@ async def mikrotik_enable_simple_queue(ctx: Context, name: str) -> str:
 @mcp.tool(name="disable_simple_queue", annotations=annotate(WRITE_IDEMPOTENT, "Disable Simple Queue"))
 async def mikrotik_disable_simple_queue(ctx: Context, name: str) -> str:
     """Disables a simple queue."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Disabling simple queue: name={name}")
 
     cmd = f'/queue simple set [find name="{name}"] disabled=yes'

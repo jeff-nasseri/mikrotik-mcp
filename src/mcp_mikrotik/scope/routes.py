@@ -2,6 +2,7 @@ from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 @mcp.tool(name="add_route", annotations=annotate(WRITE, "Add Route"))
 async def mikrotik_add_route(
@@ -25,6 +26,12 @@ async def mikrotik_add_route(
         check_gateway: "ping" or "arp"
         distance: 1-255 (lower = higher priority)
     """
+    validate_field(dst_address, V.IP_CIDR, "dst_address")
+    validate_field(gateway, V.IP_CIDR, "gateway")
+    validate_field(routing_mark, V.ROUTING_MARK, "routing_mark")
+    validate_field(comment, V.COMMENT, "comment")
+    validate_field(vrf_interface, V.INTERFACE_NAME, "vrf_interface")
+    validate_field(pref_src, V.IP_CIDR, "pref_src")
     await ctx.info(f"Adding route: dst={dst_address}, gateway={gateway}")
 
     cmd = f"/ip route add dst-address={dst_address} gateway={gateway}"
@@ -84,6 +91,9 @@ async def mikrotik_list_routes(
     static_only: bool = False
 ) -> str:
     """Lists routes in MikroTik routing table."""
+    validate_field(dst_filter, V.IP_CIDR, "dst_filter")
+    validate_field(gateway_filter, V.IP_CIDR, "gateway_filter")
+    validate_field(routing_mark_filter, V.ROUTING_MARK, "routing_mark_filter")
     await ctx.info(f"Listing routes with filters: dst={dst_filter}, gateway={gateway_filter}")
 
     cmd = "/ip route print"
@@ -123,6 +133,7 @@ async def mikrotik_get_route(ctx: Context, route_id: str) -> str:
     Notes:
         route_id: "*N" or "N" from list output e.g. "*3"
     """
+    validate_field(route_id, V.ROUTEROS_ID, "route_id")
     await ctx.info(f"Getting route details: route_id={route_id}")
 
     cmd = f"/ip route print detail where .id={route_id}"
@@ -158,6 +169,16 @@ async def mikrotik_update_route(
         distance: 1-255
         Pass "" to routing_mark, vrf_interface, or pref_src to clear them.
     """
+    validate_field(route_id, V.ROUTEROS_ID, "route_id")
+    validate_field(dst_address, V.IP_CIDR, "dst_address")
+    validate_field(gateway, V.IP_CIDR, "gateway")
+    if routing_mark:
+        validate_field(routing_mark, V.ROUTING_MARK, "routing_mark")
+    validate_field(comment, V.COMMENT, "comment")
+    if vrf_interface:
+        validate_field(vrf_interface, V.INTERFACE_NAME, "vrf_interface")
+    if pref_src:
+        validate_field(pref_src, V.IP_CIDR, "pref_src")
     await ctx.info(f"Updating route: route_id={route_id}")
 
     cmd = f"/ip route set {route_id}"
@@ -217,6 +238,7 @@ async def mikrotik_remove_route(ctx: Context, route_id: str) -> str:
     Notes:
         route_id: "*N" or "N" from list output e.g. "*3"
     """
+    validate_field(route_id, V.ROUTEROS_ID, "route_id")
     await ctx.info(f"Removing route: route_id={route_id}")
 
     check_cmd = f"/ip route print count-only where .id={route_id}"
@@ -259,6 +281,7 @@ async def mikrotik_get_routing_table(
     active_only: bool = True
 ) -> str:
     """Gets a specific routing table."""
+    validate_field(table_name, V.ROUTING_MARK, "table_name")
     await ctx.info(f"Getting routing table: table={table_name}")
 
     cmd = "/ip route print"
@@ -289,6 +312,9 @@ async def mikrotik_check_route_path(
     routing_mark: Optional[str] = None
 ) -> str:
     """Checks the route path to a destination."""
+    validate_field(destination, V.IP_CIDR, "destination")
+    validate_field(source, V.IP_CIDR, "source")
+    validate_field(routing_mark, V.ROUTING_MARK, "routing_mark")
     await ctx.info(f"Checking route path to: {destination}")
 
     cmd = f"/ip route check {destination}"
@@ -362,6 +388,8 @@ async def mikrotik_add_blackhole_route(
         dst_address: CIDR e.g. "10.0.0.0/8"
         distance: 1-255
     """
+    validate_field(dst_address, V.IP_CIDR, "dst_address")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Adding blackhole route: dst={dst_address}")
 
     cmd = f"/ip route add dst-address={dst_address} type=blackhole distance={distance}"

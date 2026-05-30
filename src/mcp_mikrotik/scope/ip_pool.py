@@ -4,6 +4,7 @@ from mcp.server.fastmcp import Context
 
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 @mcp.tool(name="create_ip_pool", annotations=annotate(WRITE, "Add IP Pool"))
 async def mikrotik_create_ip_pool(
@@ -19,6 +20,9 @@ async def mikrotik_create_ip_pool(
         ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
             Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(ranges, V.IP_RANGES, "ranges")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating IP pool: name={name}, ranges={ranges}")
 
     # Build the command
@@ -66,6 +70,7 @@ async def mikrotik_list_ip_pools(
     include_used: bool = False
 ) -> str:
     """Lists IP pools on the MikroTik device."""
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
     await ctx.info(f"Listing IP pools with filters: name={name_filter}, ranges={ranges_filter}")
 
     # Build the command
@@ -116,6 +121,7 @@ async def mikrotik_list_ip_pools(
 @mcp.tool(name="get_ip_pool", annotations=annotate(READ, "Get IP Pool"))
 async def mikrotik_get_ip_pool(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific IP pool including used address count."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting IP pool details: name={name}")
 
     cmd = f'/ip pool print detail where name="{name}"'
@@ -149,6 +155,10 @@ async def mikrotik_update_ip_pool(
             Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
         Pass "" for next_pool to clear it.
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(new_name, V.INTERFACE_NAME, "new_name")
+    validate_field(ranges, V.IP_RANGES, "ranges")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating IP pool: name={name}")
 
     # Build the command
@@ -189,6 +199,7 @@ async def mikrotik_update_ip_pool(
 @mcp.tool(name="remove_ip_pool", annotations=annotate(DESTRUCTIVE, "Remove IP Pool"))
 async def mikrotik_remove_ip_pool(ctx: Context, name: str) -> str:
     """Removes an IP pool from the MikroTik device (fails if pool is in use)."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Removing IP pool: name={name}")
 
     # First check if the pool exists
@@ -230,6 +241,8 @@ async def mikrotik_list_ip_pool_used(
     info_filter: Optional[str] = None
 ) -> str:
     """Lists currently used (allocated) addresses from IP pools."""
+    validate_field(pool_name, V.INTERFACE_NAME, "pool_name")
+    validate_field(address_filter, V.IP_CIDR, "address_filter")
     await ctx.info(f"Listing used IP pool addresses: pool={pool_name}, address={address_filter}")
 
     cmd = "/ip pool used print"
@@ -263,6 +276,8 @@ async def mikrotik_expand_ip_pool(ctx: Context, name: str, additional_ranges: st
         additional_ranges: hyphen-separated range(s) e.g. "192.168.1.101-192.168.1.150"
             Multiple ranges comma-separated: "10.0.0.51-10.0.0.60,10.0.0.70-10.0.0.80"
     """
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(additional_ranges, V.IP_RANGES, "additional_ranges")
     await ctx.info(f"Expanding IP pool: name={name}, additional_ranges={additional_ranges}")
 
     # Get current ranges

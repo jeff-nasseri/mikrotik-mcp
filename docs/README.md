@@ -35,6 +35,10 @@ Complete tool documentation organized by category:
 
 - **[Usage Examples](examples/usage-examples.md)** - Complete mcp-cli usage examples
 
+## Security
+
+- **[Input Validation](security/input-validation.md)** - Command injection prevention and per-field allowlists
+
 ## Contributing
 
 - **[Contributing Guide](contributing.md)** - Learn how to contribute

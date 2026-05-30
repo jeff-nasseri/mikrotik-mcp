@@ -4,6 +4,7 @@ from mcp.server.fastmcp import Context
 
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 
 # ---------------------------------------------------------------------------
@@ -21,6 +22,9 @@ async def mikrotik_create_wireguard_interface(
     disabled: bool = False,
 ) -> str:
     """Creates a WireGuard interface on the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(private_key, V.WG_KEY, "private_key")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Creating WireGuard interface: name={name}")
 
     cmd = f"/interface wireguard add name={name}"
@@ -57,6 +61,7 @@ async def mikrotik_list_wireguard_interfaces(
     running_only: bool = False,
 ) -> str:
     """Lists WireGuard interfaces on the MikroTik device."""
+    validate_field(name_filter, V.INTERFACE_NAME, "name_filter")
     await ctx.info("Listing WireGuard interfaces")
 
     cmd = "/interface wireguard print"
@@ -83,6 +88,7 @@ async def mikrotik_list_wireguard_interfaces(
 @mcp.tool(name="get_wireguard_interface", annotations=annotate(READ, "Get WireGuard Interface"))
 async def mikrotik_get_wireguard_interface(ctx: Context, name: str) -> str:
     """Gets detailed information about a specific WireGuard interface."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Getting WireGuard interface details: name={name}")
 
     cmd = f'/interface wireguard print detail where name="{name}"'
@@ -106,6 +112,10 @@ async def mikrotik_update_wireguard_interface(
     disabled: Optional[bool] = None,
 ) -> str:
     """Updates an existing WireGuard interface's settings on the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
+    validate_field(new_name, V.INTERFACE_NAME, "new_name")
+    validate_field(private_key, V.WG_KEY, "private_key")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating WireGuard interface: name={name}")
 
     updates = []
@@ -141,6 +151,7 @@ async def mikrotik_update_wireguard_interface(
 @mcp.tool(name="remove_wireguard_interface", annotations=annotate(DESTRUCTIVE, "Remove WireGuard Interface"))
 async def mikrotik_remove_wireguard_interface(ctx: Context, name: str) -> str:
     """Removes a WireGuard interface from the MikroTik device."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Removing WireGuard interface: name={name}")
 
     check_cmd = f'/interface wireguard print count-only where name="{name}"'
@@ -161,6 +172,7 @@ async def mikrotik_remove_wireguard_interface(ctx: Context, name: str) -> str:
 @mcp.tool(name="enable_wireguard_interface", annotations=annotate(WRITE_IDEMPOTENT, "Enable WireGuard Interface"))
 async def mikrotik_enable_wireguard_interface(ctx: Context, name: str) -> str:
     """Enables a WireGuard interface."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Enabling WireGuard interface: name={name}")
 
     cmd = f'/interface wireguard enable [find name="{name}"]'
@@ -175,6 +187,7 @@ async def mikrotik_enable_wireguard_interface(ctx: Context, name: str) -> str:
 @mcp.tool(name="disable_wireguard_interface", annotations=annotate(WRITE_IDEMPOTENT, "Disable WireGuard Interface"))
 async def mikrotik_disable_wireguard_interface(ctx: Context, name: str) -> str:
     """Disables a WireGuard interface."""
+    validate_field(name, V.INTERFACE_NAME, "name")
     await ctx.info(f"Disabling WireGuard interface: name={name}")
 
     cmd = f'/interface wireguard disable [find name="{name}"]'
@@ -210,6 +223,13 @@ async def mikrotik_add_wireguard_peer(
         endpoint_address: remote host IP or hostname e.g. "203.0.113.1"
         persistent_keepalive: seconds as string e.g. "25"
     """
+    validate_field(interface, V.INTERFACE_NAME, "interface")
+    validate_field(public_key, V.WG_KEY, "public_key")
+    validate_field(allowed_address, V.IP_CIDR, "allowed_address")
+    validate_field(endpoint_address, V.HOSTNAME, "endpoint_address")
+    validate_field(preshared_key, V.WG_KEY, "preshared_key")
+    validate_field(persistent_keepalive, V.DURATION, "persistent_keepalive")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Adding WireGuard peer: interface={interface}, public_key={public_key[:12]}...")
 
     cmd = (
@@ -254,6 +274,7 @@ async def mikrotik_list_wireguard_peers(
     disabled_only: bool = False,
 ) -> str:
     """Lists WireGuard peers on the MikroTik device."""
+    validate_field(interface_filter, V.INTERFACE_NAME, "interface_filter")
     await ctx.info("Listing WireGuard peers")
 
     cmd = "/interface wireguard peers print"
@@ -282,6 +303,7 @@ async def mikrotik_get_wireguard_peer(ctx: Context, peer_id: str) -> str:
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
     """
+    validate_field(peer_id, V.ROUTEROS_ID, "peer_id")
     await ctx.info(f"Getting WireGuard peer details: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers print detail where .id={peer_id}"
@@ -313,6 +335,15 @@ async def mikrotik_update_wireguard_peer(
         persistent_keepalive: seconds as string e.g. "25"
         Pass "" for endpoint_address or preshared_key to clear them.
     """
+    validate_field(peer_id, V.ROUTEROS_ID, "peer_id")
+    validate_field(allowed_address, V.IP_CIDR, "allowed_address")
+    if endpoint_address:
+        validate_field(endpoint_address, V.HOSTNAME, "endpoint_address")
+    if preshared_key:
+        validate_field(preshared_key, V.WG_KEY, "preshared_key")
+    if persistent_keepalive:
+        validate_field(persistent_keepalive, V.DURATION, "persistent_keepalive")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Updating WireGuard peer: peer_id={peer_id}")
 
     updates = []
@@ -359,6 +390,7 @@ async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str) -> str:
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
     """
+    validate_field(peer_id, V.ROUTEROS_ID, "peer_id")
     await ctx.info(f"Removing WireGuard peer: peer_id={peer_id}")
 
     check_cmd = f"/interface wireguard peers print count-only where .id={peer_id}"
@@ -383,6 +415,7 @@ async def mikrotik_enable_wireguard_peer(ctx: Context, peer_id: str) -> str:
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
     """
+    validate_field(peer_id, V.ROUTEROS_ID, "peer_id")
     await ctx.info(f"Enabling WireGuard peer: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers enable {peer_id}"
@@ -401,6 +434,7 @@ async def mikrotik_disable_wireguard_peer(ctx: Context, peer_id: str) -> str:
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
     """
+    validate_field(peer_id, V.ROUTEROS_ID, "peer_id")
     await ctx.info(f"Disabling WireGuard peer: peer_id={peer_id}")
 
     cmd = f"/interface wireguard peers disable {peer_id}"
@@ -425,6 +459,12 @@ async def mikrotik_generate_wireguard_client_config(
     persistent_keepalive: int = 25,
 ) -> str:
     """Generates a wg0.conf client config string from the given keys and server endpoint. Does not communicate with the router."""
+    validate_field(client_private_key, V.WG_KEY, "client_private_key")
+    validate_field(client_address, V.IP_CIDR, "client_address")
+    validate_field(server_public_key, V.WG_KEY, "server_public_key")
+    validate_field(server_endpoint, V.HOSTNAME, "server_endpoint")
+    validate_field(allowed_ips, V.IP_CIDR, "allowed_ips")
+    validate_field(dns, V.HOSTNAME, "dns")
     await ctx.info("Generating WireGuard client configuration")
 
     lines = [

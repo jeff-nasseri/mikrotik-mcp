@@ -3,6 +3,7 @@ from typing import Optional
 from ..connector import execute_mikrotik_command
 from mcp.server.fastmcp import Context
 from ..app import mcp, READ, WRITE, DESTRUCTIVE, annotate
+from ..security import SecurityError, V, validate_field
 
 @mcp.tool(name="add_ip_address", annotations=annotate(WRITE, "Add IP Address"))
 async def mikrotik_add_ip_address(
@@ -15,6 +16,10 @@ async def mikrotik_add_ip_address(
     disabled: bool = False
 ) -> str:
     """Adds an IP address to an interface on the MikroTik device."""
+    validate_field(address, V.IP_CIDR, "address")
+    validate_field(interface, V.INTERFACE_NAME, "interface")
+    validate_field(network, V.IP_CIDR, "network")
+    validate_field(comment, V.COMMENT, "comment")
     await ctx.info(f"Adding IP address: address={address}, interface={interface}")
 
     # Build the command
@@ -54,6 +59,9 @@ async def mikrotik_list_ip_addresses(
     dynamic_only: bool = False
 ) -> str:
     """Lists IP addresses on the MikroTik device."""
+    validate_field(interface_filter, V.INTERFACE_NAME, "interface_filter")
+    validate_field(address_filter, V.IP_CIDR, "address_filter")
+    validate_field(network_filter, V.IP_CIDR, "network_filter")
     await ctx.info(f"Listing IP addresses with filters: interface={interface_filter}, address={address_filter}")
 
     # Build the command
@@ -85,6 +93,7 @@ async def mikrotik_list_ip_addresses(
 @mcp.tool(name="get_ip_address", annotations=annotate(READ, "Get IP Address"))
 async def mikrotik_get_ip_address(ctx: Context, address_id: str) -> str:
     """Gets detailed information about a specific IP address by ID or address value."""
+    validate_field(address_id, V.COMMENT, "address_id")
     await ctx.info(f"Getting IP address details: address_id={address_id}")
 
     # Try to find by ID first, then by address
@@ -104,6 +113,7 @@ async def mikrotik_get_ip_address(ctx: Context, address_id: str) -> str:
 @mcp.tool(name="remove_ip_address", annotations=annotate(DESTRUCTIVE, "Remove IP Address"))
 async def mikrotik_remove_ip_address(ctx: Context, address_id: str) -> str:
     """Removes an IP address from the MikroTik device by ID or address value."""
+    validate_field(address_id, V.COMMENT, "address_id")
     await ctx.info(f"Removing IP address: address_id={address_id}")
 
     # Try to find by ID first
