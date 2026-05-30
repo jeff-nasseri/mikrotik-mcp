@@ -17,13 +17,15 @@ def _warn_if_plaintext_password_in_container(cfg: MikrotikConfig, logger: loggin
     in_container = os.path.exists("/.dockerenv") or os.environ.get("container") == "docker"
     if in_container and cfg.password and not cfg.key_filename:
         logger.warning(
-            "Security notice: a plaintext password is set via environment variable "
-            "inside a container. This password is visible to anyone who can run "
-            "'docker inspect' on the host. "
-            "Consider switching to SSH key-based authentication (--key-filename / "
-            "MIKROTIK_KEY_FILENAME) or supplying the password through Docker secrets "
-            "or a secrets manager rather than a plain environment variable. "
-            "See SECURITY.md for guidance."
+            "Security notice: a plaintext password is set as an environment "
+            "variable inside a container, so it is visible to anyone who can run "
+            "'docker inspect' on the host. Passing it via --env-file or "
+            "'export VAR=$(cat file)' does NOT help — the resolved value still "
+            "ends up in the container's environment. To keep it out of "
+            "'docker inspect', prefer SSH key-based authentication "
+            "(MIKROTIK_KEY_FILENAME) so no password is stored, or inject the "
+            "secret via Docker secrets / a secrets manager at runtime. "
+            "See SECURITY.md."
         )
 
 

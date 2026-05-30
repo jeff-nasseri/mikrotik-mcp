@@ -94,13 +94,31 @@ MikroTik MCP uses SSH to connect to RouterOS devices. Be aware of the following:
 
 ### 8. Docker Security
 
-When running MikroTik MCP in Docker:
+> ⚠️ **Environment variables are exposed by `docker inspect`.** Any value passed
+> to a container as an environment variable — whether via `-e VAR=value`,
+> `-e VAR` (inherited from the host shell), or `--env-file` — is stored in the
+> container's configuration and shown in full by `docker inspect`. Reading a
+> file into a variable (`export VAR=$(cat secret.txt)`) does **not** help: the
+> resolved value still ends up in the container's environment.
 
-- Don't pass credentials via command-line arguments (visible in `docker ps`)
-- Use Docker secrets or environment variables for credentials
+To keep credentials out of `docker inspect`, prefer (in order):
+
+1. **SSH key-based authentication** (`MIKROTIK_KEY_FILENAME` / `--key-filename`) —
+   no password is stored in the environment at all. This is the recommended
+   approach and is natively supported.
+2. **Docker / Swarm secrets** — mounted as files under `/run/secrets/`, never
+   placed in the environment. (Requires an entrypoint that reads the file into
+   the process environment at startup, which keeps it out of `docker inspect`.)
+3. **Runtime fetch from a secrets manager** (HashiCorp Vault, AWS Secrets
+   Manager, etc.) performed inside the container, rather than injecting the
+   secret at `docker run` time.
+
+Additional hardening:
+
+- Don't pass credentials as literal command-line arguments (also visible in
+  `docker ps` and shell history)
 - Run containers with minimal privileges
-- Keep Docker images updated
-- Use specific version tags instead of `latest`
+- Keep Docker images updated and use specific version tags instead of `latest`
 - Scan images for vulnerabilities regularly
 
 ### 9. API Exposure
@@ -156,6 +174,11 @@ When exposing MikroTik MCP via REST API (using MCPO):
 
 ## Secure Configuration Example
 
+Passing the password as an environment variable — in **any** form — leaves it
+visible in `docker inspect`. The configuration below instead uses **SSH
+key-based authentication**, so no secret is stored in the container's
+environment:
+
 ```json
 {
   "mcpServers": {
@@ -165,10 +188,10 @@ When exposing MikroTik MCP via REST API (using MCPO):
         "run",
         "--rm",
         "-i",
-        "-e", "MIKROTIK_HOST",
-        "-e", "MIKROTIK_USERNAME",
-        "-e", "MIKROTIK_PASSWORD",
-        "-e", "MIKROTIK_PORT=22",
+        "-e", "MIKROTIK_HOST=192.168.88.1",
+        "-e", "MIKROTIK_USERNAME=mcp_user",
+        "-e", "MIKROTIK_KEY_FILENAME=/keys/id_ed25519",
+        "-v", "/secure/path/keys:/keys:ro",
         "mikrotik-mcp"
       ]
     }
@@ -176,13 +199,20 @@ When exposing MikroTik MCP via REST API (using MCPO):
 }
 ```
 
-Set environment variables securely instead of hardcoding credentials:
+> ❌ **Not safe from `docker inspect`:** the example below is a common but
+> mistaken pattern. `export MIKROTIK_PASSWORD=$(cat ...)` followed by
+> `docker run -e MIKROTIK_PASSWORD` still copies the resolved password into the
+> container's environment, where `docker inspect` reveals it:
+>
+> ```bash
+> # DON'T rely on this for secrecy — the value still shows in `docker inspect`:
+> export MIKROTIK_PASSWORD=$(cat /secure/path/password.txt)
+> docker run -e MIKROTIK_PASSWORD ... mikrotik-mcp
+> ```
 
-```bash
-export MIKROTIK_HOST=192.168.88.1
-export MIKROTIK_USERNAME=mcp_user
-export MIKROTIK_PASSWORD=$(cat /secure/path/password.txt)
-```
+If you must use a password instead of an SSH key, supply it via Docker secrets
+(mounted as a file under `/run/secrets/`) with an entrypoint that loads it into
+the process environment at startup — that keeps it out of `docker inspect`.
 
 ## Compliance and Standards
 
