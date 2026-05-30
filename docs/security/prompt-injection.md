@@ -73,8 +73,19 @@ embedded `"` since those never belong inside a single user-supplied value).
 `PromptInjection` scanner that detects adversarial instructions embedded in
 text (e.g. "ignore previous instructions", "act as a different AI", etc.).
 
+**What is scanned:** the raw, untrusted tool **arguments** supplied by the MCP
+client (interface names, comments, addresses, …) — *not* the assembled RouterOS
+command. This matters: the model classifies RouterOS CLI syntax such as
+`/interface print detail where name="ether1"` as an injection (a false
+positive), so scanning the assembled command would block every legitimate
+request. Scanning the individual user values is accurate — normal values
+(`ether1`, `192.168.1.0/24`, prose comments) pass cleanly while injection text
+inside a value is caught. The scan runs in `GuardedFastMCP.call_tool` before the
+tool executes; a detection raises a `SecurityError` that the MCP framework
+returns as an error result, so nothing reaches the device.
+
 This layer is **opt-in** because it pulls in PyTorch + a transformer model
-(downloaded on first use) and adds latency (~100–500 ms per scan).
+(downloaded on first use) and adds latency (~100–500 ms per scanned argument).
 
 #### Installation
 

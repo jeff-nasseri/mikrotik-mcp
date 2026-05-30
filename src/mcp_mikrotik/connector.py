@@ -43,10 +43,11 @@ async def execute_mikrotik_command(command: str, ctx: Context) -> str:
     When Safe Mode is active the command is routed through the persistent
     interactive shell session so it runs inside the safe-mode context.
 
-    Security checks are applied before the command is sent to the device:
-    - Newline/carriage-return injection prevention (always active)
-    - LLM Guard prompt-injection scan (when ``llm-guard`` is installed and
-      ``MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED=true`` is set)
+    The always-on command-injection check runs here, immediately before the
+    command is sent to the device (blocks ``;``, backtick, ``{}``, newlines).
+    The optional LLM Guard prompt-injection scan runs earlier, on the raw tool
+    arguments (see ``GuardedFastMCP.call_tool`` / ``security.scan_arguments``),
+    not on the assembled command.
     """
     try:
         check_command_safety(command)

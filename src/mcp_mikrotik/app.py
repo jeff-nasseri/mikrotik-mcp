@@ -1,9 +1,39 @@
+import logging
+
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
 
-mcp = FastMCP("mcp-mikrotik")
+from .security import SecurityError, scan_arguments
+
+logger = logging.getLogger(__name__)
+
+
+class GuardedFastMCP(FastMCP):
+    """FastMCP subclass that scans tool arguments for prompt-injection.
+
+    The optional LLM Guard scan runs here — on the raw, untrusted *arguments*
+    supplied by the MCP client — rather than on the assembled RouterOS command
+    (which the model misclassifies as injection).  When scanning is disabled or
+    ``llm-guard`` is not installed, ``scan_arguments`` is a no-op, so this adds
+    no overhead to the default configuration.
+
+    A detected injection raises ``SecurityError``; the MCP framework turns the
+    raised exception into an ``isError`` tool result carrying the message, so
+    the request never reaches the device.
+    """
+
+    async def call_tool(self, name, arguments):
+        try:
+            scan_arguments(name, arguments)
+        except SecurityError as exc:
+            logger.warning(f"Blocked tool call '{name}': {exc}")
+            raise
+        return await super().call_tool(name, arguments)
+
+
+mcp = GuardedFastMCP("mcp-mikrotik")
 
 # ── Behaviour presets ──────────────────────────────────────────────────────
 # These capture the *risk profile* of a tool (MCP spec §Tool Annotations).

@@ -219,14 +219,18 @@ def scan_prompt_injection(text: str, context: str = "input") -> None:
 
 
 def check_command_safety(command: str) -> None:
-    """Perform all security checks on the final RouterOS command string.
+    """Validate the final RouterOS command string for command-injection.
 
     Called by the connector immediately before the command is sent to the
-    device.  Applies:
+    device.  This is the **always-on** structural layer; it does NOT run the
+    LLM Guard prompt-injection scanner.
 
-    1. Newline / carriage-return check (always) — a legitimate single-line
-       RouterOS command should never contain a bare newline.
-    2. LLM Guard prompt-injection scan (when enabled).
+    Prompt-injection scanning deliberately happens earlier, on the raw tool
+    *arguments* (see :func:`scan_arguments`), not here on the assembled
+    command.  The LLM Guard model classifies RouterOS CLI syntax such as
+    ``/interface print detail where name="ether1"`` as an injection (a false
+    positive), so scanning the assembled command would block every legitimate
+    request.  Scanning the user-supplied values instead is accurate.
 
     Parameters
     ----------
@@ -248,5 +252,36 @@ def check_command_safety(command: str) -> None:
             "This may indicate a command injection attempt."
         )
 
-    # Optional LLM Guard scan on the full command text.
-    scan_prompt_injection(command, context="RouterOS command")
+
+def scan_arguments(tool_name: str, arguments: Optional[dict]) -> None:
+    """Run the LLM Guard prompt-injection scanner over raw tool arguments.
+
+    This is the correct target for prompt-injection scanning: the untrusted,
+    user-supplied *values* (interface names, comments, addresses, …) rather
+    than the assembled RouterOS command.  Scanning values avoids the false
+    positives the model produces on CLI syntax while still catching injection
+    text hidden inside a value.
+
+    No-op when prompt-injection scanning is disabled or ``llm-guard`` is not
+    installed.  Raises :class:`SecurityError` on the first value that the
+    scanner flags.
+
+    Parameters
+    ----------
+    tool_name:
+        Name of the tool being invoked (used only for error context).
+    arguments:
+        The keyword arguments supplied by the MCP client.
+    """
+    if not _PROMPT_INJECTION_ENABLED or not arguments:
+        return
+
+    def _scan(value, key):
+        if isinstance(value, str) and value.strip():
+            scan_prompt_injection(value, context=f"argument '{key}' of {tool_name}")
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                _scan(item, key)
+
+    for key, value in arguments.items():
+        _scan(value, key)
