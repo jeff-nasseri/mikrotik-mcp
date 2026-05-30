@@ -1,9 +1,30 @@
 import logging
+import os
 import sys
 
 from mcp_mikrotik import config
 from mcp_mikrotik.app import mcp
 from mcp_mikrotik.config import MikrotikConfig
+
+
+def _warn_if_plaintext_password_in_container(cfg: MikrotikConfig, logger: logging.Logger) -> None:
+    """Emit a security warning when a plaintext password is detected inside a container.
+
+    Credential management is an infrastructure concern, not an MCP concern — the
+    MCP server cannot solve it on its own. This warning nudges operators toward
+    safer alternatives (SSH keys, Docker secrets, a vault) without blocking startup.
+    """
+    in_container = os.path.exists("/.dockerenv") or os.environ.get("container") == "docker"
+    if in_container and cfg.password and not cfg.key_filename:
+        logger.warning(
+            "Security notice: a plaintext password is set via environment variable "
+            "inside a container. This password is visible to anyone who can run "
+            "'docker inspect' on the host. "
+            "Consider switching to SSH key-based authentication (--key-filename / "
+            "MIKROTIK_KEY_FILENAME) or supplying the password through Docker secrets "
+            "or a secrets manager rather than a plain environment variable. "
+            "See SECURITY.md for guidance."
+        )
 
 
 def main():
@@ -19,6 +40,8 @@ def main():
     logger.info(f"Using username: {config.mikrotik_config.username}")
     if config.mikrotik_config.key_filename:
         logger.info(f"Using key from: {config.mikrotik_config.key_filename}")
+
+    _warn_if_plaintext_password_in_container(config.mikrotik_config, logger)
 
     try:
         mcp.settings.host = config.mikrotik_config.mcp.host

@@ -62,6 +62,61 @@ def test_server_main_exits_on_exception(monkeypatch):
     assert exc.value.code == 1
 
 
+def test_credential_warning_emitted_in_container_with_password(monkeypatch):
+    """Warning fires when a plaintext password is set inside a container."""
+    from mcp_mikrotik.server import _warn_if_plaintext_password_in_container
+    import logging, io, types
+
+    monkeypatch.setattr("os.path.exists", lambda p: p == "/.dockerenv")
+
+    cfg = types.SimpleNamespace(password="secret", key_filename=None)
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    logger = logging.getLogger("test_warn")
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    _warn_if_plaintext_password_in_container(cfg, logger)
+    logger.removeHandler(handler)
+    assert "plaintext password" in stream.getvalue()
+
+
+def test_credential_warning_suppressed_with_key(monkeypatch):
+    """No warning when SSH key is configured (password exposure isn't an issue)."""
+    from mcp_mikrotik.server import _warn_if_plaintext_password_in_container
+    import logging, io, types
+
+    monkeypatch.setattr("os.path.exists", lambda p: p == "/.dockerenv")
+
+    cfg = types.SimpleNamespace(password="secret", key_filename="/keys/id_ed25519")
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    logger = logging.getLogger("test_warn_key")
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    _warn_if_plaintext_password_in_container(cfg, logger)
+    logger.removeHandler(handler)
+    assert stream.getvalue() == ""
+
+
+def test_credential_warning_suppressed_outside_container(monkeypatch):
+    """No warning when not running inside a container."""
+    from mcp_mikrotik.server import _warn_if_plaintext_password_in_container
+    import logging, io, types
+
+    monkeypatch.setattr("os.path.exists", lambda p: False)
+    monkeypatch.delenv("container", raising=False)
+
+    cfg = types.SimpleNamespace(password="secret", key_filename=None)
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    logger = logging.getLogger("test_warn_nocontainer")
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    _warn_if_plaintext_password_in_container(cfg, logger)
+    logger.removeHandler(handler)
+    assert stream.getvalue() == ""
+
+
 def test_server_main_handles_keyboard_interrupt(monkeypatch):
     from mcp_mikrotik import server
 
