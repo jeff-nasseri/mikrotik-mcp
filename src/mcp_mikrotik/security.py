@@ -70,9 +70,6 @@ class SecurityError(ValueError):
 #
 _ROUTEROS_FORBIDDEN = re.compile(r'[;\[\]{}`\r\n]')
 
-# Suspicious patterns that suggest an attempt to break out of a quoted value.
-_QUOTE_BREAKOUT = re.compile(r'".*"')  # double-quote inside a value
-
 # Characters forbidden in the *final assembled command* string.  Unlike
 # user values, a legitimate command DOES contain '[' and ']' (the RouterOS
 # `[find ...]` sub-selector), so those are allowed here.  The characters
