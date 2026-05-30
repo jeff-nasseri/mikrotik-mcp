@@ -120,3 +120,10 @@ The easiest way to run the MCP MikroTik server is using Docker.
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |
    | `MIKROTIK_MCP__PORT` | HTTP server listen port | `8000` |
+   | `MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED` | Enable LLM Guard prompt-injection scanning (requires the `security` extra) | `false` |
+   | `MIKROTIK_SECURITY__PROMPT_INJECTION_THRESHOLD` | Prompt-injection detection threshold (0.0–1.0) | `0.5` |
+
+   > 🔒 **Security:** RouterOS command-injection protection is always on. The two
+   > `MIKROTIK_SECURITY__*` variables enable an optional ML-based prompt-injection
+   > scanner. See [Prompt Injection Protection](../security/prompt-injection.md)
+   > for details and installation of the `security` extra.

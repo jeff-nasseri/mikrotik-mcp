@@ -44,24 +44,28 @@ reads those values through MikroTik MCP, the instructions are executed.
 
 ## Protection layers
 
-### Layer 1 — RouterOS sanitization (always active)
+### Layer 1 — RouterOS command-injection prevention (always active)
 
-`mcp_mikrotik.security.sanitize_value()` validates user-supplied strings
-**before** they are interpolated into RouterOS command strings.
+Every assembled command is validated by
+`mcp_mikrotik.security.check_command_safety()` immediately before it is sent
+over SSH. Characters that **never appear in a legitimate command** but are the
+building blocks of command-injection are rejected:
 
-Characters blocked in user values:
+| Character | Reason | Blocked in final command |
+|-----------|--------|:---:|
+| `;`       | Command separator (`name="x" ; /system reboot`) | ✅ |
+| `` ` ``   | Backtick sub-command | ✅ |
+| `{` `}`   | Script block delimiters | ✅ |
+| `\n` `\r` | Line break — splits one command into two statements | ✅ |
+| `[` `]`   | Used legitimately by the RouterOS `[find ...]` selector | ❌ (allowed) |
 
-| Character | Reason |
-|-----------|--------|
-| `\n` `\r` | Line break — splits one command into two |
-| `;`       | Command separator |
-| `[` `]`   | Sub-command execution (`[find name=x]`) |
-| `{` `}`   | Block delimiters |
-| `` ` ``   | Backtick sub-command |
-| `"`       | Quote breakout from command context |
+> This blocks the exact payload from issue #53 — `foo"] ; /system reboot;` — by
+> default, **without** requiring the optional LLM Guard layer, because the `;`
+> separator is rejected.
 
-The final command string is also checked for newlines immediately before SSH
-execution, providing a defence-in-depth backstop.
+The helper `sanitize_value()` is also available for scope modules that want to
+validate an individual user value (it additionally rejects `[`, `]`, and
+embedded `"` since those never belong inside a single user-supplied value).
 
 ### Layer 2 — LLM Guard prompt-injection scanner (optional)
 
@@ -69,14 +73,22 @@ execution, providing a defence-in-depth backstop.
 `PromptInjection` scanner that detects adversarial instructions embedded in
 text (e.g. "ignore previous instructions", "act as a different AI", etc.).
 
-This layer is **opt-in** because it requires downloading an ML model (~250 MB)
-and adds latency (~100–500 ms per scan).
+This layer is **opt-in** because it pulls in PyTorch + a transformer model
+(downloaded on first use) and adds latency (~100–500 ms per scan).
 
 #### Installation
 
 ```bash
 pip install "mcp-server-mikrotik[security]"
 ```
+
+> ⚠️ **Platform note:** the `security` extra depends on PyTorch, which ships
+> wheels for **glibc** Linux (Debian/Ubuntu), macOS, and Windows — but **not**
+> for musl/Alpine. The project's default Docker image is Alpine-based and
+> therefore cannot install the `security` extra. To use prompt-injection
+> scanning in a container, base your image on `python:3.11-slim` (Debian) and
+> run `pip install "mcp-server-mikrotik[security]"`. The always-on Layer 1
+> command-injection protection works on every platform, including Alpine.
 
 #### Activation
 

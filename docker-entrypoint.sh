@@ -18,6 +18,8 @@ usage() {
     echo "  MIKROTIK_PASSWORD     SSH password"
     echo "  MIKROTIK_PORT         SSH port (default: 22)"
     echo "  MIKROTIK_MCP__TRANSPORT         Transport type (default: stdio)"
+    echo "  MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED    Enable LLM Guard prompt-injection scan (default: false)"
+    echo "  MIKROTIK_SECURITY__PROMPT_INJECTION_THRESHOLD  Prompt-injection threshold 0.0-1.0 (default: 0.5)"
     echo ""
     echo "Examples:"
     echo "  $0 --host 192.168.88.1 --username admin --password admin123"

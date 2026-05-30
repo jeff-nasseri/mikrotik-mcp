@@ -44,6 +44,19 @@ Create a `mcp-config.json` file in your project directory:
 
 **Note:** Adjust the MikroTik connection parameters (`host`, `username`, `password`, `port`) according to your setup.
 
+### Optional: enable prompt-injection protection
+
+To enable the optional [LLM Guard](../security/prompt-injection.md)
+prompt-injection scanner, install the `security` extra
+(`pip install "mcp-server-mikrotik[security]"`) and set these in the `env` block:
+
+```json
+      "env": {
+        "MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED": "true",
+        "MIKROTIK_SECURITY__PROMPT_INJECTION_THRESHOLD": "0.5"
+      }
+```
+
 ## Starting the MCPO Server
 
 ```bash

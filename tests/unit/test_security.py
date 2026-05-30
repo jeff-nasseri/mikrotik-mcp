@@ -91,8 +91,30 @@ class TestCheckCommandSafety:
             check_command_safety("/interface print\n/system reboot")
 
     def test_carriage_return_in_command_raises(self):
-        with pytest.raises(SecurityError, match="newline"):
+        with pytest.raises(SecurityError, match="carriage-return"):
             check_command_safety("/interface print\r/system reboot")
+
+    def test_semicolon_in_command_raises(self):
+        # The canonical command-chaining breakout
+        with pytest.raises(SecurityError, match="forbidden character"):
+            check_command_safety('/interface print where name="x" ; /system reboot')
+
+    def test_issue_53_example_payload_is_blocked(self):
+        # The EXACT payload from issue #53 must be blocked by the always-on
+        # layer (no LLM Guard required).
+        payload = 'foo"] ; /system reboot;'
+        cmd = f'/interface print detail where name="{payload}"'
+        with pytest.raises(SecurityError, match="forbidden character"):
+            check_command_safety(cmd)
+
+    def test_backtick_in_command_raises(self):
+        with pytest.raises(SecurityError, match="forbidden character"):
+            check_command_safety("/interface print `reboot`")
+
+    def test_find_selector_command_passes(self):
+        # '[' and ']' are legitimate in the RouterOS [find ...] selector and
+        # must NOT be blocked.
+        check_command_safety('/interface vlan set [find name="vlan100"] mtu=1400')
 
     def test_complex_legitimate_command_passes(self):
         cmd = (

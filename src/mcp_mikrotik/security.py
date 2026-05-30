@@ -73,6 +73,21 @@ _ROUTEROS_FORBIDDEN = re.compile(r'[;\[\]{}`\r\n]')
 # Suspicious patterns that suggest an attempt to break out of a quoted value.
 _QUOTE_BREAKOUT = re.compile(r'".*"')  # double-quote inside a value
 
+# Characters forbidden in the *final assembled command* string.  Unlike
+# user values, a legitimate command DOES contain '[' and ']' (the RouterOS
+# `[find ...]` sub-selector), so those are allowed here.  The characters
+# below never appear in any command this server constructs, so their
+# presence in the final command indicates an injection attempt:
+#
+#   ;   — command separator (the canonical breakout: name="x" ; /system reboot)
+#   `   — backtick sub-command
+#   {   — script block open
+#   }   — script block close
+#   \n  — newline (statement separator)
+#   \r  — carriage return
+#
+_COMMAND_FORBIDDEN = re.compile(r'[;`{}\r\n]')
+
 
 def sanitize_value(value: str, field_name: str = "input") -> str:
     """Validate *value* before it is interpolated into a RouterOS command.
@@ -221,11 +236,18 @@ def check_command_safety(command: str) -> None:
     command:
         The complete RouterOS command string, as built by a scope module.
     """
-    # Newlines in the command string are never legitimate — they would split
-    # the command into multiple distinct RouterOS statements.
-    if "\n" in command or "\r" in command:
+    # Block characters that never appear in a legitimate command but are the
+    # building blocks of command-injection (`;` separator, newline, backtick,
+    # script braces).  This catches breakout payloads such as the issue #53
+    # example ``foo"] ; /system reboot;`` without requiring the optional
+    # LLM Guard scanner.  '[' and ']' are intentionally NOT blocked because
+    # the RouterOS `[find ...]` selector uses them legitimately.
+    match = _COMMAND_FORBIDDEN.search(command)
+    if match:
+        char = match.group()
+        label = {"\n": "newline", "\r": "carriage-return"}.get(char, repr(char))
         raise SecurityError(
-            "RouterOS command contains a newline character. "
+            f"RouterOS command contains a forbidden character ({label}). "
             "This may indicate a command injection attempt."
         )
 

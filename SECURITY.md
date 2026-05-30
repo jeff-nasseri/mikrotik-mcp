@@ -42,11 +42,23 @@ MikroTik MCP uses SSH to connect to RouterOS devices. Be aware of the following:
   - Consider using SSH key-based authentication instead of passwords
   - Use SSH keys with passphrases for additional security
 
-### 2. Command Injection Risks
+### 2. Command Injection & Prompt Injection Risks
 
 - The server executes SSH commands on MikroTik devices based on tool inputs
-- Always validate and sanitize inputs before passing them to MikroTik commands
-- Avoid constructing commands using unsanitized user input
+- **Built-in protection (always active):** user-supplied values are validated to
+  reject RouterOS metacharacters (`;`, `[`, `]`, `{`, `}`, backtick, newlines, and
+  embedded quotes) before they are interpolated into commands, and the final command
+  string is checked for newline injection immediately before execution
+- **Optional prompt-injection scanning:** an ML-based [LLM Guard](https://github.com/protectai/llm-guard)
+  scanner can detect adversarial LLM instructions embedded in inputs. Enable it with:
+
+  ```bash
+  pip install "mcp-server-mikrotik[security]"
+  export MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED=true
+  export MIKROTIK_SECURITY__PROMPT_INJECTION_THRESHOLD=0.5   # optional, 0.0–1.0
+  ```
+
+  See [docs/security/prompt-injection.md](docs/security/prompt-injection.md) for full details.
 - Be cautious when using this server in environments where untrusted users have access
 
 ### 3. Access Control

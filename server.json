@@ -50,6 +50,20 @@
           "isRequired": false,
           "format": "string",
           "isSecret": false
+        },
+        {
+          "name": "MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED",
+          "description": "Enable optional LLM Guard prompt-injection scanning (requires the security extra). Default: false",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MIKROTIK_SECURITY__PROMPT_INJECTION_THRESHOLD",
+          "description": "Prompt-injection detection threshold from 0.0 to 1.0. Default: 0.5",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
         }
       ]
     }

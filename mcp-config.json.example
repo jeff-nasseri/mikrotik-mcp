@@ -9,7 +9,10 @@
           "--port", "${SSH_PORT}:-22",
           "--username", "${USERNAME}:-admin"
       ],
-      "env": {}
+      "env": {
+          "MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED": "false",
+          "MIKROTIK_SECURITY__PROMPT_INJECTION_THRESHOLD": "0.5"
+      }
     }
   }
 }

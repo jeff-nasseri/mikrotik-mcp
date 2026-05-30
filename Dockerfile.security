@@ -1,0 +1,44 @@
+# =============================================================================
+# Dockerfile.security — MikroTik MCP with the optional prompt-injection scanner
+# =============================================================================
+#
+# The default Dockerfile uses Alpine (musl), which cannot install PyTorch and
+# therefore cannot run the LLM Guard prompt-injection scanner. This image is
+# based on python:3.11-slim (Debian/glibc) so the `security` extra installs.
+#
+# Build:
+#   docker build -f Dockerfile.security -t mikrotik-mcp:security .
+#
+# Run (prompt-injection scanning enabled):
+#   docker run --rm -i \
+#     -e MIKROTIK_HOST=192.168.88.1 \
+#     -e MIKROTIK_USERNAME=admin \
+#     -e MIKROTIK_PASSWORD=secret \
+#     -e MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED=true \
+#     mikrotik-mcp:security
+#
+# Note: PyTorch and the transformer model add ~2 GB to the image; the model is
+# downloaded on first run. The always-on command-injection protection does not
+# require this image — it works on the default Alpine image too.
+# =============================================================================
+FROM python:3.11-slim AS production
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+COPY requirements.txt pyproject.toml ./
+COPY src/ ./src/
+
+RUN pip install --no-cache-dir ".[security]"
+
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+RUN useradd -m -u 1000 mcpuser && chown -R mcpuser:mcpuser /app
+USER mcpuser
+
+EXPOSE 8000
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
