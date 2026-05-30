@@ -35,6 +35,10 @@ Complete tool documentation organized by category:
 
 - **[Usage Examples](examples/usage-examples.md)** - Complete mcp-cli usage examples
 
+## Security
+
+- **[Prompt Injection Protection](security/prompt-injection.md)** - RouterOS command injection prevention and LLM Guard integration
+
 ## Contributing
 
 - **[Contributing Guide](contributing.md)** - Learn how to contribute

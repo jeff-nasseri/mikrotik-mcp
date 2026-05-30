@@ -5,6 +5,7 @@ from mcp.server.fastmcp import Context
 
 from . import config
 from .mikrotik_ssh_client import MikroTikSSHClient
+from .security import SecurityError, check_command_safety
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,20 @@ async def execute_mikrotik_command(command: str, ctx: Context) -> str:
 
     When Safe Mode is active the command is routed through the persistent
     interactive shell session so it runs inside the safe-mode context.
+
+    Security checks are applied before the command is sent to the device:
+    - Newline/carriage-return injection prevention (always active)
+    - LLM Guard prompt-injection scan (when ``llm-guard`` is installed and
+      ``MIKROTIK_SECURITY__PROMPT_INJECTION_ENABLED=true`` is set)
     """
+    try:
+        check_command_safety(command)
+    except SecurityError as exc:
+        msg = f"Security violation — command blocked: {exc}"
+        logger.warning(msg)
+        await ctx.error(msg)
+        return msg
+
     from .safe_mode import get_safe_mode_manager
 
     safe_mgr = get_safe_mode_manager()

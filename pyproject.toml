@@ -32,6 +32,13 @@ dependencies = [
     "starlette>=0.27.0",
 ]
 
+[project.optional-dependencies]
+# Enhanced prompt-injection detection using LLM Guard's ML-based scanner.
+# Install with: pip install "mcp-server-mikrotik[security]"
+security = [
+    "llm-guard>=0.3.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/jeff-nasseri/mikrotik-mcp"
 Issues = "https://github.com/jeff-nasseri/mikrotik-mcp/issues"
