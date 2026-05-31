@@ -1,0 +1,4 @@
+# Ensure shell scripts always use LF line endings so Docker images built on
+# any host (including Windows checkouts) have a working entrypoint.
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf

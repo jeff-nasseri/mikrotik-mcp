@@ -1,0 +1,80 @@
+# =============================================================================
+# GitHub Actions Workflow: Build and Publish multi-arch Docker image to GHCR
+# =============================================================================
+#
+# Purpose:
+#   Builds the Docker image for linux/amd64 + linux/arm64 and publishes it to
+#   the GitHub Container Registry (ghcr.io/<owner>/<repo>).
+#
+# Tagging strategy:
+#   Push to master              -> :edge        + :sha-<short>
+#   Push of a vX.Y.Z git tag    -> :X.Y.Z, :X.Y, :latest + :sha-<short>
+#
+#   The PyPI release pipeline (publish.yml) creates the vX.Y.Z stable tags via
+#   GitVersion, so a tagged release automatically produces a versioned image
+#   and updates :latest. Master builds get the moving :edge tag.
+#
+# Registry:
+#   ghcr.io/jeff-nasseri/mikrotik-mcp
+#
+# Authentication:
+#   Uses the built-in GITHUB_TOKEN (no extra secret required). The token needs
+#   packages: write, which is granted in the job permissions block below.
+# =============================================================================
+name: Publish Docker Image
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            # Stable releases (vX.Y.Z tags): semantic version tags + latest
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            # Master branch: a moving 'edge' tag
+            type=raw,value=edge,enable={{is_default_branch}}
+            # Always include a short-SHA tag for traceability
+            type=sha,format=short
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

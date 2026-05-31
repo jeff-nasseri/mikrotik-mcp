@@ -62,6 +62,34 @@ HTTP-based transports (`sse`, `streamable-http`) expose a `GET /health` endpoint
 
 The easiest way to run the MCP MikroTik server is using Docker.
 
+### Official prebuilt image (GitHub Container Registry)
+
+A multi-arch image (`linux/amd64` + `linux/arm64`) is published to GHCR, so you
+can pull it directly instead of building from source:
+
+```bash
+# Latest stable release
+docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+
+# A specific version
+docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:0.9.2
+
+# Bleeding-edge build from the master branch
+docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:edge
+```
+
+| Tag | Points to |
+|-----|-----------|
+| `latest` | The most recent stable release |
+| `X.Y.Z` / `X.Y` | A specific released version |
+| `edge` | The latest commit on `master` |
+| `sha-<short>` | A specific commit |
+
+In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
+`mikrotik-mcp` to use the prebuilt image instead of a locally built one.
+
+### Build from source
+
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/jeff-nasseri/mikrotik-mcp.git
@@ -120,3 +148,39 @@ The easiest way to run the MCP MikroTik server is using Docker.
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |
    | `MIKROTIK_MCP__PORT` | HTTP server listen port | `8000` |
+
+### Docker Compose
+
+For a long-running, self-hosted setup, use an HTTP-based transport
+(`sse` or `streamable-http`) so MCP clients can connect over the network. The
+`stdio` transport is meant for direct IDE integration where the client attaches
+to the process's stdin/stdout, not for a standalone background service.
+
+```yaml
+services:
+  mikrotik-mcp:
+    image: ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+    container_name: mikrotik-mcp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      MIKROTIK_HOST: "192.168.88.1"
+      MIKROTIK_USERNAME: "admin"
+      MIKROTIK_PASSWORD: "change-me"
+      MIKROTIK_PORT: "22"                      # SSH port of the RouterOS device
+      MIKROTIK_MCP__TRANSPORT: "streamable-http"
+      MIKROTIK_MCP__HOST: "0.0.0.0"
+      MIKROTIK_MCP__PORT: "8000"
+```
+
+```bash
+docker compose up -d
+```
+
+The server is then reachable at `http://localhost:8000/mcp` (streamable HTTP)
+or `http://localhost:8000/sse` (if you set `MIKROTIK_MCP__TRANSPORT: sse`), and
+`GET http://localhost:8000/health` returns `OK`.
+
+> ⚠️ Passing `MIKROTIK_PASSWORD` as an environment variable makes it visible via
+> `docker inspect`. See [SECURITY.md](../../SECURITY.md) for safer alternatives.
