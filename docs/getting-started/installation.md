@@ -148,6 +148,8 @@ In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |
    | `MIKROTIK_MCP__PORT` | HTTP server listen port | `8000` |
+   | `MIKROTIK_MCP__ALLOWED_HOSTS` | Comma-separated `Host` header allowlist for the HTTP transports (DNS-rebinding protection). Set to your domain behind a reverse proxy; `*` disables the check. | _(empty)_ |
+   | `MIKROTIK_MCP__ALLOWED_ORIGINS` | Comma-separated `Origin` header allowlist for the HTTP transports. | _(empty)_ |
 
 ### Docker Compose
 
@@ -181,6 +183,36 @@ docker compose up -d
 The server is then reachable at `http://localhost:8000/mcp` (streamable HTTP)
 or `http://localhost:8000/sse` (if you set `MIKROTIK_MCP__TRANSPORT: sse`), and
 `GET http://localhost:8000/health` returns `OK`.
+
+#### Behind a reverse proxy (or any non-localhost access)
+
+The HTTP transports (`sse` / `streamable-http`) apply DNS-rebinding protection,
+which validates the request's `Host` header. When the server is reached on a
+custom domain or a non-localhost IP — e.g. through a reverse proxy — you must
+allowlist that host, otherwise requests to `/mcp` are rejected with **HTTP 421
+"Invalid Host header"** (while `/health` still works, since it is exempt):
+
+```yaml
+    environment:
+      MIKROTIK_MCP__TRANSPORT: "streamable-http"
+      MIKROTIK_MCP__HOST: "0.0.0.0"
+      # Allowlist the Host header(s) clients use to reach the server:
+      MIKROTIK_MCP__ALLOWED_HOSTS: "mcp.example.com"
+      # Allowlist the Origin header(s) for browser-based clients:
+      MIKROTIK_MCP__ALLOWED_ORIGINS: "https://app.example.com"
+```
+
+Both accept a **comma-separated** list, e.g.:
+
+```yaml
+      MIKROTIK_MCP__ALLOWED_HOSTS: "mcp.example.com, mcp.example.com:*, 192.168.1.50:8000"
+      MIKROTIK_MCP__ALLOWED_ORIGINS: "https://app.example.com, https://admin.example.com"
+```
+
+- Append `:*` to a host (e.g. `mcp.example.com:*`) to allow it on any port.
+- Set `MIKROTIK_MCP__ALLOWED_HOSTS: "*"` to disable the host check entirely.
+- If you leave it unset on a non-localhost bind, the check is auto-disabled (a
+  warning is logged) so the server still works out of the box.
 
 > ⚠️ Passing `MIKROTIK_PASSWORD` as an environment variable makes it visible via
 > `docker inspect`. See [SECURITY.md](../../SECURITY.md) for safer alternatives.

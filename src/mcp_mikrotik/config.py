@@ -9,6 +9,15 @@ class McpServerSettings(BaseModel):
     host: str = "0.0.0.0"
     port: int = 8000
 
+    # DNS-rebinding protection for the HTTP transports (sse / streamable-http).
+    # Comma-separated allowlists for the Host and Origin request headers. Needed
+    # when serving behind a reverse proxy or on a non-localhost host — otherwise
+    # requests with an external Host header are rejected with HTTP 421
+    # "Invalid Host header". Set allowed_hosts to your domain (e.g.
+    # "mcp.example.com"); a value of "*" disables the host check entirely.
+    allowed_hosts: str = ""
+    allowed_origins: str = ""
+
 
 class MikrotikConfig(BaseSettings):
     model_config = SettingsConfigDict(
