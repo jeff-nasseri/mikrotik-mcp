@@ -117,6 +117,71 @@ def test_credential_warning_suppressed_outside_container(monkeypatch):
     assert stream.getvalue() == ""
 
 
+def _mcp_cfg(host="0.0.0.0", allowed_hosts="", allowed_origins=""):
+    import types
+    return types.SimpleNamespace(
+        host=host, allowed_hosts=allowed_hosts, allowed_origins=allowed_origins
+    )
+
+
+def test_transport_security_localhost_uses_localhost_allowlist():
+    """Localhost bind with no allowlist keeps the secure localhost default."""
+    import logging
+    from mcp_mikrotik.server import _build_transport_security
+
+    s = _build_transport_security(_mcp_cfg(host="127.0.0.1"), logging.getLogger("t"))
+    assert s.enable_dns_rebinding_protection is True
+    assert "127.0.0.1:*" in s.allowed_hosts
+
+
+def test_transport_security_non_localhost_disables_without_allowlist(caplog):
+    """Non-localhost bind with no allowlist disables protection (and warns)."""
+    import logging
+    from mcp_mikrotik.server import _build_transport_security
+
+    with caplog.at_level(logging.WARNING):
+        s = _build_transport_security(_mcp_cfg(host="0.0.0.0"), logging.getLogger("t"))
+    assert s.enable_dns_rebinding_protection is False
+    assert "non-localhost" in caplog.text
+
+
+def test_transport_security_explicit_allowlist_enabled():
+    """A configured allowlist enables protection with those hosts (the #86 fix)."""
+    import logging
+    from mcp_mikrotik.server import _build_transport_security
+
+    s = _build_transport_security(
+        _mcp_cfg(host="0.0.0.0", allowed_hosts="mcp.example.com, mcp.example.com:*"),
+        logging.getLogger("t"),
+    )
+    assert s.enable_dns_rebinding_protection is True
+    assert s.allowed_hosts == ["mcp.example.com", "mcp.example.com:*"]
+
+
+def test_transport_security_wildcard_disables():
+    """allowed_hosts='*' is an explicit opt-out."""
+    import logging
+    from mcp_mikrotik.server import _build_transport_security
+
+    s = _build_transport_security(
+        _mcp_cfg(host="0.0.0.0", allowed_hosts="*"), logging.getLogger("t")
+    )
+    assert s.enable_dns_rebinding_protection is False
+
+
+def test_transport_security_allowed_origins_parsed():
+    """Origins are parsed and protection is enabled."""
+    import logging
+    from mcp_mikrotik.server import _build_transport_security
+
+    s = _build_transport_security(
+        _mcp_cfg(host="0.0.0.0", allowed_origins="https://app.example.com"),
+        logging.getLogger("t"),
+    )
+    assert s.enable_dns_rebinding_protection is True
+    assert s.allowed_origins == ["https://app.example.com"]
+
+
 def test_server_main_handles_keyboard_interrupt(monkeypatch):
     from mcp_mikrotik import server
 
