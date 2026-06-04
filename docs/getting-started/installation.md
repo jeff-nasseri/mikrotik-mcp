@@ -68,21 +68,18 @@ A multi-arch image (`linux/amd64` + `linux/arm64`) is published to GHCR, so you
 can pull it directly instead of building from source:
 
 ```bash
-# Latest stable release
+# Latest release
 docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:latest
 
-# A specific version
-docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:0.9.2
-
-# Bleeding-edge build from the master branch
-docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:edge
+# A specific version (matches the PyPI / git tag version)
+docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:0.10.1
 ```
 
 | Tag | Points to |
 |-----|-----------|
-| `latest` | The most recent stable release |
-| `X.Y.Z` / `X.Y` | A specific released version |
-| `edge` | The latest commit on `master` |
+| `latest` | The most recent release |
+| `X.Y.Z` | A specific released version (e.g. `0.10.1`), aligned with the PyPI release |
+| `X.Y` | The latest patch of a minor line (e.g. `0.10`) |
 | `sha-<short>` | A specific commit |
 
 In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
