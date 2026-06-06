@@ -15,6 +15,7 @@ SCOPE_MODULES = [
     "ip_address",
     "ip_pool",
     "logs",
+    "poe",
     "queue",
     "routes",
     "users",
