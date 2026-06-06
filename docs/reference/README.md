@@ -5,6 +5,7 @@ Complete reference documentation for all MikroTik MCP tools.
 ## Available Tool Categories
 
 - **[Interfaces](interfaces/README.md)** - All Interface Management (ethernet, bridge, PPPoE, SFP, LTE …)
+- **[PoE](poe/README.md)** - Power over Ethernet monitoring
 - **[VLAN](vlan/README.md)** - VLAN Interface Management
 - **[IP Address](ip-address/README.md)** - IP Address Management
 - **[DHCP](dhcp/README.md)** - DHCP Server Management
