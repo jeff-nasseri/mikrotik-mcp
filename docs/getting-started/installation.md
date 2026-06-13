@@ -15,7 +15,7 @@ The client fetches the server metadata from the registry, installs `mcp-server-m
 ---
 
 ## Prerequisites
-- Python 3.8+
+- Python 3.10+
 - MikroTik RouterOS device with API access enabled
 - Python dependencies (routeros-api or similar)
 
@@ -26,22 +26,44 @@ The client fetches the server metadata from the registry, installs `mcp-server-m
 git clone https://github.com/jeff-nasseri/mikrotik-mcp.git
 cd mikrotik-mcp
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -e .
+# Install dependencies (creates .venv automatically)
+uv sync
 
 # Run the server (stdio, default)
-mcp-server-mikrotik
+uv run mcp-server-mikrotik
 
 # Run with SSE transport
-mcp-server-mikrotik --mcp.transport sse
+uv run mcp-server-mikrotik --mcp.transport sse
 
 # Run with streamable HTTP transport
-mcp-server-mikrotik --mcp.transport streamable-http
+uv run mcp-server-mikrotik --mcp.transport streamable-http
 ```
+
+<details>
+<summary>Alternative: using pip</summary>
+
+```bash
+# Clone the repository
+git clone https://github.com/jeff-nasseri/mikrotik-mcp/tree/master
+cd mcp-mikrotik
+
+# Create a virtual environment and install
+python -m venv .venv
+source .venv/bin/activate   # Linux/macOS
+# .venv\Scripts\activate    # Windows
+pip install -e .
+
+# Run the server
+python -m mcp_server_mikrotik
+
+# Run with SSE transport
+python -m mcp_server_mikrotik --mcp.transport sse
+
+# Run with streamable HTTP transport
+python -m mcp_server_mikrotik --mcp.transport streamable-http
+```
+
+</details>
 
 ### CLI Options
 
