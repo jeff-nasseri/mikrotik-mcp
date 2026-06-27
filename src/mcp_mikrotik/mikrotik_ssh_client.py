@@ -1,3 +1,4 @@
+import io
 import logging
 from typing import Optional
 
@@ -80,6 +81,34 @@ class MikroTikSSHClient:
         except Exception as e:
             logger.error(f"Error executing command: {e}")
             raise
+
+    def download_file(self, remote_filename: str) -> bytes:
+        """Download a file from the device over SFTP and return its raw bytes.
+
+        RouterOS exposes its file store over the SSH/SFTP subsystem, so binary
+        backups and text exports alike can be transferred without mangling.
+        """
+        if not self.client:
+            raise Exception("Not connected to MikroTik device")
+
+        sftp = self.client.open_sftp()
+        try:
+            buffer = io.BytesIO()
+            sftp.getfo(remote_filename, buffer)
+            return buffer.getvalue()
+        finally:
+            sftp.close()
+
+    def upload_file(self, remote_filename: str, data: bytes) -> None:
+        """Upload raw bytes to a file on the device over SFTP."""
+        if not self.client:
+            raise Exception("Not connected to MikroTik device")
+
+        sftp = self.client.open_sftp()
+        try:
+            sftp.putfo(io.BytesIO(data), remote_filename)
+        finally:
+            sftp.close()
 
     def disconnect(self):
         """Close SSH connection."""

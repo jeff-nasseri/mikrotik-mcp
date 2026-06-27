@@ -172,3 +172,93 @@ def test_ssh_client_returns_stderr_when_no_stdout(monkeypatch):
     assert client.connect() is True
     assert client.execute_command("/x") == "failure: nope"
 
+
+# ---------------------------------------------------------------------------
+# SFTP file transfer: download_file / upload_file
+# ---------------------------------------------------------------------------
+
+def _connect_client_with_sftp(monkeypatch, sftp):
+    from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
+    import mcp_mikrotik.mikrotik_ssh_client as mod
+
+    class DummySSH:
+        def set_missing_host_key_policy(self, _policy):
+            pass
+
+        def connect(self, **kwargs):
+            pass
+
+        def open_sftp(self):
+            return sftp
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(mod.paramiko, "SSHClient", lambda: DummySSH())
+    client = MikroTikSSHClient(host="h", username="u", password="p", key_filename=None)
+    assert client.connect() is True
+    return client
+
+
+def test_ssh_client_download_file_via_sftp(monkeypatch):
+    class DummySFTP:
+        def __init__(self, payload):
+            self.payload = payload
+            self.closed = False
+            self.requested = None
+
+        def getfo(self, remotepath, fileobj):
+            self.requested = remotepath
+            fileobj.write(self.payload)
+
+        def close(self):
+            self.closed = True
+
+    # Binary payload that is NOT valid UTF-8 — proves raw bytes survive intact.
+    sftp = DummySFTP(b"\x00\x01\x02backup\xff")
+    client = _connect_client_with_sftp(monkeypatch, sftp)
+
+    data = client.download_file("backup_123.backup")
+    assert data == b"\x00\x01\x02backup\xff"
+    assert sftp.requested == "backup_123.backup"
+    assert sftp.closed is True
+
+
+def test_ssh_client_upload_file_via_sftp(monkeypatch):
+    captured = {}
+
+    class DummySFTP:
+        def __init__(self):
+            self.closed = False
+
+        def putfo(self, fileobj, remotepath):
+            captured["remotepath"] = remotepath
+            captured["data"] = fileobj.read()
+
+        def close(self):
+            self.closed = True
+
+    sftp = DummySFTP()
+    client = _connect_client_with_sftp(monkeypatch, sftp)
+
+    client.upload_file("restore.rsc", b"/system identity\n")
+    assert captured["remotepath"] == "restore.rsc"
+    assert captured["data"] == b"/system identity\n"
+    assert sftp.closed is True
+
+
+def test_ssh_client_download_requires_connect():
+    from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
+
+    client = MikroTikSSHClient(host="h", username="u", password="p", key_filename=None, port=22)
+    with pytest.raises(Exception, match="Not connected"):
+        client.download_file("x.backup")
+
+
+def test_ssh_client_upload_requires_connect():
+    from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
+
+    client = MikroTikSSHClient(host="h", username="u", password="p", key_filename=None, port=22)
+    with pytest.raises(Exception, match="Not connected"):
+        client.upload_file("x.rsc", b"data")
+

@@ -1,7 +1,8 @@
 from typing import Literal, Optional, List
 from ..app import mcp, READ, WRITE, DANGEROUS, annotate
-from ..connector import execute_mikrotik_command
+from ..connector import execute_mikrotik_command, download_file_sync, upload_file_sync
 from mcp.server.fastmcp import Context
+import asyncio
 import base64
 import time
 import os
@@ -189,24 +190,22 @@ async def mikrotik_download_file(
     """Downloads a backup or export file from the MikroTik device as base64-encoded content."""
     await ctx.info(f"Downloading file: filename={filename}, type={file_type}")
 
-    # First, check if file exists
-    check_cmd = f"/file print count-only where name={filename}"
+    # First, check if the file exists.
+    check_cmd = f'/file print count-only where name="{filename}"'
     count = await execute_mikrotik_command(check_cmd, ctx)
 
     if count.strip() == "0":
         return f"File '{filename}' not found."
 
-    # Get file content (this is a simplified version)
-    # In a real implementation, you'd need to handle file transfer properly
-    content_cmd = f"/file print file={filename}"
-    content = await execute_mikrotik_command(content_cmd, ctx)
+    # Transfer the raw bytes over SFTP, then base64-encode for safe transport.
+    # This preserves binary backups (.backup) as well as text exports (.rsc).
+    try:
+        content = await asyncio.to_thread(download_file_sync, filename)
+    except Exception as e:
+        return f"Failed to download file '{filename}': {str(e)}"
 
-    if content:
-        # Encode content to base64 for safe transmission
-        encoded = base64.b64encode(content.encode('utf-8')).decode('utf-8')
-        return f"FILE_CONTENT_BASE64:{encoded}"
-    else:
-        return f"Failed to download file '{filename}'."
+    encoded = base64.b64encode(content).decode('ascii')
+    return f"FILE_CONTENT_BASE64:{encoded}"
 
 @mcp.tool(name="upload_file", annotations=annotate(WRITE, "Upload File"))
 async def mikrotik_upload_file(
@@ -217,15 +216,19 @@ async def mikrotik_upload_file(
     """Uploads a base64-encoded file to the MikroTik device (for restore operations)."""
     await ctx.info(f"Uploading file: filename={filename}")
 
-    # Decode base64 content
+    # Decode the base64 payload to raw bytes (keep binary intact — no utf-8 decode).
     try:
-        content = base64.b64decode(content_base64).decode('utf-8')
+        content = base64.b64decode(content_base64)
     except Exception as e:
         return f"Failed to decode file content: {str(e)}"
 
-    # This is a simplified version - actual implementation would need proper file upload
-    # For now, we'll simulate it
-    return f"File '{filename}' uploaded successfully (simulated)."
+    # Push the bytes to the device over SFTP.
+    try:
+        await asyncio.to_thread(upload_file_sync, filename, content)
+    except Exception as e:
+        return f"Failed to upload file '{filename}': {str(e)}"
+
+    return f"File '{filename}' uploaded successfully."
 
 @mcp.tool(name="restore_backup", annotations=annotate(DANGEROUS, "Restore Backup"))
 async def mikrotik_restore_backup(

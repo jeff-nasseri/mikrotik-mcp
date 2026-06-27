@@ -36,6 +36,46 @@ def _execute_sync(command: str) -> str:
         ssh_client.disconnect()
 
 
+def download_file_sync(filename: str) -> bytes:
+    """Download a file from the MikroTik device over SFTP and return its bytes (blocking)."""
+    logger.info(f"Downloading MikroTik file: {filename}")
+
+    ssh_client = MikroTikSSHClient(
+        host=config.mikrotik_config.host,
+        username=config.mikrotik_config.username,
+        password=config.mikrotik_config.password,
+        key_filename=config.mikrotik_config.key_filename,
+        port=config.mikrotik_config.port
+    )
+
+    try:
+        if not ssh_client.connect():
+            raise ConnectionError("Failed to connect to MikroTik device")
+        return ssh_client.download_file(filename)
+    finally:
+        ssh_client.disconnect()
+
+
+def upload_file_sync(filename: str, data: bytes) -> None:
+    """Upload bytes to a file on the MikroTik device over SFTP (blocking)."""
+    logger.info(f"Uploading MikroTik file: {filename} ({len(data)} bytes)")
+
+    ssh_client = MikroTikSSHClient(
+        host=config.mikrotik_config.host,
+        username=config.mikrotik_config.username,
+        password=config.mikrotik_config.password,
+        key_filename=config.mikrotik_config.key_filename,
+        port=config.mikrotik_config.port
+    )
+
+    try:
+        if not ssh_client.connect():
+            raise ConnectionError("Failed to connect to MikroTik device")
+        ssh_client.upload_file(filename, data)
+    finally:
+        ssh_client.disconnect()
+
+
 async def execute_mikrotik_command(command: str, ctx: Context) -> str:
     """Execute a MikroTik command via SSH and return the output.
 
