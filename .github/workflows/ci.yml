@@ -8,6 +8,24 @@ permissions:
   contents: read
 
 jobs:
+  lockfile:
+    name: Lockfile drift gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: "0.11.x"
+
+      - name: Verify uv.lock is up to date
+        run: |
+          uv lock --check || {
+            echo "::error::uv.lock is out of date with pyproject.toml. Run 'uv lock' locally and commit the updated uv.lock."
+            exit 1
+          }
+
   version:
     name: GitVersion
     runs-on: ubuntu-latest
