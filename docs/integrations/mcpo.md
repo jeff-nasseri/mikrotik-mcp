@@ -55,7 +55,7 @@ If you installed `mcp-server-mikrotik` with pip instead of uv, use `python -m` i
     "mikrotik-mcp-server": {
       "command": "python",
       "args": [
-        "-m", "mcp_server_mikrotik",
+        "-m", "mcp_mikrotik",
         "--password", "admin",
         "--host", "192.168.88.1",
         "--port", "22",
