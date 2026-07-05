@@ -15,32 +15,68 @@ The client fetches the server metadata from the registry, installs `mcp-server-m
 ---
 
 ## Prerequisites
-- Python 3.8+
+- Python 3.10+
 - MikroTik RouterOS device with API access enabled
 - Python dependencies (routeros-api or similar)
 
-## Manual Installation
+## Install from PyPI
+
+### uvx (recommended)
+
+Run the published package directly — `uvx` fetches `mcp-server-mikrotik` and its
+locked dependencies into an isolated, throwaway environment, so there is nothing
+to install or clean up afterwards:
+
+```bash
+# Run the server (stdio, default)
+uvx mcp-server-mikrotik
+
+# Run with SSE transport
+uvx mcp-server-mikrotik --mcp.transport sse
+
+# Run with streamable HTTP transport
+uvx mcp-server-mikrotik --mcp.transport streamable-http
+```
+
+<details>
+<summary>Alternative: using pip</summary>
+
+For a persistent install, install the published package from PyPI and launch it
+as a module:
+
+```bash
+# Create a virtual environment (recommended)
+python -m venv .venv
+source .venv/bin/activate    # Linux/macOS
+# .venv\Scripts\activate     # Windows
+
+# Install the published package
+pip install mcp-server-mikrotik
+
+# Run the server (stdio, default)
+python -m mcp_mikrotik
+
+# Run with SSE transport
+python -m mcp_mikrotik --mcp.transport sse
+
+# Run with streamable HTTP transport
+python -m mcp_mikrotik --mcp.transport streamable-http
+```
+
+</details>
+
+## Run from source (contributors)
 
 ```bash
 # Clone the repository
 git clone https://github.com/jeff-nasseri/mikrotik-mcp.git
 cd mikrotik-mcp
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Provision the exact locked environment (creates .venv automatically)
+uv sync --frozen
 
-# Install dependencies
-pip install -e .
-
-# Run the server (stdio, default)
-mcp-server-mikrotik
-
-# Run with SSE transport
-mcp-server-mikrotik --mcp.transport sse
-
-# Run with streamable HTTP transport
-mcp-server-mikrotik --mcp.transport streamable-http
+# Run the server
+uv run mcp-server-mikrotik
 ```
 
 ### CLI Options
