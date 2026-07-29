@@ -1,5 +1,7 @@
 # MikroTik MCP
 
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.jeff-nasseri%2Fmikrotik-mcp.svg)](https://mcptoplist.com/server/io.github.jeff-nasseri%2Fmikrotik-mcp)
+
 <!-- mcp-name: io.github.jeff-nasseri/mikrotik-mcp -->
 
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jeff-nasseri-mikrotik-mcp-badge.png)](https://mseep.ai/app/jeff-nasseri-mikrotik-mcp)
