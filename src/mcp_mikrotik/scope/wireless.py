@@ -38,13 +38,28 @@ async def mikrotik_detect_wireless_interface_type(ctx: Context) -> Optional[str]
                 if ("bad command name" in result_lower or
                         "failure:" in result_lower or
                         "no such command prefix" in result_lower or
+                        "no such item" in result_lower or
+                        "expected end of command" in result_lower or
                         "invalid command name" in result_lower):
                     await ctx.debug(f"Interface type {interface_type} not supported")
                     continue
-                else:
-                    # If we get a numeric result or no error, this type is supported
-                    await ctx.info(f"Detected wireless interface type: {interface_type}")
-                    return interface_type
+
+                # A menu can exist while holding no interfaces. RouterOS 7.x
+                # ships the /interface wifi menu even when only the legacy
+                # `wireless` package is installed, so `print count-only`
+                # succeeds and returns 0. Accepting that sends every
+                # subsequent command to an empty menu, which then reports
+                # "no clients"/"not found" instead of falling through to
+                # /interface wireless. Only accept a menu that has radios.
+                if result.strip().isdigit() and int(result.strip()) == 0:
+                    await ctx.debug(
+                        f"Interface type {interface_type} exists but has no interfaces"
+                    )
+                    continue
+
+                # If we get a numeric result or no error, this type is supported
+                await ctx.info(f"Detected wireless interface type: {interface_type}")
+                return interface_type
 
         except Exception as e:
             await ctx.debug(f"Interface type {interface_type} failed with exception: {e}")
