@@ -6,6 +6,34 @@ from ..app import mcp, READ, DESTRUCTIVE, annotate
 import re
 from datetime import datetime, timedelta
 
+
+def _apply_log_limit(result: str, limit: Optional[int], print_as: str = "terse") -> str:
+    """Trim log output to the most recent `limit` entries, client-side.
+
+    RouterOS `/log print` has no `limit` parameter -- passing one aborts the
+    whole command with "bad parameter limit (line 1 column 23)" and returns no
+    logs at all. Plain `/log print` and `print terse` emit one line per entry,
+    so those can be sliced safely; `value` and `detail` spread a single entry
+    across several lines (and `value` transposes them into columns), where
+    cutting lines would corrupt the record. Callers using a line-per-entry
+    format pass print_as="terse".
+    """
+    if not limit or limit <= 0 or not result:
+        return result
+
+    if print_as != "terse":
+        return (
+            f"{result}\n\n[note: limit={limit} not applied -- RouterOS /log print "
+            f"has no limit parameter, and print_as={print_as!r} does not emit one "
+            f"line per entry. Use print_as=\"terse\" for a limited view.]"
+        )
+
+    lines = [ln for ln in result.splitlines() if ln.strip()]
+    if len(lines) <= limit:
+        return result
+    return "\n".join(lines[-limit:])
+
+
 @mcp.tool(name="get_logs", annotations=annotate(READ, "Get Logs"))
 async def mikrotik_get_logs(
     ctx: Context,
@@ -20,6 +48,15 @@ async def mikrotik_get_logs(
 ) -> str:
     """Gets logs from the MikroTik device with optional topic, time, and message filters."""
     await ctx.info(f"Getting logs with filters: topics={topics}, action={action}, time={time_filter}")
+
+    # `value` transposes entries into parallel columns, so there is no way to
+    # keep only the last N records once RouterOS has rendered it. A caller
+    # asking for a limit wants fewer entries far more than they want that
+    # particular layout, so fall back to the one-line-per-entry format, which
+    # can be sliced exactly. Without this, limit= silently returns everything.
+    if limit and limit > 0 and print_as == "value":
+        await ctx.debug(f"limit={limit} requested; using terse output so it can be applied")
+        print_as = "terse"
 
     # Build the command
     cmd = f"/log print {print_as}"
@@ -52,9 +89,6 @@ async def mikrotik_get_logs(
     if filters:
         cmd += " where " + " and ".join(filters)
 
-    if limit:
-        cmd += f" limit={limit}"
-
     if follow:
         cmd += " follow"
 
@@ -62,6 +96,8 @@ async def mikrotik_get_logs(
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No log entries found matching the criteria."
+
+    result = _apply_log_limit(result, limit, print_as)
 
     return f"LOG ENTRIES:\n\n{result}"
 
@@ -192,13 +228,12 @@ async def mikrotik_get_security_logs(
     if time_filter:
         cmd += f" and time > ([:timestamp] - {time_filter})"
 
-    if limit:
-        cmd += f" limit={limit}"
-
     result = await execute_mikrotik_command(cmd, ctx)
 
     if not result or result.strip() == "" or result.strip() == "no such item":
         return "No security-related log entries found."
+
+    result = _apply_log_limit(result, limit, "terse")
 
     return f"SECURITY LOG ENTRIES:\n\n{result}"
 
@@ -304,9 +339,9 @@ async def mikrotik_monitor_logs(
     if action:
         cmd += f' action="{action}"'
 
-    # Add a limit to prevent overwhelming output
-    cmd += " limit=100"
-
     result = await execute_mikrotik_command(cmd, ctx)
+
+    # Cap the output client-side; /log print has no `limit` parameter.
+    result = _apply_log_limit(result, 100, "terse")
 
     return f"LOG MONITOR (last {duration} seconds):\n\n{result}"
