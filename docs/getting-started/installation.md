@@ -15,7 +15,7 @@ The client fetches the server metadata from the registry, installs `mcp-server-m
 ---
 
 ## Prerequisites
-- Python 3.8+
+- Python 3.10+
 - MikroTik RouterOS device with API access enabled
 - Python dependencies (routeros-api or similar)
 

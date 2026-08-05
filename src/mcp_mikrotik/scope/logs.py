@@ -1,6 +1,6 @@
 import time
 from typing import Literal, Optional, List, Dict
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, DESTRUCTIVE, annotate
 import re

@@ -1,7 +1,7 @@
 from typing import Literal, Optional, List
 from ..app import mcp, READ, WRITE, DANGEROUS, annotate
 from ..connector import execute_mikrotik_command, download_file_sync, upload_file_sync
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 import asyncio
 import base64
 import time

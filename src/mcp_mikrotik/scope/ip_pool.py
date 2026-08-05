@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate

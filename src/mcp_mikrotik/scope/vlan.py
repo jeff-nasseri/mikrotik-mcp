@@ -1,7 +1,7 @@
 from typing import Annotated, Literal, Optional
 from pydantic import Field
 from ..connector import execute_mikrotik_command
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
 @mcp.tool(name="create_vlan_interface", annotations=annotate(WRITE, "Create VLAN"))
