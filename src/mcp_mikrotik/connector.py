@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 
 from . import config
 from .mikrotik_ssh_client import MikroTikSSHClient

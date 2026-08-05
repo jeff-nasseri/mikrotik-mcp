@@ -1,20 +1,26 @@
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
 
-mcp = FastMCP("mcp-mikrotik")
+# mcp 2.0 renamed FastMCP -> MCPServer and moved it from mcp.server.fastmcp
+# to mcp.server.mcpserver. The decorator API (@tool / @custom_route) and the
+# run(transport=..., host=..., port=...) entry point are unchanged.
+mcp = MCPServer("mcp-mikrotik")
 
 # ── Behaviour presets ──────────────────────────────────────────────────────
 # These capture the *risk profile* of a tool (MCP spec §Tool Annotations).
 # Always pass them through annotate() so every tool also carries a short
 # human-readable title, which allows MCP clients to surface compact tool
 # lists without re-rendering full descriptions — shrinking prompt context.
-READ = ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False)
-WRITE = ToolAnnotations(destructiveHint=False, openWorldHint=False)
-WRITE_IDEMPOTENT = ToolAnnotations(destructiveHint=False, idempotentHint=True, openWorldHint=False)
-DESTRUCTIVE = ToolAnnotations(destructiveHint=True, idempotentHint=True, openWorldHint=False)
-DANGEROUS = ToolAnnotations(destructiveHint=True, openWorldHint=False)
+# NOTE: mcp 2.0 renamed the ToolAnnotations fields to snake_case
+# (readOnlyHint -> read_only_hint, ...). The camelCase names remain as
+# serialization aliases, so the on-the-wire MCP payload is unchanged.
+READ = ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
+WRITE = ToolAnnotations(destructive_hint=False, open_world_hint=False)
+WRITE_IDEMPOTENT = ToolAnnotations(destructive_hint=False, idempotent_hint=True, open_world_hint=False)
+DESTRUCTIVE = ToolAnnotations(destructive_hint=True, idempotent_hint=True, open_world_hint=False)
+DANGEROUS = ToolAnnotations(destructive_hint=True, open_world_hint=False)
 
 
 def annotate(base: ToolAnnotations, title: str) -> ToolAnnotations:
@@ -31,10 +37,10 @@ def annotate(base: ToolAnnotations, title: str) -> ToolAnnotations:
     """
     return ToolAnnotations(
         title=title,
-        readOnlyHint=base.readOnlyHint,
-        destructiveHint=base.destructiveHint,
-        idempotentHint=base.idempotentHint,
-        openWorldHint=base.openWorldHint,
+        read_only_hint=base.read_only_hint,
+        destructive_hint=base.destructive_hint,
+        idempotent_hint=base.idempotent_hint,
+        open_world_hint=base.open_world_hint,
     )
 
 

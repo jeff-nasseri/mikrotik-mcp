@@ -2,7 +2,7 @@ import ipaddress
 from typing import Optional
 
 from ..connector import execute_mikrotik_command
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 from ..app import mcp, READ, WRITE, DESTRUCTIVE, annotate
 
 

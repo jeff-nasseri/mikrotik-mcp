@@ -4,7 +4,7 @@ This guide shows how to expose your MikroTik MCP server as a RESTful API using M
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.10+
 - MikroTik MCP server already set up
 - `uv` package manager (recommended) or `pip`
 

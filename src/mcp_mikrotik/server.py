@@ -37,9 +37,8 @@ def _build_transport_security(
 ) -> TransportSecuritySettings:
     """Build DNS-rebinding protection settings for the HTTP transports.
 
-    Why this is needed (issue #86): the FastMCP instance is constructed with the
-    default localhost bind, so FastMCP auto-enables DNS-rebinding protection with
-    a localhost-only Host allowlist. When the server is then bound to a
+    Why this is needed (issue #86): the MCP SDK defaults its DNS-rebinding
+    protection to a localhost-only Host allowlist. When the server is bound to a
     non-localhost host (e.g. ``0.0.0.0`` in a container) and fronted by a reverse
     proxy, that localhost allowlist rejects every real request to ``/mcp`` with
     HTTP 421 "Invalid Host header". Here we reconcile the protection settings
@@ -103,15 +102,23 @@ def main():
     _warn_if_plaintext_password_in_container(config.mikrotik_config, logger)
 
     try:
-        mcp.settings.host = config.mikrotik_config.mcp.host
-        mcp.settings.port = config.mikrotik_config.mcp.port
-        # Reconcile DNS-rebinding protection with the actual runtime host so the
-        # HTTP transports work behind a reverse proxy / on non-localhost (#86).
-        if config.mikrotik_config.mcp.transport in ("sse", "streamable-http"):
-            mcp.settings.transport_security = _build_transport_security(
-                config.mikrotik_config.mcp, logger
-            )
-        mcp.run(transport=config.mikrotik_config.mcp.transport)
+        transport = config.mikrotik_config.mcp.transport
+        # mcp 2.0 removed the mutable `mcp.settings` object: host/port and the
+        # DNS-rebinding settings are now passed straight to run(). stdio takes
+        # no transport options.
+        run_kwargs = {}
+        if transport in ("sse", "streamable-http"):
+            run_kwargs = {
+                "host": config.mikrotik_config.mcp.host,
+                "port": config.mikrotik_config.mcp.port,
+                # Reconcile DNS-rebinding protection with the actual runtime host
+                # so the HTTP transports work behind a reverse proxy / on
+                # non-localhost (#86).
+                "transport_security": _build_transport_security(
+                    config.mikrotik_config.mcp, logger
+                ),
+            }
+        mcp.run(transport=transport, **run_kwargs)
     except KeyboardInterrupt:
         logger.info("MCP MikroTik server stopped by user")
     except Exception as e:

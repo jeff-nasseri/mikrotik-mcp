@@ -3,24 +3,24 @@ import types
 import pytest
 
 
-def test_server_main_runs_mcp(monkeypatch):
+def test_server_main_runs_mcp_stdio(monkeypatch):
+    """stdio takes no transport options — run() must be called bare."""
     from mcp_mikrotik import server
 
-    calls = {"run": 0}
+    calls = {"run": 0, "kwargs": None, "transport": None}
 
     class FakeMcp:
-        def __init__(self):
-            self.settings = types.SimpleNamespace(host=None, port=None)
-
-        def run(self, transport: str):
+        def run(self, transport: str, **kwargs):
             calls["run"] += 1
-            assert transport == "stdio"
+            calls["transport"] = transport
+            calls["kwargs"] = kwargs
 
     cfg = types.SimpleNamespace(
         host="10.0.0.1",
         username="admin",
         key_filename=None,
-        mcp=types.SimpleNamespace(host="127.0.0.1", port=8123, transport="stdio"),
+        mcp=types.SimpleNamespace(host="127.0.0.1", port=8123, transport="stdio",
+                                  allowed_hosts="", allowed_origins=""),
     )
 
     monkeypatch.setattr(server, "MikrotikConfig", lambda _cli_parse_args=True: cfg)
@@ -28,8 +28,39 @@ def test_server_main_runs_mcp(monkeypatch):
 
     server.main()
     assert calls["run"] == 1
-    assert server.mcp.settings.host == "127.0.0.1"
-    assert server.mcp.settings.port == 8123
+    assert calls["transport"] == "stdio"
+    assert calls["kwargs"] == {}, "stdio must not receive host/port/transport_security"
+
+
+def test_server_main_passes_http_options_to_run(monkeypatch):
+    """mcp 2.0 removed mcp.settings: host/port/security go to run() as kwargs."""
+    from mcp_mikrotik import server
+
+    calls = {"transport": None, "kwargs": None}
+
+    class FakeMcp:
+        def run(self, transport: str, **kwargs):
+            calls["transport"] = transport
+            calls["kwargs"] = kwargs
+
+    cfg = types.SimpleNamespace(
+        host="10.0.0.1",
+        username="admin",
+        key_filename=None,
+        mcp=types.SimpleNamespace(host="0.0.0.0", port=8123, transport="streamable-http",
+                                  allowed_hosts="mcp.example.com", allowed_origins=""),
+    )
+
+    monkeypatch.setattr(server, "MikrotikConfig", lambda _cli_parse_args=True: cfg)
+    monkeypatch.setattr(server, "mcp", FakeMcp())
+
+    server.main()
+    assert calls["transport"] == "streamable-http"
+    assert calls["kwargs"]["host"] == "0.0.0.0"
+    assert calls["kwargs"]["port"] == 8123
+    ts = calls["kwargs"]["transport_security"]
+    assert ts.enable_dns_rebinding_protection is True
+    assert ts.allowed_hosts == ["mcp.example.com"]
 
 
 def test_server_main_exits_on_exception(monkeypatch):

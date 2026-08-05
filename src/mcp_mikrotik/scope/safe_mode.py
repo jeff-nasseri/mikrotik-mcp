@@ -1,6 +1,6 @@
 import asyncio
 
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 
 from ..app import mcp, READ, WRITE, annotate
 from ..safe_mode import get_safe_mode_manager
