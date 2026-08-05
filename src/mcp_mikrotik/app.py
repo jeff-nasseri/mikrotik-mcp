@@ -3,9 +3,6 @@ from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
 
-# mcp 2.0 renamed FastMCP -> MCPServer and moved it from mcp.server.fastmcp
-# to mcp.server.mcpserver. The decorator API (@tool / @custom_route) and the
-# run(transport=..., host=..., port=...) entry point are unchanged.
 mcp = MCPServer("mcp-mikrotik")
 
 # ── Behaviour presets ──────────────────────────────────────────────────────
@@ -13,9 +10,6 @@ mcp = MCPServer("mcp-mikrotik")
 # Always pass them through annotate() so every tool also carries a short
 # human-readable title, which allows MCP clients to surface compact tool
 # lists without re-rendering full descriptions — shrinking prompt context.
-# NOTE: mcp 2.0 renamed the ToolAnnotations fields to snake_case
-# (readOnlyHint -> read_only_hint, ...). The camelCase names remain as
-# serialization aliases, so the on-the-wire MCP payload is unchanged.
 READ = ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
 WRITE = ToolAnnotations(destructive_hint=False, open_world_hint=False)
 WRITE_IDEMPOTENT = ToolAnnotations(destructive_hint=False, idempotent_hint=True, open_world_hint=False)
