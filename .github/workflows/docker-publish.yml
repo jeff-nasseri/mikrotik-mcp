@@ -63,6 +63,15 @@ jobs:
           echo "majorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}"
           echo "assemblySemVer:  ${{ steps.gitversion.outputs.assemblySemVer }}"
 
+      # The repo's pyproject.toml carries a placeholder version; the real one is
+      # computed by GitVersion at release time. publish.yml already does this
+      # before building the PyPI artifact — do the same here so the version
+      # baked into the image matches its tag, instead of the placeholder.
+      - name: Update version in pyproject.toml
+        run: |
+          sed -i 's/version = ".*"/version = "${{ steps.gitversion.outputs.assemblySemVer }}"/' pyproject.toml
+          grep '^version' pyproject.toml
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
