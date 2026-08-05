@@ -4,7 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-server-mikrotik"
-version = "0.1.14"
+# Placeholder only: the real version is computed by GitVersion and injected
+# into this line by CI at release time (see .github/workflows/publish.yml).
+version = "0.0.0"
 description = "MCP server for MikroTik integration with Claude and other AI assistants"
 readme = "README.md"
 requires-python = ">=3.10"
