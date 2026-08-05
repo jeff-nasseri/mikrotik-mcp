@@ -103,9 +103,7 @@ def main():
 
     try:
         transport = config.mikrotik_config.mcp.transport
-        # mcp 2.0 removed the mutable `mcp.settings` object: host/port and the
-        # DNS-rebinding settings are now passed straight to run(). stdio takes
-        # no transport options.
+        # stdio takes no transport options.
         run_kwargs = {}
         if transport in ("sse", "streamable-http"):
             run_kwargs = {
