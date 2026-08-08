@@ -100,6 +100,30 @@ region. **Credentials are never returned.**
 list_devices()
 ```
 
+## Docker
+
+The image accepts the same two variables, and ships a `/config` directory to
+mount the inventory into:
+
+```bash
+docker run --rm -i \
+  -v "$PWD/inventory.json:/config/inventory.json:ro" \
+  -e MIKROTIK_INVENTORY_FILE=/config/inventory.json \
+  ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+```
+
+The entrypoint also takes `--inventory '<json>'` and `--inventory-file <path>`.
+
+A mounted file is preferable to `MIKROTIK_INVENTORY`: environment values are
+visible in `docker inspect`, file contents are not. The container runs as **uid
+1000** (`mcpuser`), so the file must be readable by that uid; if it isn't, the
+entrypoint stops with an explicit message instead of starting with no devices.
+
+When an inventory is configured it wins, so `MIKROTIK_HOST` / `MIKROTIK_USERNAME`
+/ `MIKROTIK_PASSWORD` / `MIKROTIK_PORT` are ignored and can be dropped.
+
+See [Installation](../../getting-started/installation.md) for a Compose example.
+
 ## Connections are per command
 
 Every command opens its own SSH connection to the target device and closes it
