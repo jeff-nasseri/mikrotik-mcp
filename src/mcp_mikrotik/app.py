@@ -3,7 +3,17 @@ from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
 
-mcp = MCPServer("mcp-mikrotik")
+# Sent once, in the initialize response, instead of being repeated in all 173
+# tool descriptions — the same guidance costs ~60 tokens here rather than ~4k.
+INSTRUCTIONS = (
+    "This server manages one or more MikroTik devices. Every tool accepts an "
+    "optional `device` argument: the title of the target device, as listed by "
+    "`list_devices`. Omit it when a single device is configured; when several "
+    "are, it is required. Titles match case-insensitively, and an omitted or "
+    "unknown device returns an error naming the valid titles."
+)
+
+mcp = MCPServer("mcp-mikrotik", instructions=INSTRUCTIONS)
 
 # ── Behaviour presets ──────────────────────────────────────────────────────
 # These capture the *risk profile* of a tool (MCP spec §Tool Annotations).
@@ -47,5 +57,5 @@ async def health_check(request: Request) -> Response:
 # Import scope modules to trigger @mcp.tool() registration
 from mcp_mikrotik.scope import (  # noqa: F401, E402
     backup, dhcp, dns, firewall_filter, firewall_nat,
-    interfaces, ip_address, ipv6_address, ip_pool, logs, poe, queue, safe_mode, routes, users, vlan, wireless, wireguard,
+    interfaces, inventory, ip_address, ipv6_address, ip_pool, logs, poe, queue, safe_mode, routes, users, vlan, wireless, wireguard,
 )

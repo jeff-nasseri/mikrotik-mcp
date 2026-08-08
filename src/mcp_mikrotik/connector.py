@@ -1,99 +1,89 @@
 import asyncio
 import logging
+from typing import Optional
 
 from mcp.server.mcpserver import Context
 
-from . import config
-from .mikrotik_ssh_client import MikroTikSSHClient
+from .inventory import DeviceNotFoundError, get_inventory
 
 logger = logging.getLogger(__name__)
 
 
-def _execute_sync(command: str) -> str:
-    """Execute a MikroTik command via SSH and return the output (blocking)."""
-    logger.info(f"Executing MikroTik command: {command}")
+def _execute_sync(command: str, device: Optional[str] = None) -> str:
+    """Execute a MikroTik command over a fresh SSH connection (blocking).
 
-    ssh_client = MikroTikSSHClient(
-        host=config.mikrotik_config.host,
-        username=config.mikrotik_config.username,
-        password=config.mikrotik_config.password,
-        key_filename=config.mikrotik_config.key_filename,
-        port=config.mikrotik_config.port
-    )
+    Each call opens its own connection and closes it again, so concurrent
+    sessions never share a client.
+    """
+    inventory = get_inventory()
+    target = inventory.resolve(device)
+    logger.info(f"Executing MikroTik command on '{target.title}': {command}")
 
-    try:
-        if not ssh_client.connect():
-            return "Error: Failed to connect to MikroTik device"
+    with inventory.session(target.title) as client:
+        result = client.execute_command(command)
 
-        result = ssh_client.execute_command(command)
-        logger.info(f"Command result: {repr(result)}")
-        return result
-    except Exception as e:
-        error_msg = f"Error executing command: {str(e)}"
-        logger.error(error_msg)
-        return error_msg
-    finally:
-        ssh_client.disconnect()
+    logger.info(f"Command result: {repr(result)}")
+    return result
 
 
-def download_file_sync(filename: str) -> bytes:
-    """Download a file from the MikroTik device over SFTP and return its bytes (blocking)."""
-    logger.info(f"Downloading MikroTik file: {filename}")
+def download_file_sync(filename: str, device: Optional[str] = None) -> bytes:
+    """Download a file from the target device over SFTP and return its bytes."""
+    inventory = get_inventory()
+    target = inventory.resolve(device)
+    logger.info(f"Downloading file from '{target.title}': {filename}")
 
-    ssh_client = MikroTikSSHClient(
-        host=config.mikrotik_config.host,
-        username=config.mikrotik_config.username,
-        password=config.mikrotik_config.password,
-        key_filename=config.mikrotik_config.key_filename,
-        port=config.mikrotik_config.port
-    )
-
-    try:
-        if not ssh_client.connect():
-            raise ConnectionError("Failed to connect to MikroTik device")
-        return ssh_client.download_file(filename)
-    finally:
-        ssh_client.disconnect()
+    with inventory.session(target.title) as client:
+        return client.download_file(filename)
 
 
-def upload_file_sync(filename: str, data: bytes) -> None:
-    """Upload bytes to a file on the MikroTik device over SFTP (blocking)."""
-    logger.info(f"Uploading MikroTik file: {filename} ({len(data)} bytes)")
+def upload_file_sync(filename: str, data: bytes, device: Optional[str] = None) -> None:
+    """Upload bytes to a file on the target device over SFTP."""
+    inventory = get_inventory()
+    target = inventory.resolve(device)
+    logger.info(f"Uploading file to '{target.title}': {filename} ({len(data)} bytes)")
 
-    ssh_client = MikroTikSSHClient(
-        host=config.mikrotik_config.host,
-        username=config.mikrotik_config.username,
-        password=config.mikrotik_config.password,
-        key_filename=config.mikrotik_config.key_filename,
-        port=config.mikrotik_config.port
-    )
-
-    try:
-        if not ssh_client.connect():
-            raise ConnectionError("Failed to connect to MikroTik device")
-        ssh_client.upload_file(filename, data)
-    finally:
-        ssh_client.disconnect()
+    with inventory.session(target.title) as client:
+        client.upload_file(filename, data)
 
 
-async def execute_mikrotik_command(command: str, ctx: Context) -> str:
-    """Execute a MikroTik command via SSH and return the output.
+async def execute_mikrotik_command(
+    command: str, ctx: Context, device: Optional[str] = None
+) -> str:
+    """Execute a MikroTik command on the selected device and return the output.
 
-    When Safe Mode is active the command is routed through the persistent
-    interactive shell session so it runs inside the safe-mode context.
+    ``device`` is the inventory title of the target. It may be omitted when the
+    inventory holds exactly one device.
+
+    When Safe Mode is active *for that device* the command is routed through
+    that device's persistent interactive shell so it runs inside the safe-mode
+    context.
     """
     from .safe_mode import get_safe_mode_manager
 
-    safe_mgr = get_safe_mode_manager()
+    # Resolve the target first so a bad/missing device is reported clearly and
+    # never silently executed somewhere else.
+    try:
+        target = get_inventory().resolve(device)
+    except DeviceNotFoundError as exc:
+        msg = f"Error: {exc}"
+        await ctx.error(msg)
+        return msg
+
+    safe_mgr = get_safe_mode_manager(target.title)
     if safe_mgr.is_active:
-        await ctx.info(f"Executing (safe mode): {command}")
+        await ctx.info(f"Executing on '{target.title}' (safe mode): {command}")
         try:
             result = await asyncio.to_thread(safe_mgr.execute, command)
         except Exception as e:
             result = f"Error executing command in safe mode session: {str(e)}"
     else:
-        await ctx.info(f"Executing MikroTik command: {command}")
-        result = await asyncio.to_thread(_execute_sync, command)
+        await ctx.info(f"Executing on '{target.title}': {command}")
+        try:
+            result = await asyncio.to_thread(_execute_sync, command, target.title)
+        except ConnectionError as e:
+            result = f"Error: {str(e)}"
+        except Exception as e:
+            result = f"Error executing command: {str(e)}"
 
     logger.info(f"Command result: {repr(result)}")
     if result.startswith("Error"):

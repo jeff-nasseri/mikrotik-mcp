@@ -16,7 +16,8 @@ async def mikrotik_create_dhcp_server(
     disabled: bool = False,
     authoritative: Literal["yes", "no", "after-2sec-delay"] = "yes",
     delay_threshold: Optional[str] = None,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None
 ) -> str:
     """Creates a DHCP server bound to the specified interface on the MikroTik device.
 
@@ -44,14 +45,14 @@ async def mikrotik_create_dhcp_server(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create DHCP server: {result}"
 
     # Get the created server details
     details_cmd = f'/ip dhcp-server print detail where name="{name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"DHCP server created successfully:\n\n{details}"
 
@@ -61,7 +62,8 @@ async def mikrotik_list_dhcp_servers(
     name_filter: Optional[str] = None,
     interface_filter: Optional[str] = None,
     disabled_only: bool = False,
-    invalid_only: bool = False
+    invalid_only: bool = False,
+    device: Optional[str] = None
 ) -> str:
     """Lists DHCP servers on the MikroTik device."""
     await ctx.info(f"Listing DHCP servers with filters: name={name_filter}, interface={interface_filter}")
@@ -83,7 +85,7 @@ async def mikrotik_list_dhcp_servers(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "No DHCP servers found matching the criteria."
@@ -91,12 +93,12 @@ async def mikrotik_list_dhcp_servers(
     return f"DHCP SERVERS:\n\n{result}"
 
 @mcp.tool(name="get_dhcp_server", annotations=annotate(READ, "Get DHCP Server"))
-async def mikrotik_get_dhcp_server(ctx: Context, name: str) -> str:
+async def mikrotik_get_dhcp_server(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Gets detailed information about a specific DHCP server."""
     await ctx.info(f"Getting DHCP server details: name={name}")
 
     cmd = f'/ip dhcp-server print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"DHCP server '{name}' not found."
@@ -114,7 +116,8 @@ async def mikrotik_create_dhcp_network(
     wins_servers: Optional[List[str]] = None,
     ntp_servers: Optional[List[str]] = None,
     dhcp_option: Optional[List[str]] = None,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None
 ) -> str:
     """Creates a DHCP network configuration (gateway, DNS, domain, etc.) on the MikroTik device."""
     await ctx.info(f"Creating DHCP network: network={network}, gateway={gateway}")
@@ -144,14 +147,14 @@ async def mikrotik_create_dhcp_network(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create DHCP network: {result}"
 
     # Get the created network details
     details_cmd = f'/ip dhcp-server network print detail where address="{network}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"DHCP network created successfully:\n\n{details}"
 
@@ -161,7 +164,8 @@ async def mikrotik_create_dhcp_pool(
     name: str,
     ranges: str,
     next_pool: Optional[str] = None,
-    comment: Optional[str] = None
+    comment: Optional[str] = None,
+    device: Optional[str] = None
 ) -> str:
     """Creates a DHCP address pool with the given IP ranges on the MikroTik device.
 
@@ -181,32 +185,32 @@ async def mikrotik_create_dhcp_pool(
     if comment:
         cmd += f' comment="{comment}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create DHCP pool: {result}"
 
     # Get the created pool details
     details_cmd = f'/ip pool print detail where name="{name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"DHCP pool created successfully:\n\n{details}"
 
 @mcp.tool(name="remove_dhcp_server", annotations=annotate(DESTRUCTIVE, "Remove DHCP Server"))
-async def mikrotik_remove_dhcp_server(ctx: Context, name: str) -> str:
+async def mikrotik_remove_dhcp_server(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Removes a DHCP server from the MikroTik device."""
     await ctx.info(f"Removing DHCP server: name={name}")
 
     # First check if the server exists
     check_cmd = f'/ip dhcp-server print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"DHCP server '{name}' not found."
 
     # Remove the server
     cmd = f'/ip dhcp-server remove [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove DHCP server: {result}"

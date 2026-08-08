@@ -2,7 +2,7 @@ import logging
 import re
 import threading
 import time
-from typing import Optional
+from typing import Dict, List, Optional
 
 from . import config
 from .mikrotik_ssh_client import MikroTikSSHClient
@@ -39,7 +39,10 @@ class SafeModeManager:
     exits Safe Mode.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, device: Optional[str] = None) -> None:
+        # Inventory title of the device this session belongs to. ``None`` means
+        # "the only device", resolved through the inventory at connect time.
+        self.device = device
         self._ssh: Optional[MikroTikSSHClient] = None
         self._channel = None
         self._active = False
@@ -59,15 +62,28 @@ class SafeModeManager:
             if self._active:
                 return "Safe mode is already active."
 
+            # Safe mode needs a persistent shell that outlives a single
+            # command, so it holds its own connection rather than borrowing one
+            # from the inventory, and builds it from the resolved device.
+            from .inventory import DeviceNotFoundError, get_inventory
+
+            try:
+                target = get_inventory().resolve(self.device)
+            except DeviceNotFoundError as exc:
+                return f"Error: {exc}"
+
             ssh = MikroTikSSHClient(
-                host=config.mikrotik_config.host,
-                username=config.mikrotik_config.username,
-                password=config.mikrotik_config.password,
-                key_filename=config.mikrotik_config.key_filename,
-                port=config.mikrotik_config.port,
+                host=target.host,
+                username=target.username,
+                password=target.password,
+                key_filename=target.key_filename,
+                port=target.port,
             )
             if not ssh.connect():
-                return "Error: Failed to connect to MikroTik device for safe mode session."
+                return (
+                    f"Error: Failed to connect to MikroTik device '{target.title}' "
+                    "for safe mode session."
+                )
 
             channel = ssh.client.invoke_shell(term='dumb', width=220, height=50)
             channel.settimeout(1.0)
@@ -209,17 +225,40 @@ class SafeModeManager:
 
 
 # ---------------------------------------------------------------------------
-# Module-level singleton
+# One manager per device
 # ---------------------------------------------------------------------------
+#
+# Safe mode holds a persistent shell, so it MUST be tracked per device: with a
+# single shared manager, enabling safe mode on one router would silently route
+# every other device's commands into that router's shell.
 
-_manager: Optional[SafeModeManager] = None
+_managers: Dict[str, SafeModeManager] = {}
 _manager_lock = threading.Lock()
 
 
-def get_safe_mode_manager() -> SafeModeManager:
-    global _manager
-    if _manager is None:
+def _manager_key(device: Optional[str]) -> str:
+    """Resolve the device to a stable key, falling back to the raw value."""
+    try:
+        from .inventory import get_inventory
+
+        return get_inventory().resolve(device).title.casefold()
+    except Exception:
+        return (device or "").casefold()
+
+
+def get_safe_mode_manager(device: Optional[str] = None) -> SafeModeManager:
+    """Return the safe-mode manager for ``device`` (the only device if omitted)."""
+    key = _manager_key(device)
+    manager = _managers.get(key)
+    if manager is None:
         with _manager_lock:
-            if _manager is None:
-                _manager = SafeModeManager()
-    return _manager
+            manager = _managers.get(key)
+            if manager is None:
+                manager = SafeModeManager(device)
+                _managers[key] = manager
+    return manager
+
+
+def get_active_safe_mode_devices() -> List[str]:
+    """Titles of devices that currently have an active safe-mode session."""
+    return [m.device or key for key, m in _managers.items() if m.is_active]

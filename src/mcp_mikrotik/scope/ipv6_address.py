@@ -35,6 +35,7 @@ async def mikrotik_add_ipv6_address(
     no_dad: Optional[bool] = None,
     comment: Optional[str] = None,
     disabled: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """Adds an IPv6 address to an interface on the MikroTik device.
 
@@ -64,7 +65,7 @@ async def mikrotik_add_ipv6_address(
     if disabled:
         cmd += " disabled=yes"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to add IPv6 address: {result}"
@@ -75,7 +76,7 @@ async def mikrotik_add_ipv6_address(
     # MAC — in both cases the stored address differs from the input, so a
     # by-address lookup would miss the very entry we just created.
     details_cmd = f'/ipv6 address print detail where interface="{interface}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     if details.strip() and "address=" in details:
         return f"IPv6 address added successfully (addresses on {interface}):\n\n{details}"
@@ -91,6 +92,7 @@ async def mikrotik_list_ipv6_addresses(
     dynamic_only: bool = False,
     global_only: bool = False,
     link_local_only: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """Lists IPv6 addresses on the MikroTik device.
 
@@ -122,7 +124,7 @@ async def mikrotik_list_ipv6_addresses(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "No IPv6 addresses found matching the criteria."
@@ -131,7 +133,9 @@ async def mikrotik_list_ipv6_addresses(
 
 
 @mcp.tool(name="get_ipv6_address", annotations=annotate(READ, "Get IPv6 Address"))
-async def mikrotik_get_ipv6_address(ctx: Context, address_id: str) -> str:
+async def mikrotik_get_ipv6_address(
+    ctx: Context, address_id: str, device: Optional[str] = None
+) -> str:
     """Gets detailed information about a specific IPv6 address by ID or address value.
 
     Notes:
@@ -153,7 +157,7 @@ async def mikrotik_get_ipv6_address(ctx: Context, address_id: str) -> str:
 
     for where in queries:
         result = await execute_mikrotik_command(
-            f"/ipv6 address print detail where {where}", ctx
+            f"/ipv6 address print detail where {where}", ctx, device=device
         )
         if result and "address=" in result:
             return f"IPV6 ADDRESS DETAILS:\n\n{result}"
@@ -162,7 +166,9 @@ async def mikrotik_get_ipv6_address(ctx: Context, address_id: str) -> str:
 
 
 @mcp.tool(name="remove_ipv6_address", annotations=annotate(DESTRUCTIVE, "Remove IPv6 Address"))
-async def mikrotik_remove_ipv6_address(ctx: Context, address_id: str) -> str:
+async def mikrotik_remove_ipv6_address(
+    ctx: Context, address_id: str, device: Optional[str] = None
+) -> str:
     """Removes an IPv6 address from the MikroTik device by ID or address value.
 
     Notes:
@@ -175,12 +181,12 @@ async def mikrotik_remove_ipv6_address(ctx: Context, address_id: str) -> str:
 
     # Try to find by ID first
     check_cmd = f'/ipv6 address print count-only where .id="{address_id}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         # Try finding by (canonicalized) address value
         check_cmd = f'/ipv6 address print count-only where address="{addr}"'
-        count = await execute_mikrotik_command(check_cmd, ctx)
+        count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
         if count.strip() == "0":
             return f"IPv6 address '{address_id}' not found."
@@ -189,7 +195,7 @@ async def mikrotik_remove_ipv6_address(ctx: Context, address_id: str) -> str:
     else:
         cmd = f'/ipv6 address remove [find .id="{address_id}"]'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove IPv6 address: {result}"

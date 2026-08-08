@@ -5,7 +5,7 @@ from mcp.server.mcpserver import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
 
-async def mikrotik_detect_wireless_interface_type(ctx: Context) -> Optional[str]:
+async def mikrotik_detect_wireless_interface_type(ctx: Context, device: Optional[str] = None) -> Optional[str]:
     """
     Detects the wireless interface type based on RouterOS version.
 
@@ -28,7 +28,7 @@ async def mikrotik_detect_wireless_interface_type(ctx: Context) -> Optional[str]
 
             # Use a simpler test command that's less likely to hang
             test_cmd = f"{interface_type} print count-only"
-            result = await execute_mikrotik_command(test_cmd, ctx)
+            result = await execute_mikrotik_command(test_cmd, ctx, device=device)
 
             await ctx.debug(f"Result for {interface_type}: {result}")
 
@@ -68,12 +68,13 @@ async def mikrotik_create_wireless_interface(
         band: Optional[Literal["2ghz-b", "2ghz-b/g", "2ghz-b/g/n", "5ghz-a", "5ghz-a/n", "5ghz-a/n/ac", "2ghz-g", "2ghz-n", "5ghz-n", "5ghz-ac"]] = None,
         channel_width: Optional[Literal["20mhz", "40mhz", "80mhz", "160mhz", "20/40mhz-eC", "20/40mhz-Ce"]] = None,
         security_profile: Optional[str] = None,
+        device: Optional[str] = None,
 ) -> str:
     """Creates a wireless interface on the MikroTik device (auto-detects RouterOS v6/v7 syntax)."""
     await ctx.info(f"Creating wireless interface: name={name}, ssid={ssid}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
@@ -124,14 +125,14 @@ async def mikrotik_create_wireless_interface(
                 cmd += f" {param_name}={param_value}"
 
     await ctx.info(f"Executing command: {cmd}")
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to create wireless interface: {result}"
 
     # Get the created interface details
     details_cmd = f'{interface_type} print detail where name="{name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"Wireless interface created successfully using {interface_type}:\n\n{details}"
 
@@ -141,7 +142,8 @@ async def mikrotik_list_wireless_interfaces(
         ctx: Context,
         name_filter: Optional[str] = None,
         disabled_only: bool = False,
-        running_only: bool = False
+        running_only: bool = False,
+        device: Optional[str] = None
 ) -> str:
     """Lists wireless interfaces on the MikroTik device."""
     await ctx.info(f"Listing wireless interfaces with filters: name={name_filter}")
@@ -174,7 +176,7 @@ async def mikrotik_list_wireless_interfaces(
             if filters:
                 cmd += " where " + " and ".join(filters)
 
-            result = await execute_mikrotik_command(cmd, ctx)
+            result = await execute_mikrotik_command(cmd, ctx, device=device)
 
             # Check if command worked and has results
             if (result and
@@ -196,7 +198,7 @@ async def mikrotik_list_wireless_interfaces(
     # If no results found, try to show all interfaces to help debug
     try:
         all_interfaces_cmd = "/interface print"
-        all_interfaces = await execute_mikrotik_command(all_interfaces_cmd, ctx)
+        all_interfaces = await execute_mikrotik_command(all_interfaces_cmd, ctx, device=device)
         return f"""No wireless interfaces found matching the criteria.
 
 DEBUGGING INFO:
@@ -212,18 +214,18 @@ NOTE: If you see wireless interfaces above, they might be using a different comm
 
 
 @mcp.tool(name="get_wireless_interface", annotations=annotate(READ, "Get Wireless Interface"))
-async def mikrotik_get_wireless_interface(ctx: Context, name: str) -> str:
+async def mikrotik_get_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Gets detailed information about a specific wireless interface."""
     await ctx.info(f"Getting wireless interface details: name={name}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
 
     cmd = f'{interface_type} print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"Wireless interface '{name}' not found."
@@ -232,26 +234,26 @@ async def mikrotik_get_wireless_interface(ctx: Context, name: str) -> str:
 
 
 @mcp.tool(name="remove_wireless_interface", annotations=annotate(DESTRUCTIVE, "Remove Wireless Interface"))
-async def mikrotik_remove_wireless_interface(ctx: Context, name: str) -> str:
+async def mikrotik_remove_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Removes a wireless interface from the MikroTik device."""
     await ctx.info(f"Removing wireless interface: name={name}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
 
     # Check if interface exists
     check_cmd = f'{interface_type} print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Wireless interface '{name}' not found."
 
     # Remove the interface
     cmd = f'{interface_type} remove [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove wireless interface: {result}"
@@ -260,18 +262,18 @@ async def mikrotik_remove_wireless_interface(ctx: Context, name: str) -> str:
 
 
 @mcp.tool(name="enable_wireless_interface", annotations=annotate(WRITE_IDEMPOTENT, "Enable Wireless Interface"))
-async def mikrotik_enable_wireless_interface(ctx: Context, name: str) -> str:
+async def mikrotik_enable_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Enables a wireless interface."""
     await ctx.info(f"Enabling wireless interface: {name}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
 
     cmd = f'{interface_type} enable [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to enable wireless interface: {result}"
@@ -280,18 +282,18 @@ async def mikrotik_enable_wireless_interface(ctx: Context, name: str) -> str:
 
 
 @mcp.tool(name="disable_wireless_interface", annotations=annotate(WRITE_IDEMPOTENT, "Disable Wireless Interface"))
-async def mikrotik_disable_wireless_interface(ctx: Context, name: str) -> str:
+async def mikrotik_disable_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Disables a wireless interface."""
     await ctx.info(f"Disabling wireless interface: {name}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
 
     cmd = f'{interface_type} disable [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to disable wireless interface: {result}"
@@ -303,13 +305,14 @@ async def mikrotik_disable_wireless_interface(ctx: Context, name: str) -> str:
 async def mikrotik_scan_wireless_networks(
         ctx: Context,
         interface: str,
-        duration: int = 5
+        duration: int = 5,
+        device: Optional[str] = None
 ) -> str:
     """Scans for nearby wireless networks using the specified interface."""
     await ctx.info(f"Scanning wireless networks on interface: {interface}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
@@ -317,7 +320,7 @@ async def mikrotik_scan_wireless_networks(
     # Different scan commands for different versions
     scan_cmd = f'{interface_type} scan {interface} duration={duration}'
 
-    result = await execute_mikrotik_command(scan_cmd, ctx)
+    result = await execute_mikrotik_command(scan_cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to scan wireless networks: {result}"
@@ -328,13 +331,14 @@ async def mikrotik_scan_wireless_networks(
 @mcp.tool(name="get_wireless_registration_table", annotations=annotate(READ, "Wireless Registration Table"))
 async def mikrotik_get_wireless_registration_table(
         ctx: Context,
-        interface: Optional[str] = None
+        interface: Optional[str] = None,
+        device: Optional[str] = None
 ) -> str:
     """Gets the wireless registration table (connected clients) from the MikroTik device."""
     await ctx.info(f"Getting wireless registration table for interface: {interface}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
@@ -345,7 +349,7 @@ async def mikrotik_get_wireless_registration_table(
     if interface:
         cmd += f' where interface="{interface}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "No wireless clients registered."
@@ -354,24 +358,24 @@ async def mikrotik_get_wireless_registration_table(
 
 
 @mcp.tool(name="check_wireless_support", annotations=annotate(READ, "Check Wireless Support"))
-async def mikrotik_check_wireless_support(ctx: Context) -> str:
+async def mikrotik_check_wireless_support(ctx: Context, device: Optional[str] = None) -> str:
     """Checks if the device supports wireless and reports the RouterOS version and wireless interface type."""
     await ctx.info("Checking wireless support")
 
     # Check RouterOS version
     version_cmd = "/system resource print"
-    version_result = await execute_mikrotik_command(version_cmd, ctx)
+    version_result = await execute_mikrotik_command(version_cmd, ctx, device=device)
 
     # Check installed packages
     package_cmd = "/system package print"
-    package_result = await execute_mikrotik_command(package_cmd, ctx)
+    package_result = await execute_mikrotik_command(package_cmd, ctx, device=device)
 
     # Check available interfaces
     interface_cmd = "/interface print"
-    interface_result = await execute_mikrotik_command(interface_cmd, ctx)
+    interface_result = await execute_mikrotik_command(interface_cmd, ctx, device=device)
 
     # Detect wireless interface type
-    wireless_type = await mikrotik_detect_wireless_interface_type(ctx)
+    wireless_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     report = f"""WIRELESS SUPPORT CHECK:
 
@@ -405,72 +409,72 @@ For legacy systems:
 
 # Legacy compatibility functions (simplified versions for older RouterOS)
 @mcp.tool(name="create_wireless_security_profile", annotations=annotate(WRITE, "Create Wireless Security Profile"))
-async def mikrotik_create_wireless_security_profile(ctx: Context, name: str) -> str:
+async def mikrotik_create_wireless_security_profile(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Configure security directly on the wireless interface."
     return "Legacy security profile creation not implemented in this version."
 
 
 @mcp.tool(name="list_wireless_security_profiles", annotations=annotate(READ, "List Wireless Security Profiles"))
-async def mikrotik_list_wireless_security_profiles(ctx: Context) -> str:
+async def mikrotik_list_wireless_security_profiles(ctx: Context, device: Optional[str] = None) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Security is configured directly on wireless interfaces."
     return "Legacy security profile listing not implemented in this version."
 
 
 @mcp.tool(name="get_wireless_security_profile", annotations=annotate(READ, "Get Wireless Security Profile"))
-async def mikrotik_get_wireless_security_profile(ctx: Context, name: str) -> str:
+async def mikrotik_get_wireless_security_profile(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Check security configuration on wireless interfaces directly."
     return "Legacy security profile details not implemented in this version."
 
 
 @mcp.tool(name="remove_wireless_security_profile", annotations=annotate(DESTRUCTIVE, "Remove Wireless Security Profile"))
-async def mikrotik_remove_wireless_security_profile(ctx: Context, name: str) -> str:
+async def mikrotik_remove_wireless_security_profile(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Security is configured directly on wireless interfaces."
     return "Legacy security profile removal not implemented in this version."
 
 
 @mcp.tool(name="set_wireless_security_profile", annotations=annotate(WRITE, "Set Wireless Security Profile"))
-async def mikrotik_set_wireless_security_profile(ctx: Context, interface_name: str, security_profile: str) -> str:
+async def mikrotik_set_wireless_security_profile(ctx: Context, interface_name: str, security_profile: str, device: Optional[str] = None) -> str:
     """Legacy function - not supported in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Configure security directly on the wireless interface."
     return "Legacy security profile setting not implemented in this version."
 
 
 @mcp.tool(name="create_wireless_access_list", annotations=annotate(WRITE, "Create Wireless Access List"))
-async def mikrotik_create_wireless_access_list(ctx: Context) -> str:
+async def mikrotik_create_wireless_access_list(ctx: Context, device: Optional[str] = None) -> str:
     """Legacy function - different in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Access lists are configured differently in RouterOS v7.x. Use firewall rules or other access control methods."
     return "Legacy access list creation not implemented in this version."
 
 
 @mcp.tool(name="list_wireless_access_list", annotations=annotate(READ, "List Wireless Access List"))
-async def mikrotik_list_wireless_access_list(ctx: Context) -> str:
+async def mikrotik_list_wireless_access_list(ctx: Context, device: Optional[str] = None) -> str:
     """Legacy function - different in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Access lists are configured differently in RouterOS v7.x. Check firewall rules or other access control configurations."
     return "Legacy access list listing not implemented in this version."
 
 
 @mcp.tool(name="remove_wireless_access_list_entry", annotations=annotate(DESTRUCTIVE, "Remove Wireless Access List Entry"))
-async def mikrotik_remove_wireless_access_list_entry(ctx: Context, entry_id: str) -> str:
+async def mikrotik_remove_wireless_access_list_entry(ctx: Context, entry_id: str, device: Optional[str] = None) -> str:
     """Legacy function - different in RouterOS v7.x"""
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Access lists are configured differently in RouterOS v7.x."
     return "Legacy access list removal not implemented in this version."
@@ -484,19 +488,20 @@ async def mikrotik_update_wireless_interface(
         ssid: Optional[str] = None,
         disabled: Optional[bool] = None,
         comment: Optional[str] = None,
+        device: Optional[str] = None,
 ) -> str:
     """Updates an existing wireless interface's settings (name, SSID, enabled state, etc.)."""
     await ctx.info(f"Updating wireless interface: name={name}")
 
     # Detect wireless interface type
-    interface_type = await mikrotik_detect_wireless_interface_type(ctx)
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
 
     if not interface_type:
         return "Error: No wireless interface support detected on this device."
 
     # Check if interface exists
     check_cmd = f'{interface_type} print count-only where name="{name}"'
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Wireless interface '{name}' not found."
@@ -517,7 +522,7 @@ async def mikrotik_update_wireless_interface(
         return "No updates specified."
 
     cmd = f'{interface_type} set [find name="{name}"] {" ".join(updates)}'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update wireless interface: {result}"
@@ -525,6 +530,6 @@ async def mikrotik_update_wireless_interface(
     # Get updated details
     target_name = new_name or name
     details_cmd = f'{interface_type} print detail where name="{target_name}"'
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"Wireless interface updated successfully:\n\n{details}"

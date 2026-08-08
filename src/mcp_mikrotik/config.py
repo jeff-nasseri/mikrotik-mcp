@@ -1,6 +1,7 @@
-from typing import Literal, Optional
+import json
+from typing import List, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +20,30 @@ class McpServerSettings(BaseModel):
     allowed_origins: str = ""
 
 
+class DeviceConfig(BaseModel):
+    """A single MikroTik device in the inventory.
+
+    ``title`` is the identifier the LLM uses to target this device; it must be
+    unique across the inventory.
+    """
+
+    title: str
+    host: str
+    port: int = 22
+    username: str = "admin"
+    password: str = ""
+    key_filename: Optional[str] = None
+    tags: List[str] = []
+    region: Optional[str] = None
+
+    @field_validator("title")
+    @classmethod
+    def _title_not_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("device 'title' must be a non-empty string")
+        return v.strip()
+
+
 class MikrotikConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="MIKROTIK_",
@@ -28,12 +53,44 @@ class MikrotikConfig(BaseSettings):
         cli_kebab_case=True,
     )
 
+    # ── Single-device settings (unchanged; still the default) ───────────────
     host: str = "127.0.0.1"
     username: str = "admin"
     password: str = ""
     port: int = 22
     key_filename: Optional[str] = None
     mcp: McpServerSettings = McpServerSettings()
+
+    # ── Multi-device inventory ─────────────────────────────────────────────
+    # Supplied as a JSON array, either inline or from a file:
+    #
+    #   MIKROTIK_INVENTORY='[{"title":"TitleA","host":"10.0.0.1","tags":["eu"],
+    #                         "region":"NL","username":"admin","password":"..."}]'
+    #   MIKROTIK_INVENTORY_FILE=/etc/mikrotik/inventory.json
+    #
+    # In an MCP client config these belong in the server's "env" block — that is
+    # the channel a client actually forwards to the spawned process.
+    #
+    # When left empty, a single-device inventory is synthesised from the flat
+    # settings above, so existing single-device setups keep working unchanged.
+    inventory: List[DeviceConfig] = []
+    inventory_file: Optional[str] = None
+
+    @field_validator("inventory", mode="before")
+    @classmethod
+    def _parse_inventory(cls, v):
+        """Accept a JSON string (env var) as well as a real list."""
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            try:
+                v = json.loads(v)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"MIKROTIK_INVENTORY is not valid JSON: {exc}") from exc
+        if isinstance(v, dict):
+            v = [v]
+        return v
 
 
 mikrotik_config = MikrotikConfig()

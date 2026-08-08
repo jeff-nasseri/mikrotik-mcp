@@ -5,7 +5,7 @@ from ..app import mcp, READ, annotate
 
 
 @mcp.tool(name="get_poe_monitor", annotations=annotate(READ, "PoE Monitor"))
-async def mikrotik_get_poe_monitor(ctx: Context, interfaces: str) -> str:
+async def mikrotik_get_poe_monitor(ctx: Context, interfaces: str, device: Optional[str] = None) -> str:
     """Reads real-time Power-over-Ethernet (PoE) monitor data for one or more
     ethernet interfaces — PoE-out status, voltage, current, and power.
 
@@ -20,7 +20,7 @@ async def mikrotik_get_poe_monitor(ctx: Context, interfaces: str) -> str:
     # `once` is required — without it the monitor streams continuously and the
     # command never returns (it would hang the SSH session).
     cmd = f"/interface ethernet poe monitor {interfaces} once"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or not result.strip():
         return (
@@ -32,7 +32,7 @@ async def mikrotik_get_poe_monitor(ctx: Context, interfaces: str) -> str:
 
 
 @mcp.tool(name="list_poe", annotations=annotate(READ, "List PoE"))
-async def mikrotik_list_poe(ctx: Context, interface_filter: Optional[str] = None) -> str:
+async def mikrotik_list_poe(ctx: Context, interface_filter: Optional[str] = None, device: Optional[str] = None) -> str:
     """Lists the Power-over-Ethernet (PoE) configuration of PoE-capable
     ethernet interfaces (PoE-out mode, priority).
 
@@ -47,7 +47,7 @@ async def mikrotik_list_poe(ctx: Context, interface_filter: Optional[str] = None
     if interface_filter:
         cmd += f' where name~"{interface_filter}"'
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or not result.strip():
         return (
@@ -59,7 +59,7 @@ async def mikrotik_list_poe(ctx: Context, interface_filter: Optional[str] = None
 
 
 @mcp.tool(name="get_poe_settings", annotations=annotate(READ, "PoE Settings"))
-async def mikrotik_get_poe_settings(ctx: Context, name: str) -> str:
+async def mikrotik_get_poe_settings(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Gets the detailed PoE-out settings of a specific ethernet interface
     (PoE-out mode, priority, voltage, low/high thresholds, …).
 
@@ -71,7 +71,7 @@ async def mikrotik_get_poe_settings(ctx: Context, name: str) -> str:
     await ctx.info(f"Getting PoE settings for: {name}")
 
     cmd = f'/interface ethernet poe print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or not result.strip():
         return f"No PoE settings found for interface '{name}'."

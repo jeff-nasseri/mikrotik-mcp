@@ -142,6 +142,8 @@ In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
    | `MIKROTIK_USERNAME` | SSH username | `admin` |
    | `MIKROTIK_PASSWORD` | SSH password | _(empty)_ |
    | `MIKROTIK_PORT` | SSH port | `22` |
+   | `MIKROTIK_INVENTORY` | Multiple devices, as a JSON array. Takes precedence over the four variables above. See [Inventory](../reference/inventory/README.md). | _(empty)_ |
+   | `MIKROTIK_INVENTORY_FILE` | Path **inside the container** to a file holding that JSON | _(empty)_ |
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |
    | `MIKROTIK_MCP__PORT` | HTTP server listen port | `8000` |
@@ -176,6 +178,54 @@ services:
 ```bash
 docker compose up -d
 ```
+
+#### Managing several devices
+
+To manage a fleet, give the container an **inventory** instead of the four
+single-device variables. Mounting it as a file is preferred: unlike an
+environment variable, its contents do not show up in `docker inspect`.
+
+`inventory.json`:
+
+```json
+[
+  { "title": "TitleA", "host": "192.168.88.1", "port": 22, "username": "admin", "password": "change-me", "region": "NL", "tags": ["branch"] },
+  { "title": "TitleB", "host": "192.168.89.1", "port": 22, "username": "admin", "key_filename": "/config/keys/id_ed25519" }
+]
+```
+
+```yaml
+services:
+  mikrotik-mcp:
+    image: ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+    container_name: mikrotik-mcp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./inventory.json:/config/inventory.json:ro
+    environment:
+      MIKROTIK_INVENTORY_FILE: "/config/inventory.json"
+      MIKROTIK_MCP__TRANSPORT: "streamable-http"
+      MIKROTIK_MCP__HOST: "0.0.0.0"
+      MIKROTIK_MCP__PORT: "8000"
+```
+
+The image ships a `/config` directory for this. Or pass the JSON inline with
+`MIKROTIK_INVENTORY` (or `--inventory` / `--inventory-file` as entrypoint
+arguments) if a mount is inconvenient.
+
+> The container runs as **uid 1000** (`mcpuser`), so the mounted file must be
+> readable by that uid — `chmod 644 inventory.json` is usually enough. If it
+> isn't readable the entrypoint stops with an explicit message rather than
+> starting a server with no devices.
+
+When an inventory is set it takes precedence and `MIKROTIK_HOST` /
+`MIKROTIK_USERNAME` / `MIKROTIK_PASSWORD` / `MIKROTIK_PORT` are ignored, so you
+can drop them. The entrypoint also stops applying its `192.168.88.1` default in
+that case, rather than injecting a host nobody asked for. Tools then take a
+`device` argument naming the title to target; see
+[Inventory](../reference/inventory/README.md).
 
 The server is then reachable at `http://localhost:8000/mcp` (streamable HTTP)
 or `http://localhost:8000/sse` (if you set `MIKROTIK_MCP__TRANSPORT: sse`), and

@@ -111,7 +111,7 @@ def test_list_link_local_filter(ctx, monkeypatch):
 def test_list_empty_message(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_address as m
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         return ""
 
     monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
@@ -129,7 +129,7 @@ def test_get_by_id_queries_id_first(ctx, monkeypatch):
 
     calls = []
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         calls.append(cmd)
         return "address=2001:db8::1/64 interface=ether1"  # real entry data
 
@@ -145,7 +145,7 @@ def test_get_by_address_queries_address_first(ctx, monkeypatch):
 
     calls = []
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         calls.append(cmd)
         return "address=2001:db8::1/64 interface=ether1"
 
@@ -162,7 +162,7 @@ def test_get_legend_only_is_treated_as_not_found(ctx, monkeypatch):
 
     legend = "Flags: X - disabled, I - invalid; D - dynamic; G - global, L - link-local"
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         return legend  # non-empty, but no real "address=" row
 
     monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
@@ -173,13 +173,13 @@ def test_get_legend_only_is_treated_as_not_found(ctx, monkeypatch):
 def test_remove_by_id(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_address as m
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         if "count-only" in cmd:
             return "1"      # found by id
         return ""           # remove succeeds
 
     seen = []
-    async def tracking(cmd, _ctx):
+    async def tracking(cmd, _ctx, device=None):
         seen.append(cmd)
         return await fake(cmd, _ctx)
 
@@ -192,7 +192,7 @@ def test_remove_by_id(ctx, monkeypatch):
 def test_remove_not_found(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_address as m
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         return "0"  # count-only returns 0 for both id and address
 
     monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
@@ -210,7 +210,7 @@ def test_get_canonicalizes_noncanonical_address(ctx, monkeypatch):
 
     calls = []
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         calls.append(cmd)
         return "address=2001:db8::1/64 interface=ether1"
 
@@ -227,7 +227,7 @@ def test_remove_by_address_path_canonicalized(ctx, monkeypatch):
 
     seen = []
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         seen.append(cmd)
         if "count-only" in cmd:
             return "0" if ".id=" in cmd else "1"
@@ -250,7 +250,7 @@ def test_add_from_pool_confirms_via_interface(ctx, monkeypatch):
 
     seen = []
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         seen.append(cmd)
         if cmd.startswith("/ipv6 address add"):
             return ""  # success
@@ -268,7 +268,7 @@ def test_add_from_pool_confirms_via_interface(ctx, monkeypatch):
 def test_add_failure_path(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_address as m
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         return "failure: already have such address"
 
     monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
@@ -279,7 +279,7 @@ def test_add_failure_path(ctx, monkeypatch):
 def test_remove_failure_path(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_address as m
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         if "count-only" in cmd:
             return "1"  # found by id
         return "failure: cannot remove"

@@ -14,6 +14,7 @@ async def mikrotik_list_interfaces(
     name_filter: Optional[str] = None,
     running_only: bool = False,
     disabled_only: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     """Lists all interfaces on the MikroTik device (ethernet, bridge, WireGuard,
     PPPoE, VLAN, WiFi, SFP, LTE, loopback, and any other type).
@@ -40,7 +41,7 @@ async def mikrotik_list_interfaces(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return "No interfaces found matching the criteria."
@@ -49,7 +50,7 @@ async def mikrotik_list_interfaces(
 
 
 @mcp.tool(name="get_interface", annotations=annotate(READ, "Get Interface"))
-async def mikrotik_get_interface(ctx: Context, name: str) -> str:
+async def mikrotik_get_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Gets detailed information about a specific interface by name.
 
     Notes:
@@ -58,7 +59,7 @@ async def mikrotik_get_interface(ctx: Context, name: str) -> str:
     await ctx.info(f"Getting interface details: name={name}")
 
     cmd = f'/interface print detail where name="{name}"'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"Interface '{name}' not found."
@@ -67,7 +68,7 @@ async def mikrotik_get_interface(ctx: Context, name: str) -> str:
 
 
 @mcp.tool(name="enable_interface", annotations=annotate(WRITE_IDEMPOTENT, "Enable Interface"))
-async def mikrotik_enable_interface(ctx: Context, name: str) -> str:
+async def mikrotik_enable_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Enables an interface on the MikroTik device.
 
     Notes:
@@ -76,14 +77,14 @@ async def mikrotik_enable_interface(ctx: Context, name: str) -> str:
     await ctx.info(f"Enabling interface: name={name}")
 
     cmd = f'/interface enable [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to enable interface '{name}': {result}"
 
     # Verify the change
     check_cmd = f'/interface print detail where name="{name}"'
-    details = await execute_mikrotik_command(check_cmd, ctx)
+    details = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if not details.strip():
         return f"Interface '{name}' not found."
@@ -92,7 +93,7 @@ async def mikrotik_enable_interface(ctx: Context, name: str) -> str:
 
 
 @mcp.tool(name="disable_interface", annotations=annotate(WRITE_IDEMPOTENT, "Disable Interface"))
-async def mikrotik_disable_interface(ctx: Context, name: str) -> str:
+async def mikrotik_disable_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
     """Disables an interface on the MikroTik device.
 
     Notes:
@@ -101,14 +102,14 @@ async def mikrotik_disable_interface(ctx: Context, name: str) -> str:
     await ctx.info(f"Disabling interface: name={name}")
 
     cmd = f'/interface disable [find name="{name}"]'
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to disable interface '{name}': {result}"
 
     # Verify the change
     check_cmd = f'/interface print detail where name="{name}"'
-    details = await execute_mikrotik_command(check_cmd, ctx)
+    details = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if not details.strip():
         return f"Interface '{name}' not found."
