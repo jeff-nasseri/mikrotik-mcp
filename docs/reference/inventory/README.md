@@ -100,6 +100,21 @@ region. **Credentials are never returned.**
 list_devices()
 ```
 
+## Connections are per command
+
+Every command opens its own SSH connection to the target device and closes it
+when the command finishes. Connections are never pooled or shared.
+
+This matters when more than one client session talks to the same server
+process: a shared connection would mean shared fate, so one session
+disconnecting, timing out or failing to authenticate would break a command
+another session was running against the same device. With a connection per
+command the sessions cannot disturb each other.
+
+The trade-off is one SSH handshake per command. On a LAN that is a few tens of
+milliseconds; if the device is far away or heavily loaded, expect commands to
+cost noticeably more than the RouterOS work alone.
+
 ## Safe mode is per device
 
 Safe mode holds a persistent session, and each device has its own. Enabling it

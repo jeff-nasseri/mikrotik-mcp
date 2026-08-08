@@ -62,9 +62,9 @@ class SafeModeManager:
             if self._active:
                 return "Safe mode is already active."
 
-            # Safe mode needs its OWN persistent shell, separate from the
-            # inventory's pooled client, so it is built from the resolved
-            # device's connection details rather than the global config.
+            # Safe mode needs a persistent shell that outlives a single
+            # command, so it holds its own connection rather than borrowing one
+            # from the inventory, and builds it from the resolved device.
             from .inventory import DeviceNotFoundError, get_inventory
 
             try:

@@ -10,13 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 def _execute_sync(command: str, device: Optional[str] = None) -> str:
-    """Execute a MikroTik command over the target device's SSH client (blocking)."""
+    """Execute a MikroTik command over a fresh SSH connection (blocking).
+
+    Each call opens its own connection and closes it again, so concurrent
+    sessions never share a client.
+    """
     inventory = get_inventory()
     target = inventory.resolve(device)
     logger.info(f"Executing MikroTik command on '{target.title}': {command}")
 
-    client = inventory.get_client(device)
-    result = client.execute_command(command)
+    with inventory.session(target.title) as client:
+        result = client.execute_command(command)
+
     logger.info(f"Command result: {repr(result)}")
     return result
 
@@ -26,7 +31,9 @@ def download_file_sync(filename: str, device: Optional[str] = None) -> bytes:
     inventory = get_inventory()
     target = inventory.resolve(device)
     logger.info(f"Downloading file from '{target.title}': {filename}")
-    return inventory.get_client(device).download_file(filename)
+
+    with inventory.session(target.title) as client:
+        return client.download_file(filename)
 
 
 def upload_file_sync(filename: str, data: bytes, device: Optional[str] = None) -> None:
@@ -34,7 +41,9 @@ def upload_file_sync(filename: str, data: bytes, device: Optional[str] = None) -
     inventory = get_inventory()
     target = inventory.resolve(device)
     logger.info(f"Uploading file to '{target.title}': {filename} ({len(data)} bytes)")
-    inventory.get_client(device).upload_file(filename, data)
+
+    with inventory.session(target.title) as client:
+        client.upload_file(filename, data)
 
 
 async def execute_mikrotik_command(

@@ -1,6 +1,7 @@
 """Connector tests for the inventory-backed (multi-device) execution path."""
 
 import asyncio
+from contextlib import contextmanager
 
 import pytest
 
@@ -33,10 +34,17 @@ class DummyClient:
 
 
 class FakeInventory:
-    """Minimal inventory double: resolves titles and hands back clients."""
+    """Minimal inventory double: resolves titles and hands out connections.
+
+    Each device keeps one ``DummyClient`` so assertions can see the commands
+    that reached it, while ``opened``/``closed`` record the connection
+    lifecycle the connector drives.
+    """
 
     def __init__(self, clients: dict):
         self._clients = clients
+        self.opened: list = []
+        self.closed: list = []
         self._devices = {
             t.casefold(): DeviceConfig(title=t, host=f"10.0.0.{i + 1}")
             for i, t in enumerate(clients)
@@ -52,8 +60,18 @@ class FakeInventory:
             raise DeviceNotFoundError(f"Unknown device {title!r}.")
         return dev
 
-    def get_client(self, title=None):
-        return self._clients[self.resolve(title).title]
+    def connect(self, title=None):
+        client = self._clients[self.resolve(title).title]
+        self.opened.append(client)
+        return client
+
+    @contextmanager
+    def session(self, title=None):
+        client = self.connect(title)
+        try:
+            yield client
+        finally:
+            self.closed.append(client)
 
 
 def _patch_inventory(monkeypatch, inv):
@@ -87,6 +105,45 @@ def test_execute_sync_unknown_device_raises(monkeypatch):
     connector = _patch_inventory(monkeypatch, FakeInventory({"RouterA": DummyClient()}))
     with pytest.raises(DeviceNotFoundError):
         connector._execute_sync("/x", device="Nope")
+
+
+# ---------------------------------------------------------------------------
+# Connection lifecycle — one connection per command, never shared
+# ---------------------------------------------------------------------------
+
+def test_each_execution_opens_and_closes_its_own_connection(monkeypatch):
+    """Two commands must not ride on one shared client."""
+    inv = FakeInventory({"OnlyOne": DummyClient()})
+    connector = _patch_inventory(monkeypatch, inv)
+
+    connector._execute_sync("/one")
+    connector._execute_sync("/two")
+
+    assert len(inv.opened) == 2
+    assert len(inv.closed) == 2
+
+
+def test_connection_is_closed_when_the_command_fails(monkeypatch):
+    """A failing command must not leak an SSH session on the router."""
+    boom = DummyClient(raises=RuntimeError("boom"))
+    inv = FakeInventory({"OnlyOne": boom})
+    connector = _patch_inventory(monkeypatch, inv)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        connector._execute_sync("/bad")
+
+    assert inv.closed == [boom]
+
+
+def test_file_transfers_close_their_connection(monkeypatch):
+    inv = FakeInventory({"OnlyOne": DummyClient()})
+    connector = _patch_inventory(monkeypatch, inv)
+
+    connector.download_file_sync("backup_1.backup")
+    connector.upload_file_sync("restore.rsc", b"bytes")
+
+    assert len(inv.opened) == 2
+    assert len(inv.closed) == 2
 
 
 # ---------------------------------------------------------------------------

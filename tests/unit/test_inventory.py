@@ -1,5 +1,6 @@
 """Tests for the multi-device Inventory (issue #44)."""
 
+import copy
 import json
 
 import pytest
@@ -94,64 +95,88 @@ def test_describe_never_exposes_credentials():
 
 
 # ---------------------------------------------------------------------------
-# Client handling
+# Connections — never pooled, always closed
 # ---------------------------------------------------------------------------
 
-def test_get_client_is_cached_per_device(monkeypatch):
+def _recording_ssh(monkeypatch):
+    """Patch MikroTikSSHClient with a recorder. Returns (built, closed)."""
     import mcp_mikrotik.inventory as inv_mod
 
-    built = []
+    built, closed = [], []
 
     class FakeSSH:
         def __init__(self, **kw):
-            built.append(kw["host"])
+            self.host = kw["host"]
             self.client = object()
+            built.append(self)
 
         def connect(self):
             return True
 
         def disconnect(self):
-            pass
+            closed.append(self)
 
     monkeypatch.setattr(inv_mod, "MikroTikSSHClient", FakeSSH)
-    monkeypatch.setattr(Inventory, "_is_alive", staticmethod(lambda c: True))
+    return built, closed
 
+
+def test_each_call_opens_a_fresh_connection(monkeypatch):
+    """Clients are never pooled, so concurrent sessions cannot share one."""
+    built, _ = _recording_ssh(monkeypatch)
     inv = Inventory([_dev("RouterA", "10.0.0.1"), _dev("RouterB", "10.0.0.2")])
-    c1 = inv.get_client("RouterA")
-    c2 = inv.get_client("RouterA")
-    c3 = inv.get_client("RouterB")
 
-    assert c1 is c2                 # reused
-    assert c3 is not c1             # per-device
-    assert built == ["10.0.0.1", "10.0.0.2"]
+    a1 = inv.connect("RouterA")
+    a2 = inv.connect("RouterA")
+    b1 = inv.connect("RouterB")
+
+    # Two calls for the SAME device must still be two distinct connections.
+    assert a1 is not a2
+    assert b1 is not a1 and b1 is not a2
+    assert [c.host for c in built] == ["10.0.0.1", "10.0.0.1", "10.0.0.2"]
 
 
-def test_get_client_rebuilds_a_dead_connection(monkeypatch):
-    import mcp_mikrotik.inventory as inv_mod
+def test_inventory_holds_no_connection_state(monkeypatch):
+    """Opening connections must not mutate the inventory.
 
-    built = []
-
-    class FakeSSH:
-        def __init__(self, **kw):
-            built.append(kw["host"])
-            self.client = object()
-
-        def connect(self):
-            return True
-
-        def disconnect(self):
-            pass
-
-    monkeypatch.setattr(inv_mod, "MikroTikSSHClient", FakeSSH)
-    monkeypatch.setattr(Inventory, "_is_alive", staticmethod(lambda c: False))
-
+    Anything the inventory retained between calls would be state shared by
+    every session in the process — exactly what this design removes.
+    """
+    _recording_ssh(monkeypatch)
     inv = Inventory([_dev("RouterA", "10.0.0.1")])
-    inv.get_client("RouterA")
-    inv.get_client("RouterA")
-    assert built == ["10.0.0.1", "10.0.0.1"]   # stale client replaced
+
+    before = copy.deepcopy(vars(inv))
+    inv.connect("RouterA")
+    inv.connect("RouterA")
+    with inv.session("RouterA"):
+        pass
+
+    assert vars(inv) == before
 
 
-def test_get_client_raises_on_connect_failure(monkeypatch):
+def test_session_closes_the_connection(monkeypatch):
+    built, closed = _recording_ssh(monkeypatch)
+    inv = Inventory([_dev("RouterA", "10.0.0.1")])
+
+    with inv.session("RouterA") as client:
+        assert closed == []          # still open while the command runs
+
+    assert closed == [client]
+    assert built == [client]
+
+
+def test_session_closes_the_connection_on_error(monkeypatch):
+    """A failing command must not leak an SSH session on the router."""
+    built, closed = _recording_ssh(monkeypatch)
+    inv = Inventory([_dev("RouterA", "10.0.0.1")])
+
+    with pytest.raises(RuntimeError, match="command blew up"):
+        with inv.session("RouterA"):
+            raise RuntimeError("command blew up")
+
+    assert closed == built and len(closed) == 1
+
+
+def test_connect_raises_on_connect_failure(monkeypatch):
     import mcp_mikrotik.inventory as inv_mod
 
     class FailingSSH:
@@ -167,7 +192,28 @@ def test_get_client_raises_on_connect_failure(monkeypatch):
     monkeypatch.setattr(inv_mod, "MikroTikSSHClient", FailingSSH)
     inv = Inventory([_dev("RouterA", "10.0.0.1")])
     with pytest.raises(ConnectionError, match="RouterA"):
-        inv.get_client("RouterA")
+        inv.connect("RouterA")
+
+
+def test_session_propagates_connect_failure(monkeypatch):
+    """An unreachable device fails at the `with`, never yielding a client."""
+    import mcp_mikrotik.inventory as inv_mod
+
+    class FailingSSH:
+        def __init__(self, **kw):
+            self.client = None
+
+        def connect(self):
+            return False
+
+        def disconnect(self):
+            raise AssertionError("nothing was opened, so nothing may be closed")
+
+    monkeypatch.setattr(inv_mod, "MikroTikSSHClient", FailingSSH)
+    inv = Inventory([_dev("RouterA", "10.0.0.1")])
+    with pytest.raises(ConnectionError, match="RouterA"):
+        with inv.session("RouterA"):
+            raise AssertionError("body must not run")
 
 
 # ---------------------------------------------------------------------------

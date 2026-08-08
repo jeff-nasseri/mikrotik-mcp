@@ -1,20 +1,23 @@
 """Device inventory for multi-device (fleet) support — issue #44.
 
-The :class:`Inventory` owns the list of MikroTik devices and the
-``MikroTikSSHClient`` used to reach each one.  Tools pass a device ``title``
-down to the connector, which asks the inventory to resolve it to the matching
-client and runs the command over that client's SSH channel.
+The :class:`Inventory` owns the list of MikroTik devices and knows how to reach
+each one.  Tools pass a device ``title`` down to the connector, which asks the
+inventory to open a connection to the matching device and runs the command over
+it.
 
-Clients are created lazily (on first use for a device) rather than eagerly at
-start-up, so an unreachable device cannot block server start-up or wedge the
-whole inventory.
+Connections are **never pooled or shared**.  Every call gets a brand-new
+``MikroTikSSHClient`` that is closed as soon as the command finishes, so
+concurrent MCP sessions are fully isolated from one another: one session
+disconnecting, timing out or failing to authenticate cannot disturb a command
+another session is running against the same device.
 """
 
 import json
 import logging
 import os
 import threading
-from typing import Dict, List, Optional
+from contextlib import contextmanager
+from typing import Dict, Iterator, List, Optional
 
 from . import config
 from .config import DeviceConfig
@@ -28,12 +31,14 @@ class DeviceNotFoundError(LookupError):
 
 
 class Inventory:
-    """Holds device definitions and their SSH clients, keyed by title."""
+    """Holds the device definitions, keyed by title.
+
+    The inventory is immutable after construction and holds no connection
+    state, so a single instance is safe to share across sessions and threads.
+    """
 
     def __init__(self, devices: List[DeviceConfig]) -> None:
         self._devices: Dict[str, DeviceConfig] = {}
-        self._clients: Dict[str, MikroTikSSHClient] = {}
-        self._lock = threading.Lock()
 
         for device in devices:
             key = device.title.casefold()
@@ -104,62 +109,49 @@ class Inventory:
 
     # ── SSH clients ────────────────────────────────────────────────────────
 
-    def get_client(self, title: Optional[str] = None) -> MikroTikSSHClient:
-        """Return a connected SSH client for the resolved device.
+    def connect(self, title: Optional[str] = None) -> MikroTikSSHClient:
+        """Open and return a **new** SSH connection to the resolved device.
 
-        The client for each device is created once and reused.  A client whose
-        connection has dropped is rebuilt transparently on the next call.
+        Connections are deliberately not pooled.  Sharing one client between
+        concurrent MCP sessions would make them share a fate — a disconnect,
+        timeout or dropped transport in one session would break a command
+        another session was running — so every caller gets its own.
+
+        The caller owns the returned client and must close it.  Prefer
+        :meth:`session`, which closes it automatically.
         """
         device = self.resolve(title)
-        key = device.title.casefold()
 
-        with self._lock:
-            client = self._clients.get(key)
-            if client is not None and self._is_alive(client):
-                return client
-
-            if client is not None:
-                # Stale/broken session — drop it before rebuilding.
-                try:
-                    client.disconnect()
-                except Exception:
-                    pass
-                self._clients.pop(key, None)
-
-            client = MikroTikSSHClient(
-                host=device.host,
-                username=device.username,
-                password=device.password,
-                key_filename=device.key_filename,
-                port=device.port,
+        client = MikroTikSSHClient(
+            host=device.host,
+            username=device.username,
+            password=device.password,
+            key_filename=device.key_filename,
+            port=device.port,
+        )
+        if not client.connect():
+            raise ConnectionError(
+                f"Failed to connect to MikroTik device '{device.title}' "
+                f"({device.host}:{device.port})"
             )
-            if not client.connect():
-                raise ConnectionError(
-                    f"Failed to connect to MikroTik device '{device.title}' "
-                    f"({device.host}:{device.port})"
-                )
-            self._clients[key] = client
-            logger.info(f"Opened SSH client for device '{device.title}'")
-            return client
+        logger.debug(f"Opened SSH connection to '{device.title}'")
+        return client
 
-    @staticmethod
-    def _is_alive(client: MikroTikSSHClient) -> bool:
-        """True when the client's transport is still usable."""
+    @contextmanager
+    def session(self, title: Optional[str] = None) -> Iterator[MikroTikSSHClient]:
+        """Yield a fresh SSH connection to the device, closed on exit.
+
+        The connection is closed even if the command raises, so a failing
+        command cannot leak a session on the router.
+        """
+        client = self.connect(title)
         try:
-            transport = client.client.get_transport() if client.client else None
-            return bool(transport and transport.is_active())
-        except Exception:
-            return False
-
-    def close(self) -> None:
-        """Disconnect every open client."""
-        with self._lock:
-            for title, client in self._clients.items():
-                try:
-                    client.disconnect()
-                except Exception:
-                    logger.debug(f"Error closing client for '{title}'", exc_info=True)
-            self._clients.clear()
+            yield client
+        finally:
+            try:
+                client.disconnect()
+            except Exception:
+                logger.debug("Error closing SSH connection", exc_info=True)
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +208,4 @@ def reset_inventory() -> None:
     """Drop the cached inventory (used by tests and after config reloads)."""
     global _inventory
     with _inventory_lock:
-        if _inventory is not None:
-            _inventory.close()
         _inventory = None
