@@ -4,6 +4,8 @@ Complete reference documentation for all MikroTik MCP tools.
 
 ## Available Tool Categories
 
+- **[Inventory](inventory/README.md)** - Managing multiple MikroTik devices
+
 - **[Interfaces](interfaces/README.md)** - All Interface Management (ethernet, bridge, PPPoE, SFP, LTE …)
 - **[PoE](poe/README.md)** - Power over Ethernet monitoring
 - **[VLAN](vlan/README.md)** - VLAN Interface Management

@@ -79,18 +79,22 @@ async def main():
                   "password" not in out.lower(), out)
 
             # ── Targeting ─────────────────────────────────────────────────
-            a = txt(await s.call_tool("get_system_identity", {"device": "RouterA"})) \
-                if "get_system_identity" in names else \
-                txt(await s.call_tool("list_interfaces", {"device": "RouterA"}))
+            a = txt(await s.call_tool("list_interfaces", {"device": "RouterA"}))
             check("command routed to RouterA", "Failed to connect" not in a and "Error" not in a[:20], a)
 
             b = txt(await s.call_tool("list_interfaces", {"device": "RouterB"}))
             check("command routed to RouterB", "Failed to connect" not in b and "Error" not in b[:20], b)
 
-            # The two routers must not return the same interface set by accident;
-            # a differing MAC address proves the calls hit different devices.
-            check("RouterA and RouterB return different device output", a != b,
-                  f"A[:60]={a[:60]!r} B[:60]={b[:60]!r}")
+            # Decisive proof: each router carries a distinct system identity, so
+            # exporting it shows which box actually executed the command.
+            ia = txt(await s.call_tool("export_section",
+                                       {"device": "RouterA", "section": "system identity"}))
+            ib = txt(await s.call_tool("export_section",
+                                       {"device": "RouterB", "section": "system identity"}))
+            check("RouterA reports its own identity", "RouterA-NL" in ia, ia)
+            check("RouterB reports its own identity", "RouterB-DE" in ib, ib)
+            check("the two devices are genuinely different hosts",
+                  "RouterB-DE" not in ia and "RouterA-NL" not in ib)
 
             # ── Selection rules ───────────────────────────────────────────
             out = txt(await s.call_tool("list_interfaces", {}))
