@@ -149,6 +149,34 @@ def test_ssh_client_connect_and_execute(monkeypatch):
     assert state["closed"] == 1
 
 
+def test_failed_connect_closes_the_half_open_client(monkeypatch):
+    """A rejected login must not leave paramiko's transport running."""
+    from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
+    import mcp_mikrotik.mikrotik_ssh_client as mod
+
+    state = {"closed": 0}
+
+    class RejectingSSH:
+        def set_missing_host_key_policy(self, _policy):
+            pass
+
+        def connect(self, **kwargs):
+            raise mod.paramiko.AuthenticationException("bad password")
+
+        def close(self):
+            state["closed"] += 1
+
+    monkeypatch.setattr(mod.paramiko, "SSHClient", lambda: RejectingSSH())
+
+    client = MikroTikSSHClient(host="h", username="u", password="wrong", key_filename=None)
+    assert client.connect() is False
+    assert state["closed"] == 1
+    # and the object reports itself as unusable rather than half-connected
+    assert client.client is None
+    with pytest.raises(Exception, match="Not connected"):
+        client.execute_command("/system identity print")
+
+
 def test_ssh_client_returns_stderr_when_no_stdout(monkeypatch):
     from mcp_mikrotik.mikrotik_ssh_client import MikroTikSSHClient
     import mcp_mikrotik.mikrotik_ssh_client as mod

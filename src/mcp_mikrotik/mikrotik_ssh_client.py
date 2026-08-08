@@ -61,6 +61,15 @@ class MikroTikSSHClient:
             return True
         except Exception as e:
             logger.error(f"Failed to connect to MikroTik: {e}")
+            # A rejected login still leaves paramiko's transport running: it
+            # keeps a thread and a socket, and paramiko holds a strong
+            # reference to it, so it is never collected.  Close it here rather
+            # than abandoning a half-open connection.
+            try:
+                self.client.close()
+            except Exception:
+                pass
+            self.client = None
             return False
 
     def execute_command(self, command: str) -> str:
