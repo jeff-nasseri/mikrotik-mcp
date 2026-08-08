@@ -14,7 +14,6 @@ async def mikrotik_get_poe_monitor(ctx: Context, interfaces: str, device: Option
     Notes:
         interfaces: comma-separated ethernet interface name(s), e.g.
             "ether1" or "ether9-ap,ether10-ap,ether11-ap,ether12-ap"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Reading PoE monitor for: {interfaces}")
 
@@ -41,7 +40,6 @@ async def mikrotik_list_poe(ctx: Context, interface_filter: Optional[str] = None
 
     Notes:
         interface_filter: partial name match, e.g. "ether" matches ether1, ether2 …
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info("Listing PoE configuration")
 
@@ -69,7 +67,6 @@ async def mikrotik_get_poe_settings(ctx: Context, name: str, device: Optional[st
 
     Notes:
         name: exact ethernet interface name, e.g. "ether1"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting PoE settings for: {name}")
 

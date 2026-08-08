@@ -47,7 +47,6 @@ async def mikrotik_add_ipv6_address(
         eui_64: derive the host part of the address from the interface MAC.
         from_pool: name of an IPv6 pool to take the prefix from.
         no_dad: skip Duplicate Address Detection.
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Adding IPv6 address: address={address}, interface={interface}")
 
@@ -101,7 +100,6 @@ async def mikrotik_list_ipv6_addresses(
         address_filter: partial match on the address, e.g. "2001:db8" or "fe80".
         global_only: show only global (routable) addresses.
         link_local_only: show only link-local (fe80::/10) addresses.
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(
         f"Listing IPv6 addresses with filters: interface={interface_filter}, address={address_filter}"
@@ -143,7 +141,6 @@ async def mikrotik_get_ipv6_address(
     Notes:
         address_id: a RouterOS internal id (e.g. "*1") or the address value
             (e.g. "2001:db8::1/64").
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting IPv6 address details: address_id={address_id}")
 
@@ -177,7 +174,6 @@ async def mikrotik_remove_ipv6_address(
     Notes:
         address_id: a RouterOS internal id (e.g. "*1") or the address value
             (e.g. "2001:db8::1/64").
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Removing IPv6 address: address_id={address_id}")
 

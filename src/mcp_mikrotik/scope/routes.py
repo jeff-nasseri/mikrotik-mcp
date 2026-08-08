@@ -25,7 +25,6 @@ async def mikrotik_add_route(
         dst_address: CIDR e.g. "0.0.0.0/0", "192.168.1.0/24"
         check_gateway: "ping" or "arp"
         distance: 1-255 (lower = higher priority)
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Adding route: dst={dst_address}, gateway={gateway}")
 
@@ -86,11 +85,7 @@ async def mikrotik_list_routes(
     static_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists routes in MikroTik routing table.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists routes in MikroTik routing table."""
     await ctx.info(f"Listing routes with filters: dst={dst_filter}, gateway={gateway_filter}")
 
     cmd = "/ip route print"
@@ -129,7 +124,6 @@ async def mikrotik_get_route(ctx: Context, route_id: str, device: Optional[str] 
 
     Notes:
         route_id: "*N" or "N" from list output e.g. "*3"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting route details: route_id={route_id}")
 
@@ -166,7 +160,6 @@ async def mikrotik_update_route(
         check_gateway: "ping" or "arp"
         distance: 1-255
         Pass "" to routing_mark, vrf_interface, or pref_src to clear them.
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Updating route: route_id={route_id}")
 
@@ -226,7 +219,6 @@ async def mikrotik_remove_route(ctx: Context, route_id: str, device: Optional[st
 
     Notes:
         route_id: "*N" or "N" from list output e.g. "*3"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Removing route: route_id={route_id}")
 
@@ -250,7 +242,6 @@ async def mikrotik_enable_route(ctx: Context, route_id: str, device: Optional[st
 
     Notes:
         route_id: "*N" or "N" from list output e.g. "*3"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     return await mikrotik_update_route(route_id, disabled=False, ctx=ctx, device=device)
 
@@ -260,7 +251,6 @@ async def mikrotik_disable_route(ctx: Context, route_id: str, device: Optional[s
 
     Notes:
         route_id: "*N" or "N" from list output e.g. "*3"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     return await mikrotik_update_route(route_id, disabled=True, ctx=ctx, device=device)
 
@@ -272,11 +262,7 @@ async def mikrotik_get_routing_table(
     active_only: bool = True,
     device: Optional[str] = None
 ) -> str:
-    """Gets a specific routing table.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets a specific routing table."""
     await ctx.info(f"Getting routing table: table={table_name}")
 
     cmd = "/ip route print"
@@ -307,11 +293,7 @@ async def mikrotik_check_route_path(
     routing_mark: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Checks the route path to a destination.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Checks the route path to a destination."""
     await ctx.info(f"Checking route path to: {destination}")
 
     cmd = f"/ip route check {destination}"
@@ -330,11 +312,7 @@ async def mikrotik_check_route_path(
 
 @mcp.tool(name="get_route_cache", annotations=annotate(READ, "Get Route Cache"))
 async def mikrotik_get_route_cache(ctx: Context, device: Optional[str] = None) -> str:
-    """Gets the route cache.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets the route cache."""
     await ctx.info("Getting route cache")
 
     cmd = "/ip route cache print"
@@ -347,11 +325,7 @@ async def mikrotik_get_route_cache(ctx: Context, device: Optional[str] = None) -
 
 @mcp.tool(name="flush_route_cache", annotations=annotate(DESTRUCTIVE, "Flush Route Cache"))
 async def mikrotik_flush_route_cache(ctx: Context, device: Optional[str] = None) -> str:
-    """Flushes the route cache.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Flushes the route cache."""
     await ctx.info("Flushing route cache")
 
     cmd = "/ip route cache flush"
@@ -371,11 +345,7 @@ async def mikrotik_add_default_route(
     check_gateway: str = "ping",
     device: Optional[str] = None
 ) -> str:
-    """Adds a default route.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Adds a default route."""
     return await mikrotik_add_route(
         dst_address="0.0.0.0/0",
         gateway=gateway,
@@ -399,7 +369,6 @@ async def mikrotik_add_blackhole_route(
     Notes:
         dst_address: CIDR e.g. "10.0.0.0/8"
         distance: 1-255
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Adding blackhole route: dst={dst_address}")
 
@@ -420,11 +389,7 @@ async def mikrotik_add_blackhole_route(
 
 @mcp.tool(name="get_route_statistics", annotations=annotate(READ, "Route Statistics"))
 async def mikrotik_get_route_statistics(ctx: Context, device: Optional[str] = None) -> str:
-    """Gets routing table statistics.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets routing table statistics."""
     await ctx.info("Getting route statistics")
 
     total_cmd = "/ip route print count-only"

@@ -15,11 +15,7 @@ async def mikrotik_add_ip_address(
     disabled: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Adds an IP address to an interface on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Adds an IP address to an interface on the MikroTik device."""
     await ctx.info(f"Adding IP address: address={address}, interface={interface}")
 
     # Build the command
@@ -59,11 +55,7 @@ async def mikrotik_list_ip_addresses(
     dynamic_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists IP addresses on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists IP addresses on the MikroTik device."""
     await ctx.info(f"Listing IP addresses with filters: interface={interface_filter}, address={address_filter}")
 
     # Build the command
@@ -94,11 +86,7 @@ async def mikrotik_list_ip_addresses(
 
 @mcp.tool(name="get_ip_address", annotations=annotate(READ, "Get IP Address"))
 async def mikrotik_get_ip_address(ctx: Context, address_id: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific IP address by ID or address value.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific IP address by ID or address value."""
     await ctx.info(f"Getting IP address details: address_id={address_id}")
 
     # Try to find by ID first, then by address
@@ -117,11 +105,7 @@ async def mikrotik_get_ip_address(ctx: Context, address_id: str, device: Optiona
 
 @mcp.tool(name="remove_ip_address", annotations=annotate(DESTRUCTIVE, "Remove IP Address"))
 async def mikrotik_remove_ip_address(ctx: Context, address_id: str, device: Optional[str] = None) -> str:
-    """Removes an IP address from the MikroTik device by ID or address value.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes an IP address from the MikroTik device by ID or address value."""
     await ctx.info(f"Removing IP address: address_id={address_id}")
 
     # Try to find by ID first

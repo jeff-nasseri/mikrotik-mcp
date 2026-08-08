@@ -19,11 +19,7 @@ async def mikrotik_get_logs(
     print_as: Literal["value", "detail", "terse"] = "value",
     device: Optional[str] = None
 ) -> str:
-    """Gets logs from the MikroTik device with optional topic, time, and message filters.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets logs from the MikroTik device with optional topic, time, and message filters."""
     await ctx.info(f"Getting logs with filters: topics={topics}, action={action}, time={time_filter}")
 
     # Build the command
@@ -78,11 +74,7 @@ async def mikrotik_get_logs_by_severity(
     limit: Optional[int] = None,
     device: Optional[str] = None
 ) -> str:
-    """Gets logs filtered by severity level (debug/info/warning/error/critical).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets logs filtered by severity level (debug/info/warning/error/critical)."""
     await ctx.info(f"Getting logs by severity: severity={severity}")
 
     # Map severity to topics
@@ -112,11 +104,7 @@ async def mikrotik_get_logs_by_topic(
     limit: Optional[int] = None,
     device: Optional[str] = None
 ) -> str:
-    """Gets logs for a specific topic/facility (system, dhcp, interface, firewall, etc.).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets logs for a specific topic/facility (system, dhcp, interface, firewall, etc.)."""
     await ctx.info(f"Getting logs by topic: topic={topic}")
 
     return await mikrotik_get_logs(
@@ -136,11 +124,7 @@ async def mikrotik_search_logs(
     limit: Optional[int] = None,
     device: Optional[str] = None
 ) -> str:
-    """Searches log messages for a specific term.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Searches log messages for a specific term."""
     await ctx.info(f"Searching logs for: term={search_term}")
 
     # Adjust search term for case sensitivity
@@ -167,11 +151,7 @@ async def mikrotik_get_system_events(
     limit: Optional[int] = None,
     device: Optional[str] = None
 ) -> str:
-    """Gets system-related log events (login, reboot, config-change, etc.).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets system-related log events (login, reboot, config-change, etc.)."""
     await ctx.info(f"Getting system events: type={event_type}")
 
     # Build filter based on event type
@@ -210,11 +190,7 @@ async def mikrotik_get_security_logs(
     limit: Optional[int] = None,
     device: Optional[str] = None
 ) -> str:
-    """Gets security-related log entries (login failures, blocked connections, etc.).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets security-related log entries (login failures, blocked connections, etc.)."""
     await ctx.info("Getting security logs")
 
     # Security-related topics and keywords
@@ -238,11 +214,7 @@ async def mikrotik_get_security_logs(
 
 @mcp.tool(name="clear_logs", annotations=annotate(DESTRUCTIVE, "Clear Logs"))
 async def mikrotik_clear_logs(ctx: Context, device: Optional[str] = None) -> str:
-    """Clears all logs from the MikroTik device. This action cannot be undone.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Clears all logs from the MikroTik device. This action cannot be undone."""
     await ctx.info("Clearing all logs")
 
     cmd = "/log print follow-only"
@@ -255,11 +227,7 @@ async def mikrotik_clear_logs(ctx: Context, device: Optional[str] = None) -> str
 
 @mcp.tool(name="get_log_statistics", annotations=annotate(READ, "Log Statistics"))
 async def mikrotik_get_log_statistics(ctx: Context, device: Optional[str] = None) -> str:
-    """Gets log entry counts by topic and severity from the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets log entry counts by topic and severity from the MikroTik device."""
     await ctx.info("Getting log statistics")
 
     # Get total count
@@ -297,11 +265,7 @@ async def mikrotik_export_logs(
     format: Literal["plain", "csv"] = "plain",
     device: Optional[str] = None
 ) -> str:
-    """Exports logs to a file on the MikroTik device with optional topic and time filters.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Exports logs to a file on the MikroTik device with optional topic and time filters."""
     if not filename:
         filename = f"logs_export_{int(time.time())}"
 
@@ -335,11 +299,7 @@ async def mikrotik_monitor_logs(
     duration: int = 10,
     device: Optional[str] = None
 ) -> str:
-    """Monitors MikroTik logs in near-real-time for a limited duration (max 60s).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Monitors MikroTik logs in near-real-time for a limited duration (max 60s)."""
     await ctx.info(f"Monitoring logs for {duration} seconds")
 
     # Limit duration for safety

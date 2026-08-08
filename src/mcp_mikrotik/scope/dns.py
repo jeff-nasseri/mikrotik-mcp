@@ -19,11 +19,7 @@ async def mikrotik_set_dns_servers(
     verify_doh_cert: bool = True,
     device: Optional[str] = None
 ) -> str:
-    """Sets DNS server configuration.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Sets DNS server configuration."""
     await ctx.info(f"Setting DNS servers: {', '.join(servers)}")
 
     cmd = "/ip dns set servers=" + ",".join(servers)
@@ -60,11 +56,7 @@ async def mikrotik_set_dns_servers(
 
 @mcp.tool(name="get_dns_settings", annotations=annotate(READ, "DNS Settings"))
 async def mikrotik_get_dns_settings(ctx: Context, device: Optional[str] = None) -> str:
-    """Gets current DNS configuration.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets current DNS configuration."""
     await ctx.info("Getting DNS settings")
 
     cmd = "/ip dns print"
@@ -94,11 +86,7 @@ async def mikrotik_add_dns_static(
     regexp: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Adds a static DNS entry.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Adds a static DNS entry."""
     await ctx.info(f"Adding static DNS entry: name={name}")
 
     cmd = f'/ip dns static add name="{name}"'
@@ -164,11 +152,7 @@ async def mikrotik_list_dns_static(
     regexp_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists static DNS entries.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists static DNS entries."""
     await ctx.info(f"Listing static DNS entries with filters: name={name_filter}")
 
     cmd = "/ip dns static print"
@@ -197,11 +181,7 @@ async def mikrotik_list_dns_static(
 
 @mcp.tool(name="get_dns_static", annotations=annotate(READ, "Get DNS Static Entry"))
 async def mikrotik_get_dns_static(ctx: Context, entry_id: str, device: Optional[str] = None) -> str:
-    """Gets details of a specific static DNS entry.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets details of a specific static DNS entry."""
     await ctx.info(f"Getting static DNS entry details: entry_id={entry_id}")
 
     cmd = f"/ip dns static print detail where .id={entry_id}"
@@ -232,11 +212,7 @@ async def mikrotik_update_dns_static(
     regexp: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Updates a static DNS entry.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Updates a static DNS entry."""
     await ctx.info(f"Updating static DNS entry: entry_id={entry_id}")
 
     cmd = f"/ip dns static set {entry_id}"
@@ -309,11 +285,7 @@ async def mikrotik_update_dns_static(
 
 @mcp.tool(name="remove_dns_static", annotations=annotate(DESTRUCTIVE, "Remove DNS Static Entry"))
 async def mikrotik_remove_dns_static(ctx: Context, entry_id: str, device: Optional[str] = None) -> str:
-    """Removes a static DNS entry.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a static DNS entry."""
     await ctx.info(f"Removing static DNS entry: entry_id={entry_id}")
 
     check_cmd = f"/ip dns static print count-only where .id={entry_id}"
@@ -332,29 +304,17 @@ async def mikrotik_remove_dns_static(ctx: Context, entry_id: str, device: Option
 
 @mcp.tool(name="enable_dns_static", annotations=annotate(WRITE_IDEMPOTENT, "Enable DNS Static Entry"))
 async def mikrotik_enable_dns_static(ctx: Context, entry_id: str, device: Optional[str] = None) -> str:
-    """Enables a static DNS entry.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Enables a static DNS entry."""
     return await mikrotik_update_dns_static(entry_id, disabled=False, ctx=ctx, device=device)
 
 @mcp.tool(name="disable_dns_static", annotations=annotate(WRITE_IDEMPOTENT, "Disable DNS Static Entry"))
 async def mikrotik_disable_dns_static(ctx: Context, entry_id: str, device: Optional[str] = None) -> str:
-    """Disables a static DNS entry.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Disables a static DNS entry."""
     return await mikrotik_update_dns_static(entry_id, disabled=True, ctx=ctx, device=device)
 
 @mcp.tool(name="get_dns_cache", annotations=annotate(READ, "DNS Cache"))
 async def mikrotik_get_dns_cache(ctx: Context, device: Optional[str] = None) -> str:
-    """Gets the current DNS cache.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets the current DNS cache."""
     await ctx.info("Getting DNS cache")
 
     cmd = "/ip dns cache print"
@@ -367,11 +327,7 @@ async def mikrotik_get_dns_cache(ctx: Context, device: Optional[str] = None) -> 
 
 @mcp.tool(name="flush_dns_cache", annotations=annotate(DESTRUCTIVE, "Flush DNS Cache"))
 async def mikrotik_flush_dns_cache(ctx: Context, device: Optional[str] = None) -> str:
-    """Flushes the DNS cache.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Flushes the DNS cache."""
     await ctx.info("Flushing DNS cache")
 
     cmd = "/ip dns cache flush"
@@ -384,11 +340,7 @@ async def mikrotik_flush_dns_cache(ctx: Context, device: Optional[str] = None) -
 
 @mcp.tool(name="get_dns_cache_statistics", annotations=annotate(READ, "DNS Cache Statistics"))
 async def mikrotik_get_dns_cache_statistics(ctx: Context, device: Optional[str] = None) -> str:
-    """Gets DNS cache statistics.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets DNS cache statistics."""
     await ctx.info("Getting DNS cache statistics")
 
     cmd = "/ip dns cache print stats"
@@ -409,11 +361,7 @@ async def mikrotik_add_dns_regexp(
     disabled: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Adds a DNS regexp entry.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Adds a DNS regexp entry."""
     await ctx.info(f"Adding DNS regexp entry: regexp={regexp}")
 
     return await mikrotik_add_dns_static(
@@ -435,11 +383,7 @@ async def mikrotik_test_dns_query(
     type: str = "A",
     device: Optional[str] = None
 ) -> str:
-    """Tests a DNS query.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Tests a DNS query."""
     await ctx.info(f"Testing DNS query: name={name}, type={type}")
 
     cmd = f"/resolve {name}"
@@ -459,11 +403,7 @@ async def mikrotik_test_dns_query(
 
 @mcp.tool(name="export_dns_config", annotations=annotate(READ, "Export DNS Config"))
 async def mikrotik_export_dns_config(ctx: Context, filename: Optional[str] = None, device: Optional[str] = None) -> str:
-    """Exports DNS configuration to a file.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Exports DNS configuration to a file."""
     await ctx.info("Exporting DNS configuration")
 
     if not filename:

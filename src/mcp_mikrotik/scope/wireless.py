@@ -70,11 +70,7 @@ async def mikrotik_create_wireless_interface(
         security_profile: Optional[str] = None,
         device: Optional[str] = None,
 ) -> str:
-    """Creates a wireless interface on the MikroTik device (auto-detects RouterOS v6/v7 syntax).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Creates a wireless interface on the MikroTik device (auto-detects RouterOS v6/v7 syntax)."""
     await ctx.info(f"Creating wireless interface: name={name}, ssid={ssid}")
 
     # Detect wireless interface type
@@ -149,11 +145,7 @@ async def mikrotik_list_wireless_interfaces(
         running_only: bool = False,
         device: Optional[str] = None
 ) -> str:
-    """Lists wireless interfaces on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists wireless interfaces on the MikroTik device."""
     await ctx.info(f"Listing wireless interfaces with filters: name={name_filter}")
 
     # Try multiple interface types to ensure we find all wireless interfaces
@@ -223,11 +215,7 @@ NOTE: If you see wireless interfaces above, they might be using a different comm
 
 @mcp.tool(name="get_wireless_interface", annotations=annotate(READ, "Get Wireless Interface"))
 async def mikrotik_get_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific wireless interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific wireless interface."""
     await ctx.info(f"Getting wireless interface details: name={name}")
 
     # Detect wireless interface type
@@ -247,11 +235,7 @@ async def mikrotik_get_wireless_interface(ctx: Context, name: str, device: Optio
 
 @mcp.tool(name="remove_wireless_interface", annotations=annotate(DESTRUCTIVE, "Remove Wireless Interface"))
 async def mikrotik_remove_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Removes a wireless interface from the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a wireless interface from the MikroTik device."""
     await ctx.info(f"Removing wireless interface: name={name}")
 
     # Detect wireless interface type
@@ -279,11 +263,7 @@ async def mikrotik_remove_wireless_interface(ctx: Context, name: str, device: Op
 
 @mcp.tool(name="enable_wireless_interface", annotations=annotate(WRITE_IDEMPOTENT, "Enable Wireless Interface"))
 async def mikrotik_enable_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Enables a wireless interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Enables a wireless interface."""
     await ctx.info(f"Enabling wireless interface: {name}")
 
     # Detect wireless interface type
@@ -303,11 +283,7 @@ async def mikrotik_enable_wireless_interface(ctx: Context, name: str, device: Op
 
 @mcp.tool(name="disable_wireless_interface", annotations=annotate(WRITE_IDEMPOTENT, "Disable Wireless Interface"))
 async def mikrotik_disable_wireless_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Disables a wireless interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Disables a wireless interface."""
     await ctx.info(f"Disabling wireless interface: {name}")
 
     # Detect wireless interface type
@@ -332,11 +308,7 @@ async def mikrotik_scan_wireless_networks(
         duration: int = 5,
         device: Optional[str] = None
 ) -> str:
-    """Scans for nearby wireless networks using the specified interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Scans for nearby wireless networks using the specified interface."""
     await ctx.info(f"Scanning wireless networks on interface: {interface}")
 
     # Detect wireless interface type
@@ -362,11 +334,7 @@ async def mikrotik_get_wireless_registration_table(
         interface: Optional[str] = None,
         device: Optional[str] = None
 ) -> str:
-    """Gets the wireless registration table (connected clients) from the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets the wireless registration table (connected clients) from the MikroTik device."""
     await ctx.info(f"Getting wireless registration table for interface: {interface}")
 
     # Detect wireless interface type
@@ -391,11 +359,7 @@ async def mikrotik_get_wireless_registration_table(
 
 @mcp.tool(name="check_wireless_support", annotations=annotate(READ, "Check Wireless Support"))
 async def mikrotik_check_wireless_support(ctx: Context, device: Optional[str] = None) -> str:
-    """Checks if the device supports wireless and reports the RouterOS version and wireless interface type.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Checks if the device supports wireless and reports the RouterOS version and wireless interface type."""
     await ctx.info("Checking wireless support")
 
     # Check RouterOS version
@@ -446,11 +410,7 @@ For legacy systems:
 # Legacy compatibility functions (simplified versions for older RouterOS)
 @mcp.tool(name="create_wireless_security_profile", annotations=annotate(WRITE, "Create Wireless Security Profile"))
 async def mikrotik_create_wireless_security_profile(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Legacy function - not supported in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Configure security directly on the wireless interface."
@@ -459,11 +419,7 @@ async def mikrotik_create_wireless_security_profile(ctx: Context, name: str, dev
 
 @mcp.tool(name="list_wireless_security_profiles", annotations=annotate(READ, "List Wireless Security Profiles"))
 async def mikrotik_list_wireless_security_profiles(ctx: Context, device: Optional[str] = None) -> str:
-    """Legacy function - not supported in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Security is configured directly on wireless interfaces."
@@ -472,11 +428,7 @@ async def mikrotik_list_wireless_security_profiles(ctx: Context, device: Optiona
 
 @mcp.tool(name="get_wireless_security_profile", annotations=annotate(READ, "Get Wireless Security Profile"))
 async def mikrotik_get_wireless_security_profile(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Legacy function - not supported in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Check security configuration on wireless interfaces directly."
@@ -485,11 +437,7 @@ async def mikrotik_get_wireless_security_profile(ctx: Context, name: str, device
 
 @mcp.tool(name="remove_wireless_security_profile", annotations=annotate(DESTRUCTIVE, "Remove Wireless Security Profile"))
 async def mikrotik_remove_wireless_security_profile(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Legacy function - not supported in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Security is configured directly on wireless interfaces."
@@ -498,11 +446,7 @@ async def mikrotik_remove_wireless_security_profile(ctx: Context, name: str, dev
 
 @mcp.tool(name="set_wireless_security_profile", annotations=annotate(WRITE, "Set Wireless Security Profile"))
 async def mikrotik_set_wireless_security_profile(ctx: Context, interface_name: str, security_profile: str, device: Optional[str] = None) -> str:
-    """Legacy function - not supported in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - not supported in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Security profiles are not used in RouterOS v7.x. Configure security directly on the wireless interface."
@@ -511,11 +455,7 @@ async def mikrotik_set_wireless_security_profile(ctx: Context, interface_name: s
 
 @mcp.tool(name="create_wireless_access_list", annotations=annotate(WRITE, "Create Wireless Access List"))
 async def mikrotik_create_wireless_access_list(ctx: Context, device: Optional[str] = None) -> str:
-    """Legacy function - different in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - different in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Access lists are configured differently in RouterOS v7.x. Use firewall rules or other access control methods."
@@ -524,11 +464,7 @@ async def mikrotik_create_wireless_access_list(ctx: Context, device: Optional[st
 
 @mcp.tool(name="list_wireless_access_list", annotations=annotate(READ, "List Wireless Access List"))
 async def mikrotik_list_wireless_access_list(ctx: Context, device: Optional[str] = None) -> str:
-    """Legacy function - different in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - different in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Access lists are configured differently in RouterOS v7.x. Check firewall rules or other access control configurations."
@@ -537,11 +473,7 @@ async def mikrotik_list_wireless_access_list(ctx: Context, device: Optional[str]
 
 @mcp.tool(name="remove_wireless_access_list_entry", annotations=annotate(DESTRUCTIVE, "Remove Wireless Access List Entry"))
 async def mikrotik_remove_wireless_access_list_entry(ctx: Context, entry_id: str, device: Optional[str] = None) -> str:
-    """Legacy function - different in RouterOS v7.x
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Legacy function - different in RouterOS v7.x"""
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
     if interface_type in ["/interface wifi", "/interface wifiwave2"]:
         return "Access lists are configured differently in RouterOS v7.x."
@@ -558,11 +490,7 @@ async def mikrotik_update_wireless_interface(
         comment: Optional[str] = None,
         device: Optional[str] = None,
 ) -> str:
-    """Updates an existing wireless interface's settings (name, SSID, enabled state, etc.).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Updates an existing wireless interface's settings (name, SSID, enabled state, etc.)."""
     await ctx.info(f"Updating wireless interface: name={name}")
 
     # Detect wireless interface type

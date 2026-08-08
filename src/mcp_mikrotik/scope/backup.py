@@ -16,11 +16,7 @@ async def mikrotik_create_backup(
     comment: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Creates a system backup on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Creates a system backup on the MikroTik device."""
     # Generate filename if not provided
     if not name:
         name = f"backup_{int(time.time())}"
@@ -62,11 +58,7 @@ async def mikrotik_list_backups(
     include_exports: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists backup files on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists backup files on the MikroTik device."""
     await ctx.info(f"Listing backups with filter: name={name_filter}")
 
     # Build the command
@@ -101,11 +93,7 @@ async def mikrotik_create_export(
     comment: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Creates a configuration export file (rsc/json/xml) on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Creates a configuration export file (rsc/json/xml) on the MikroTik device."""
     # Generate filename if not provided
     if not name:
         name = f"export_{int(time.time())}"
@@ -165,7 +153,6 @@ async def mikrotik_export_section(
     Notes:
         section: RouterOS path without leading slash e.g. "ip address", "interface vlan",
             "ip firewall filter", "ip firewall nat", "queue simple"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     # Generate filename if not provided
     if not name:
@@ -205,11 +192,7 @@ async def mikrotik_download_file(
     file_type: Literal["backup", "export"] = "backup",
     device: Optional[str] = None
 ) -> str:
-    """Downloads a backup or export file from the MikroTik device as base64-encoded content.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Downloads a backup or export file from the MikroTik device as base64-encoded content."""
     await ctx.info(f"Downloading file: filename={filename}, type={file_type}")
 
     # First, check if the file exists.
@@ -236,11 +219,7 @@ async def mikrotik_upload_file(
     content_base64: str,
     device: Optional[str] = None
 ) -> str:
-    """Uploads a base64-encoded file to the MikroTik device (for restore operations).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Uploads a base64-encoded file to the MikroTik device (for restore operations)."""
     await ctx.info(f"Uploading file: filename={filename}")
 
     # Decode the base64 payload to raw bytes (keep binary intact — no utf-8 decode).
@@ -264,11 +243,7 @@ async def mikrotik_restore_backup(
     password: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Restores a system backup on the MikroTik device; triggers a reboot.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Restores a system backup on the MikroTik device; triggers a reboot."""
     await ctx.info(f"Restoring backup: filename={filename}")
 
     # Check if backup file exists
@@ -299,11 +274,7 @@ async def mikrotik_import_configuration(
     verbose: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Imports and executes a RouterOS configuration script (.rsc file) on the device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Imports and executes a RouterOS configuration script (.rsc file) on the device."""
     await ctx.info(f"Importing configuration: filename={filename}")
 
     # Check if file exists
@@ -335,11 +306,7 @@ async def mikrotik_remove_file(
     filename: str,
     device: Optional[str] = None
 ) -> str:
-    """Removes a file from the MikroTik device filesystem.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a file from the MikroTik device filesystem."""
     await ctx.info(f"Removing file: filename={filename}")
 
     # Check if file exists
@@ -364,11 +331,7 @@ async def mikrotik_backup_info(
     filename: str,
     device: Optional[str] = None
 ) -> str:
-    """Gets detailed information about a backup file on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a backup file on the MikroTik device."""
     await ctx.info(f"Getting backup info: filename={filename}")
 
     # Get file details

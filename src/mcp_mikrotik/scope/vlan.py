@@ -18,11 +18,7 @@ async def mikrotik_create_vlan_interface(
     arp_timeout: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Creates a VLAN interface on the MikroTik device with the given VLAN ID and parent interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Creates a VLAN interface on the MikroTik device with the given VLAN ID and parent interface."""
     await ctx.info(f"Creating VLAN interface: name={name}, vlan_id={vlan_id}, interface={interface}")
 
     # Build the command
@@ -83,11 +79,7 @@ async def mikrotik_list_vlan_interfaces(
     disabled_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists VLAN interfaces on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists VLAN interfaces on the MikroTik device."""
     await ctx.info(f"Listing VLAN interfaces with filters: name={name_filter}, vlan_id={vlan_id_filter}, interface={interface_filter}")
 
     # Build the command
@@ -117,11 +109,7 @@ async def mikrotik_list_vlan_interfaces(
 
 @mcp.tool(name="get_vlan_interface", annotations=annotate(READ, "Get VLAN"))
 async def mikrotik_get_vlan_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific VLAN interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific VLAN interface."""
     await ctx.info(f"Getting VLAN interface details: name={name}")
 
     cmd = f'/interface vlan print detail where name="{name}"'
@@ -147,11 +135,7 @@ async def mikrotik_update_vlan_interface(
     arp_timeout: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Updates an existing VLAN interface's settings on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Updates an existing VLAN interface's settings on the MikroTik device."""
     await ctx.info(f"Updating VLAN interface: name={name}")
 
     # Build the command
@@ -198,11 +182,7 @@ async def mikrotik_update_vlan_interface(
 
 @mcp.tool(name="remove_vlan_interface", annotations=annotate(DESTRUCTIVE, "Remove VLAN"))
 async def mikrotik_remove_vlan_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Removes a VLAN interface from the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a VLAN interface from the MikroTik device."""
     await ctx.info(f"Removing VLAN interface: name={name}")
 
     # First check if the interface exists
