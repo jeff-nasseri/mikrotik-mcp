@@ -15,11 +15,7 @@ async def mikrotik_add_user(
     disabled: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Adds a user to MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Adds a user to MikroTik device."""
     await ctx.info(f"Adding user: name={name}, group={group}")
 
     cmd = f'/user add name="{name}" password="{password}" group={group}'
@@ -68,11 +64,7 @@ async def mikrotik_list_users(
     active_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists users on MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists users on MikroTik device."""
     await ctx.info(f"Listing users with filters: name={name_filter}, group={group_filter}")
 
     cmd = "/user print"
@@ -100,11 +92,7 @@ async def mikrotik_list_users(
 
 @mcp.tool(name="get_user", annotations=annotate(READ, "Get User"))
 async def mikrotik_get_user(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific user.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific user."""
     await ctx.info(f"Getting user details: name={name}")
 
     cmd = f'/user print detail where name="{name}"'
@@ -130,11 +118,7 @@ async def mikrotik_update_user(
     disabled: Optional[bool] = None,
     device: Optional[str] = None
 ) -> str:
-    """Updates a user.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Updates a user."""
     await ctx.info(f"Updating user: name={name}")
 
     cmd = f'/user set [find name="{name}"]'
@@ -177,11 +161,7 @@ async def mikrotik_update_user(
 
 @mcp.tool(name="remove_user", annotations=annotate(DESTRUCTIVE, "Remove User"))
 async def mikrotik_remove_user(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Removes a user.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a user."""
     await ctx.info(f"Removing user: name={name}")
 
     # Don't allow removal of admin user
@@ -204,20 +184,12 @@ async def mikrotik_remove_user(ctx: Context, name: str, device: Optional[str] = 
 
 @mcp.tool(name="disable_user", annotations=annotate(WRITE_IDEMPOTENT, "Disable User"))
 async def mikrotik_disable_user(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Disables a user.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Disables a user."""
     return await mikrotik_update_user(name, disabled=True, ctx=ctx, device=device)
 
 @mcp.tool(name="enable_user", annotations=annotate(WRITE_IDEMPOTENT, "Enable User"))
 async def mikrotik_enable_user(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Enables a user.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Enables a user."""
     return await mikrotik_update_user(name, disabled=False, ctx=ctx, device=device)
 
 @mcp.tool(name="add_user_group", annotations=annotate(WRITE, "Add User Group"))
@@ -229,11 +201,7 @@ async def mikrotik_add_user_group(
     comment: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Adds a user group.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Adds a user group."""
     await ctx.info(f"Adding user group: name={name}")
 
     # Valid policies
@@ -286,11 +254,7 @@ async def mikrotik_list_user_groups(
     policy_filter: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Lists user groups on MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists user groups on MikroTik device."""
     await ctx.info(f"Listing user groups with filters: name={name_filter}")
 
     cmd = "/user group print"
@@ -313,11 +277,7 @@ async def mikrotik_list_user_groups(
 
 @mcp.tool(name="get_user_group", annotations=annotate(READ, "Get User Group"))
 async def mikrotik_get_user_group(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific user group.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific user group."""
     await ctx.info(f"Getting user group details: name={name}")
 
     cmd = f'/user group print detail where name="{name}"'
@@ -338,11 +298,7 @@ async def mikrotik_update_user_group(
     comment: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Updates a user group.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Updates a user group."""
     await ctx.info(f"Updating user group: name={name}")
 
     # Don't allow modification of built-in groups
@@ -382,11 +338,7 @@ async def mikrotik_update_user_group(
 
 @mcp.tool(name="remove_user_group", annotations=annotate(DESTRUCTIVE, "Remove User Group"))
 async def mikrotik_remove_user_group(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Removes a user group.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a user group."""
     await ctx.info(f"Removing user group: name={name}")
 
     # Don't allow removal of built-in groups
@@ -416,11 +368,7 @@ async def mikrotik_remove_user_group(ctx: Context, name: str, device: Optional[s
 
 @mcp.tool(name="get_active_users", annotations=annotate(READ, "Active Users"))
 async def mikrotik_get_active_users(ctx: Context, device: Optional[str] = None) -> str:
-    """Gets currently active/logged-in users.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets currently active/logged-in users."""
     await ctx.info("Getting active users")
 
     cmd = "/user active print"
@@ -433,11 +381,7 @@ async def mikrotik_get_active_users(ctx: Context, device: Optional[str] = None) 
 
 @mcp.tool(name="disconnect_user", annotations=annotate(DESTRUCTIVE, "Disconnect User"))
 async def mikrotik_disconnect_user(ctx: Context, user_id: str, device: Optional[str] = None) -> str:
-    """Disconnects an active user session.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Disconnects an active user session."""
     await ctx.info(f"Disconnecting user: user_id={user_id}")
 
     cmd = f"/user active remove {user_id}"
@@ -450,11 +394,7 @@ async def mikrotik_disconnect_user(ctx: Context, user_id: str, device: Optional[
 
 @mcp.tool(name="export_user_config", annotations=annotate(READ, "Export User Config"))
 async def mikrotik_export_user_config(ctx: Context, filename: Optional[str] = None, device: Optional[str] = None) -> str:
-    """Exports user configuration to a file.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Exports user configuration to a file."""
     await ctx.info("Exporting user configuration")
 
     if not filename:
@@ -475,11 +415,7 @@ async def mikrotik_set_user_ssh_keys(
     key_file: str,
     device: Optional[str] = None
 ) -> str:
-    """Sets SSH keys for a specific user.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Sets SSH keys for a specific user."""
     await ctx.info(f"Setting SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys import user="{username}" public-key-file="{key_file}"'
@@ -492,11 +428,7 @@ async def mikrotik_set_user_ssh_keys(
 
 @mcp.tool(name="list_user_ssh_keys", annotations=annotate(READ, "List User SSH Keys"))
 async def mikrotik_list_user_ssh_keys(ctx: Context, username: str, device: Optional[str] = None) -> str:
-    """Lists SSH keys for a specific user.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists SSH keys for a specific user."""
     await ctx.info(f"Listing SSH keys for user: {username}")
 
     cmd = f'/user ssh-keys print where user="{username}"'
@@ -509,11 +441,7 @@ async def mikrotik_list_user_ssh_keys(ctx: Context, username: str, device: Optio
 
 @mcp.tool(name="remove_user_ssh_key", annotations=annotate(DESTRUCTIVE, "Remove User SSH Key"))
 async def mikrotik_remove_user_ssh_key(ctx: Context, key_id: str, device: Optional[str] = None) -> str:
-    """Removes an SSH key.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes an SSH key."""
     await ctx.info(f"Removing SSH key: key_id={key_id}")
 
     cmd = f"/user ssh-keys remove {key_id}"

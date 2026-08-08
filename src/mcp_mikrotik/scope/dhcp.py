@@ -23,7 +23,6 @@ async def mikrotik_create_dhcp_server(
 
     Notes:
         lease_time: duration e.g. "1d", "12h", "30m", "1h30m"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Creating DHCP server: name={name}, interface={interface}")
 
@@ -66,11 +65,7 @@ async def mikrotik_list_dhcp_servers(
     invalid_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists DHCP servers on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists DHCP servers on the MikroTik device."""
     await ctx.info(f"Listing DHCP servers with filters: name={name_filter}, interface={interface_filter}")
 
     # Build the command
@@ -99,11 +94,7 @@ async def mikrotik_list_dhcp_servers(
 
 @mcp.tool(name="get_dhcp_server", annotations=annotate(READ, "Get DHCP Server"))
 async def mikrotik_get_dhcp_server(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific DHCP server.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific DHCP server."""
     await ctx.info(f"Getting DHCP server details: name={name}")
 
     cmd = f'/ip dhcp-server print detail where name="{name}"'
@@ -128,11 +119,7 @@ async def mikrotik_create_dhcp_network(
     comment: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Creates a DHCP network configuration (gateway, DNS, domain, etc.) on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Creates a DHCP network configuration (gateway, DNS, domain, etc.) on the MikroTik device."""
     await ctx.info(f"Creating DHCP network: network={network}, gateway={gateway}")
 
     # Build the command
@@ -185,7 +172,6 @@ async def mikrotik_create_dhcp_pool(
     Notes:
         ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
             Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Creating DHCP pool: name={name}, ranges={ranges}")
 
@@ -212,11 +198,7 @@ async def mikrotik_create_dhcp_pool(
 
 @mcp.tool(name="remove_dhcp_server", annotations=annotate(DESTRUCTIVE, "Remove DHCP Server"))
 async def mikrotik_remove_dhcp_server(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Removes a DHCP server from the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a DHCP server from the MikroTik device."""
     await ctx.info(f"Removing DHCP server: name={name}")
 
     # First check if the server exists

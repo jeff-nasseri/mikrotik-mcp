@@ -30,7 +30,6 @@ async def mikrotik_create_nat_rule(
         to_addresses: single IP or range e.g. "10.0.0.1" or "10.0.0.1-10.0.0.10"
         to_ports: single port or range e.g. "8080" or "8080-8090"
         place_before: rule number or ID (*N) to insert before e.g. "0" or "*3"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Creating NAT rule: chain={chain}, action={action}")
 
@@ -132,11 +131,7 @@ async def mikrotik_list_nat_rules(
     invalid_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists NAT rules on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists NAT rules on the MikroTik device."""
     await ctx.info(f"Listing NAT rules with filters: chain={chain_filter}, action={action_filter}")
 
     # Build the command
@@ -178,7 +173,6 @@ async def mikrotik_get_nat_rule(ctx: Context, rule_id: str, device: Optional[str
 
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting NAT rule details: rule_id={rule_id}")
 
@@ -218,7 +212,6 @@ async def mikrotik_update_nat_rule(
         to_addresses: single IP or range e.g. "10.0.0.1" or "10.0.0.1-10.0.0.10"
         to_ports: single port or range e.g. "8080" or "8080-8090"
         Pass "" to clear an optional field.
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Updating NAT rule: rule_id={rule_id}")
 
@@ -308,7 +301,6 @@ async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str, device: Optional[
 
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Removing NAT rule: rule_id={rule_id}")
 
@@ -335,7 +327,6 @@ async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int, d
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
         destination: 0-based target position index
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Moving NAT rule: rule_id={rule_id} to position {destination}")
 
@@ -357,18 +348,10 @@ async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int, d
 
 @mcp.tool(name="enable_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Enable NAT Rule"))
 async def mikrotik_enable_nat_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
-    """Enables a NAT rule.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Enables a NAT rule."""
     return await mikrotik_update_nat_rule(rule_id, disabled=False, ctx=ctx, device=device)
 
 @mcp.tool(name="disable_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Disable NAT Rule"))
 async def mikrotik_disable_nat_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
-    """Disables a NAT rule.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Disables a NAT rule."""
     return await mikrotik_update_nat_rule(rule_id, disabled=True, ctx=ctx, device=device)

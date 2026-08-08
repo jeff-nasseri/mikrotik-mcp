@@ -35,7 +35,6 @@ async def mikrotik_create_filter_rule(
         limit: RouterOS rate/burst string e.g. "10,5:packet" or "10/1s:packet"
         tcp_flags: RouterOS flag expression e.g. "syn,!ack"
         place_before: rule number or ID (*N) to insert before e.g. "0" or "*3"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Creating firewall filter rule: chain={chain}, action={action}")
 
@@ -141,11 +140,7 @@ async def mikrotik_list_filter_rules(
     dynamic_only: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists firewall filter rules on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists firewall filter rules on the MikroTik device."""
     await ctx.info(f"Listing firewall filter rules with filters: chain={chain_filter}, action={action_filter}")
 
     # Build the command
@@ -189,7 +184,6 @@ async def mikrotik_get_filter_rule(ctx: Context, rule_id: str, device: Optional[
 
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting firewall filter rule details: rule_id={rule_id}")
 
@@ -234,7 +228,6 @@ async def mikrotik_update_filter_rule(
         limit: RouterOS rate string e.g. "10,5:packet"
         tcp_flags: RouterOS flag expression e.g. "syn,!ack"
         Pass "" to clear an optional field (e.g. src_address="").
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Updating firewall filter rule: rule_id={rule_id}")
 
@@ -344,7 +337,6 @@ async def mikrotik_remove_filter_rule(ctx: Context, rule_id: str, device: Option
 
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Removing firewall filter rule: rule_id={rule_id}")
 
@@ -371,7 +363,6 @@ async def mikrotik_move_filter_rule(ctx: Context, rule_id: str, destination: int
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
         destination: 0-based target position index
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Moving firewall filter rule: rule_id={rule_id} to position {destination}")
 
@@ -393,29 +384,17 @@ async def mikrotik_move_filter_rule(ctx: Context, rule_id: str, destination: int
 
 @mcp.tool(name="enable_filter_rule", annotations=annotate(WRITE_IDEMPOTENT, "Enable Filter Rule"))
 async def mikrotik_enable_filter_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
-    """Enables a firewall filter rule.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Enables a firewall filter rule."""
     return await mikrotik_update_filter_rule(rule_id, disabled=False, ctx=ctx, device=device)
 
 @mcp.tool(name="disable_filter_rule", annotations=annotate(WRITE_IDEMPOTENT, "Disable Filter Rule"))
 async def mikrotik_disable_filter_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
-    """Disables a firewall filter rule.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Disables a firewall filter rule."""
     return await mikrotik_update_filter_rule(rule_id, disabled=True, ctx=ctx, device=device)
 
 @mcp.tool(name="create_basic_firewall_setup", annotations=annotate(DANGEROUS, "Create Basic Firewall Setup"))
 async def mikrotik_create_basic_firewall_setup(ctx: Context, device: Optional[str] = None) -> str:
-    """Creates a basic firewall setup with common security rules on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Creates a basic firewall setup with common security rules on the MikroTik device."""
     await ctx.info("Creating basic firewall setup")
 
     results = []

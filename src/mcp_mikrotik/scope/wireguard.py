@@ -21,11 +21,7 @@ async def mikrotik_create_wireguard_interface(
     disabled: bool = False,
     device: Optional[str] = None,
 ) -> str:
-    """Creates a WireGuard interface on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Creates a WireGuard interface on the MikroTik device."""
     await ctx.info(f"Creating WireGuard interface: name={name}")
 
     cmd = f"/interface wireguard add name={name}"
@@ -62,11 +58,7 @@ async def mikrotik_list_wireguard_interfaces(
     running_only: bool = False,
     device: Optional[str] = None,
 ) -> str:
-    """Lists WireGuard interfaces on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists WireGuard interfaces on the MikroTik device."""
     await ctx.info("Listing WireGuard interfaces")
 
     cmd = "/interface wireguard print"
@@ -92,11 +84,7 @@ async def mikrotik_list_wireguard_interfaces(
 
 @mcp.tool(name="get_wireguard_interface", annotations=annotate(READ, "Get WireGuard Interface"))
 async def mikrotik_get_wireguard_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific WireGuard interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific WireGuard interface."""
     await ctx.info(f"Getting WireGuard interface details: name={name}")
 
     cmd = f'/interface wireguard print detail where name="{name}"'
@@ -120,11 +108,7 @@ async def mikrotik_update_wireguard_interface(
     disabled: Optional[bool] = None,
     device: Optional[str] = None,
 ) -> str:
-    """Updates an existing WireGuard interface's settings on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Updates an existing WireGuard interface's settings on the MikroTik device."""
     await ctx.info(f"Updating WireGuard interface: name={name}")
 
     updates = []
@@ -159,11 +143,7 @@ async def mikrotik_update_wireguard_interface(
 
 @mcp.tool(name="remove_wireguard_interface", annotations=annotate(DESTRUCTIVE, "Remove WireGuard Interface"))
 async def mikrotik_remove_wireguard_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Removes a WireGuard interface from the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes a WireGuard interface from the MikroTik device."""
     await ctx.info(f"Removing WireGuard interface: name={name}")
 
     check_cmd = f'/interface wireguard print count-only where name="{name}"'
@@ -183,11 +163,7 @@ async def mikrotik_remove_wireguard_interface(ctx: Context, name: str, device: O
 
 @mcp.tool(name="enable_wireguard_interface", annotations=annotate(WRITE_IDEMPOTENT, "Enable WireGuard Interface"))
 async def mikrotik_enable_wireguard_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Enables a WireGuard interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Enables a WireGuard interface."""
     await ctx.info(f"Enabling WireGuard interface: name={name}")
 
     cmd = f'/interface wireguard enable [find name="{name}"]'
@@ -201,11 +177,7 @@ async def mikrotik_enable_wireguard_interface(ctx: Context, name: str, device: O
 
 @mcp.tool(name="disable_wireguard_interface", annotations=annotate(WRITE_IDEMPOTENT, "Disable WireGuard Interface"))
 async def mikrotik_disable_wireguard_interface(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Disables a WireGuard interface.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Disables a WireGuard interface."""
     await ctx.info(f"Disabling WireGuard interface: name={name}")
 
     cmd = f'/interface wireguard disable [find name="{name}"]'
@@ -241,7 +213,6 @@ async def mikrotik_add_wireguard_peer(
         allowed_address: CIDR, comma-separated for multiple e.g. "10.0.0.2/32" or "10.0.0.0/24,192.168.0.0/24"
         endpoint_address: remote host IP or hostname e.g. "203.0.113.1"
         persistent_keepalive: seconds as string e.g. "25"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Adding WireGuard peer: interface={interface}, public_key={public_key[:12]}...")
 
@@ -287,11 +258,7 @@ async def mikrotik_list_wireguard_peers(
     disabled_only: bool = False,
     device: Optional[str] = None,
 ) -> str:
-    """Lists WireGuard peers on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists WireGuard peers on the MikroTik device."""
     await ctx.info("Listing WireGuard peers")
 
     cmd = "/interface wireguard peers print"
@@ -319,7 +286,6 @@ async def mikrotik_get_wireguard_peer(ctx: Context, peer_id: str, device: Option
 
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting WireGuard peer details: peer_id={peer_id}")
 
@@ -352,7 +318,6 @@ async def mikrotik_update_wireguard_peer(
         allowed_address: CIDR, comma-separated e.g. "10.0.0.2/32" or "10.0.0.0/24,192.168.0.0/24"
         persistent_keepalive: seconds as string e.g. "25"
         Pass "" for endpoint_address or preshared_key to clear them.
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Updating WireGuard peer: peer_id={peer_id}")
 
@@ -399,7 +364,6 @@ async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str, device: Opt
 
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Removing WireGuard peer: peer_id={peer_id}")
 
@@ -424,7 +388,6 @@ async def mikrotik_enable_wireguard_peer(ctx: Context, peer_id: str, device: Opt
 
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Enabling WireGuard peer: peer_id={peer_id}")
 
@@ -443,7 +406,6 @@ async def mikrotik_disable_wireguard_peer(ctx: Context, peer_id: str, device: Op
 
     Notes:
         peer_id: "*N" or "N" from list output e.g. "*2"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Disabling WireGuard peer: peer_id={peer_id}")
 
@@ -469,11 +431,7 @@ async def mikrotik_generate_wireguard_client_config(
     persistent_keepalive: int = 25,
     device: Optional[str] = None,
 ) -> str:
-    """Generates a wg0.conf client config string from the given keys and server endpoint. Does not communicate with the router.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Generates a wg0.conf client config string from the given keys and server endpoint. Does not communicate with the router."""
     await ctx.info("Generating WireGuard client configuration")
 
     lines = [

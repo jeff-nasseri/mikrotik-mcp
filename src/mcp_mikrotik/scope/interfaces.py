@@ -23,7 +23,6 @@ async def mikrotik_list_interfaces(
         type_filter: RouterOS interface type e.g. "ether", "bridge", "vlan",
             "wg", "pppoe-out", "wifi", "lte", "loopback"
         name_filter: partial name match e.g. "ether" matches ether1, ether2 …
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info("Listing all interfaces")
 
@@ -56,7 +55,6 @@ async def mikrotik_get_interface(ctx: Context, name: str, device: Optional[str] 
 
     Notes:
         name: exact interface name e.g. "ether1", "bridge", "pppoe-out1", "wg0"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting interface details: name={name}")
 
@@ -75,7 +73,6 @@ async def mikrotik_enable_interface(ctx: Context, name: str, device: Optional[st
 
     Notes:
         name: exact interface name e.g. "ether1", "bridge", "pppoe-out1"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Enabling interface: name={name}")
 
@@ -101,7 +98,6 @@ async def mikrotik_disable_interface(ctx: Context, name: str, device: Optional[s
 
     Notes:
         name: exact interface name e.g. "ether1", "bridge", "pppoe-out1"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Disabling interface: name={name}")
 

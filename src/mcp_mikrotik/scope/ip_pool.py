@@ -19,7 +19,6 @@ async def mikrotik_create_ip_pool(
     Notes:
         ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
             Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Creating IP pool: name={name}, ranges={ranges}")
 
@@ -68,11 +67,7 @@ async def mikrotik_list_ip_pools(
     include_used: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Lists IP pools on the MikroTik device.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists IP pools on the MikroTik device."""
     await ctx.info(f"Listing IP pools with filters: name={name_filter}, ranges={ranges_filter}")
 
     # Build the command
@@ -122,11 +117,7 @@ async def mikrotik_list_ip_pools(
 
 @mcp.tool(name="get_ip_pool", annotations=annotate(READ, "Get IP Pool"))
 async def mikrotik_get_ip_pool(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Gets detailed information about a specific IP pool including used address count.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Gets detailed information about a specific IP pool including used address count."""
     await ctx.info(f"Getting IP pool details: name={name}")
 
     cmd = f'/ip pool print detail where name="{name}"'
@@ -160,7 +151,6 @@ async def mikrotik_update_ip_pool(
         ranges: hyphen-separated range(s) e.g. "192.168.1.1-192.168.1.100"
             Multiple ranges comma-separated: "10.0.0.1-10.0.0.50,10.0.0.100-10.0.0.120"
         Pass "" for next_pool to clear it.
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Updating IP pool: name={name}")
 
@@ -201,11 +191,7 @@ async def mikrotik_update_ip_pool(
 
 @mcp.tool(name="remove_ip_pool", annotations=annotate(DESTRUCTIVE, "Remove IP Pool"))
 async def mikrotik_remove_ip_pool(ctx: Context, name: str, device: Optional[str] = None) -> str:
-    """Removes an IP pool from the MikroTik device (fails if pool is in use).
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Removes an IP pool from the MikroTik device (fails if pool is in use)."""
     await ctx.info(f"Removing IP pool: name={name}")
 
     # First check if the pool exists
@@ -247,11 +233,7 @@ async def mikrotik_list_ip_pool_used(
     info_filter: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Lists currently used (allocated) addresses from IP pools.
-
-    Notes:
-        device: Device title from the inventory; omit when only one device is configured.
-    """
+    """Lists currently used (allocated) addresses from IP pools."""
     await ctx.info(f"Listing used IP pool addresses: pool={pool_name}, address={address_filter}")
 
     cmd = "/ip pool used print"
@@ -284,7 +266,6 @@ async def mikrotik_expand_ip_pool(ctx: Context, name: str, additional_ranges: st
     Notes:
         additional_ranges: hyphen-separated range(s) e.g. "192.168.1.101-192.168.1.150"
             Multiple ranges comma-separated: "10.0.0.51-10.0.0.60,10.0.0.70-10.0.0.80"
-        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Expanding IP pool: name={name}, additional_ranges={additional_ranges}")
 
