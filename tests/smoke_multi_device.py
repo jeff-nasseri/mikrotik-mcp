@@ -11,6 +11,7 @@ lands on the device named by the `device` argument.
 import asyncio
 import json
 import os
+import re
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -51,6 +52,16 @@ def env():
 
 def txt(res):
     return "\n".join(getattr(c, "text", "") for c in res.content)
+
+
+def ether2_mac(output):
+    """Pull ether2's MAC from a list_interfaces response.
+
+    Each container generates its own ether2 MAC, so the MAC in a response
+    identifies which router actually produced it.
+    """
+    m = re.search(r"ether2\s+\S+\s+\d+\s+([0-9A-Fa-f:]{17})", output)
+    return m.group(1) if m else ""
 
 
 async def main():
@@ -107,6 +118,37 @@ async def main():
 
             out = txt(await s.call_tool("list_interfaces", {"device": "routera"}))
             check("device matching is case-insensitive", "Failed to connect" not in out, out)
+
+            # ── Session isolation ─────────────────────────────────────────
+            mac_a = ether2_mac(a)
+            mac_b = ether2_mac(b)
+            check("the routers have distinct ether2 MACs (usable as a fingerprint)",
+                  bool(mac_a) and bool(mac_b) and mac_a != mac_b,
+                  f"A={mac_a} B={mac_b}")
+
+            # Fire interleaved calls at both routers at once.  These run in
+            # parallel threads sharing the inventory, so a pooled or shared
+            # SSH client would surface here as cross-talk between devices or
+            # as a session dropped out from under a running command.
+            targets = ["RouterA", "RouterB"] * 6
+            outs = [txt(o) for o in await asyncio.gather(
+                *[s.call_tool("list_interfaces", {"device": d}) for d in targets]
+            )]
+            got = [ether2_mac(o) for o in outs]
+            want = [mac_a if d == "RouterA" else mac_b for d in targets]
+
+            check(f"{len(targets)} concurrent calls each reached the right router",
+                  got == want, f"want {want[:4]}... got {got[:4]}...")
+            check("no concurrent call errored",
+                  not any("Error" in o for o in outs),
+                  next((o for o in outs if "Error" in o), ""))
+
+            # Connection churn must not exhaust the router's session limit.
+            serial = [txt(await s.call_tool("list_interfaces", {"device": "RouterA"}))
+                      for _ in range(10)]
+            check("10 back-to-back commands all succeed (no session exhaustion)",
+                  all(ether2_mac(o) == mac_a for o in serial),
+                  next((o for o in serial if ether2_mac(o) != mac_a), ""))
 
     print()
     passed = sum(1 for _, ok in results if ok)
