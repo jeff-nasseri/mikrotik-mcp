@@ -26,7 +26,7 @@ def test_get_poe_monitor_uses_once_flag(ctx, monkeypatch):
 def test_get_poe_monitor_returns_data(ctx, monkeypatch):
     from mcp_mikrotik.scope import poe
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         return "name: ether9-ap\npoe-out-status: powered-on\npoe-out-power: 4.2W"
 
     monkeypatch.setattr(poe, "execute_mikrotik_command", fake, raising=True)
@@ -38,7 +38,7 @@ def test_get_poe_monitor_returns_data(ctx, monkeypatch):
 def test_get_poe_monitor_handles_empty(ctx, monkeypatch):
     from mcp_mikrotik.scope import poe
 
-    async def fake(cmd, _ctx):
+    async def fake(cmd, _ctx, device=None):
         return ""
 
     monkeypatch.setattr(poe, "execute_mikrotik_command", fake, raising=True)

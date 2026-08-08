@@ -1,15 +1,22 @@
+# Two RouterOS instances so multi-device (inventory) support can be exercised
+# end to end:
+#
+#   routeros-a  ->  SSH on host port 2222   (inventory title: RouterA)
+#   routeros-b  ->  SSH on host port 2223   (inventory title: RouterB)
+#
+# Both boot inside QEMU and take ~2 minutes to become healthy.
 services:
-  routeros:
+  routeros-a:
     image: ${ROUTEROS_IMAGE:-evilfreelancer/docker-routeros:latest}
-    container_name: ${CONTAINER_NAME:-routeros}
-    hostname: ${HOSTNAME:-routeros}
+    container_name: ${CONTAINER_NAME_A:-routeros-a}
+    hostname: ${HOSTNAME_A:-routeros-a}
     privileged: true
     restart: ${RESTART_POLICY:-unless-stopped}
     platform: ${PLATFORM:-linux/amd64}
 
     # Healthcheck: with eth1 present, QEMU enables hostfwd so 127.0.0.1:8728 is valid
     healthcheck:
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${API_PORT:-8728} || exit 1"]
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8728 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 40        # ~10 minutes max
@@ -21,28 +28,76 @@ services:
       ROUTEROS_LICENSE: ${ROUTEROS_LICENSE:-true}
 
     ports:
-      - "${WINBOX_PORT:-8291}:8291"
-      - "${API_PORT:-8728}:8728"
-      - "${API_SSL_PORT:-8729}:8729"
-      - "${FTP_PORT:-21}:21"
-      - "${SSH_PORT:-2222}:22"
-      - "${TELNET_PORT:-23}:23"
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
-      - "${HTTP_PROXY_PORT:-8080}:8080"
-      - "${OPENVPN_PORT:-1194}:1194"
+      - "${WINBOX_PORT_A:-8291}:8291"
+      - "${API_PORT_A:-8728}:8728"
+      - "${API_SSL_PORT_A:-8729}:8729"
+      - "${FTP_PORT_A:-21}:21"
+      - "${SSH_PORT_A:-2222}:22"
+      - "${TELNET_PORT_A:-23}:23"
+      - "${HTTP_PORT_A:-80}:80"
+      - "${HTTPS_PORT_A:-443}:443"
+      - "${HTTP_PROXY_PORT_A:-8080}:8080"
+      - "${OPENVPN_PORT_A:-1194}:1194"
 
     networks:
       # Primary network: eth0 — Docker port mappings use this IP
       routeros-net:
-        ipv4_address: ${ROUTEROS_IP:-172.20.0.2}
+        ipv4_address: ${ROUTEROS_IP_A:-172.20.0.2}
       # Secondary network: eth1 — entrypoint uses this for the bridge so eth0
       # keeps its IP and QEMU enables user-mode hostfwd for the health check
       routeros-wan-net:
-        ipv4_address: ${ROUTEROS_WAN_IP:-172.21.0.2}
+        ipv4_address: ${ROUTEROS_WAN_IP_A:-172.21.0.2}
 
     volumes:
-      - ${VOLUME_NAME:-routeros-data}:/routeros
+      - ${VOLUME_NAME_A:-routeros-data-a}:/routeros
+
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+    devices:
+      - /dev/net/tun
+
+  routeros-b:
+    image: ${ROUTEROS_IMAGE:-evilfreelancer/docker-routeros:latest}
+    container_name: ${CONTAINER_NAME_B:-routeros-b}
+    hostname: ${HOSTNAME_B:-routeros-b}
+    privileged: true
+    restart: ${RESTART_POLICY:-unless-stopped}
+    platform: ${PLATFORM:-linux/amd64}
+
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8728 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 120s
+
+    environment:
+      ROUTEROS_USER: ${ROUTEROS_USER:-admin}
+      ROUTEROS_PASS: ${ROUTEROS_PASS:-admin}
+      ROUTEROS_LICENSE: ${ROUTEROS_LICENSE:-true}
+
+    ports:
+      - "${WINBOX_PORT_B:-8292}:8291"
+      - "${API_PORT_B:-8738}:8728"
+      - "${API_SSL_PORT_B:-8739}:8729"
+      - "${FTP_PORT_B:-2121}:21"
+      - "${SSH_PORT_B:-2223}:22"
+      - "${TELNET_PORT_B:-2323}:23"
+      - "${HTTP_PORT_B:-8081}:80"
+      - "${HTTPS_PORT_B:-4443}:443"
+      - "${HTTP_PROXY_PORT_B:-8098}:8080"
+      - "${OPENVPN_PORT_B:-1195}:1194"
+
+    networks:
+      routeros-net:
+        ipv4_address: ${ROUTEROS_IP_B:-172.20.0.3}
+      routeros-wan-net:
+        ipv4_address: ${ROUTEROS_WAN_IP_B:-172.21.0.3}
+
+    volumes:
+      - ${VOLUME_NAME_B:-routeros-data-b}:/routeros
 
     cap_add:
       - NET_ADMIN
@@ -66,5 +121,7 @@ networks:
           gateway: ${WAN_NETWORK_GATEWAY:-172.21.0.1}
 
 volumes:
-  routeros-data:
+  routeros-data-a:
+    driver: local
+  routeros-data-b:
     driver: local

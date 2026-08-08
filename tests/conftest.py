@@ -36,9 +36,11 @@ class FakeExecutor:
 
     def __init__(self):
         self.commands: list[str] = []
+        self.devices: list[Any] = []
 
-    async def __call__(self, command: str, _ctx: Any) -> str:
+    async def __call__(self, command: str, _ctx: Any, device: Any = None) -> str:
         self.commands.append(command)
+        self.devices.append(device)
 
         cmd = command.lower()
         if "count-only" in cmd:
