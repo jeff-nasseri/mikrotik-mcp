@@ -10,7 +10,7 @@ def test_expand_ip_pool_hits_wrapper_bug(ctx, monkeypatch):
     """
     from mcp_mikrotik.scope import ip_pool as mod
 
-    async def fake_exec(command: str, _ctx):
+    async def fake_exec(command: str, _ctx, device=None):
         if "print detail" in command:
             return 'name="pool1" ranges=10.0.0.1-10.0.0.10'
         return ""

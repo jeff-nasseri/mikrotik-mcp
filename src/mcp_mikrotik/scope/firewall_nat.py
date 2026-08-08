@@ -21,7 +21,8 @@ async def mikrotik_create_nat_rule(
     disabled: bool = False,
     log: bool = False,
     log_prefix: Optional[str] = None,
-    place_before: Optional[str] = None
+    place_before: Optional[str] = None,
+    device: Optional[str] = None
 ) -> str:
     """Creates a NAT rule (srcnat or dstnat) on the MikroTik device.
 
@@ -29,6 +30,7 @@ async def mikrotik_create_nat_rule(
         to_addresses: single IP or range e.g. "10.0.0.1" or "10.0.0.1-10.0.0.10"
         to_ports: single port or range e.g. "8080" or "8080-8090"
         place_before: rule number or ID (*N) to insert before e.g. "0" or "*3"
+        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Creating NAT rule: chain={chain}, action={action}")
 
@@ -86,7 +88,7 @@ async def mikrotik_create_nat_rule(
     if place_before:
         cmd += f" place-before={place_before}"
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if creation was successful
     if result.strip():
@@ -95,7 +97,7 @@ async def mikrotik_create_nat_rule(
             # Success - get the details
             rule_id = result.strip()
             details_cmd = f"/ip firewall nat print detail where .id={rule_id}"
-            details = await execute_mikrotik_command(details_cmd, ctx)
+            details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
             if details.strip():
                 return f"NAT rule created successfully:\n\n{details}"
@@ -107,12 +109,12 @@ async def mikrotik_create_nat_rule(
     else:
         # No output might mean success, let's check by getting the last rule
         details_cmd = "/ip firewall nat print detail count-only"
-        count = await execute_mikrotik_command(details_cmd, ctx)
+        count = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
         if count.strip().isdigit() and int(count.strip()) > 0:
             # Get the last rule
             last_rule_cmd = f"/ip firewall nat print detail from={int(count.strip())-1}"
-            details = await execute_mikrotik_command(last_rule_cmd, ctx)
+            details = await execute_mikrotik_command(last_rule_cmd, ctx, device=device)
             return f"NAT rule created successfully:\n\n{details}"
         else:
             return "NAT rule creation completed but unable to verify."
@@ -127,9 +129,14 @@ async def mikrotik_list_nat_rules(
     protocol_filter: Optional[str] = None,
     interface_filter: Optional[str] = None,
     disabled_only: bool = False,
-    invalid_only: bool = False
+    invalid_only: bool = False,
+    device: Optional[str] = None
 ) -> str:
-    """Lists NAT rules on the MikroTik device."""
+    """Lists NAT rules on the MikroTik device.
+
+    Notes:
+        device: Device title from the inventory; omit when only one device is configured.
+    """
     await ctx.info(f"Listing NAT rules with filters: chain={chain_filter}, action={action_filter}")
 
     # Build the command
@@ -157,7 +164,7 @@ async def mikrotik_list_nat_rules(
     if filters:
         cmd += " where " + " ".join(filters)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check for empty result
     if not result or result.strip() == "" or result.strip() == "no such item":
@@ -166,16 +173,17 @@ async def mikrotik_list_nat_rules(
     return f"NAT RULES:\n\n{result}"
 
 @mcp.tool(name="get_nat_rule", annotations=annotate(READ, "Get NAT Rule"))
-async def mikrotik_get_nat_rule(ctx: Context, rule_id: str) -> str:
+async def mikrotik_get_nat_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
     """Gets detailed information about a specific NAT rule.
 
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
+        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Getting NAT rule details: rule_id={rule_id}")
 
     cmd = f"/ip firewall nat print detail where .id={rule_id}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
         return f"NAT rule with ID '{rule_id}' not found."
@@ -200,7 +208,8 @@ async def mikrotik_update_nat_rule(
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
     log: Optional[bool] = None,
-    log_prefix: Optional[str] = None
+    log_prefix: Optional[str] = None,
+    device: Optional[str] = None
 ) -> str:
     """Updates an existing NAT rule on the MikroTik device.
 
@@ -209,6 +218,7 @@ async def mikrotik_update_nat_rule(
         to_addresses: single IP or range e.g. "10.0.0.1" or "10.0.0.1-10.0.0.10"
         to_ports: single port or range e.g. "8080" or "8080-8090"
         Pass "" to clear an optional field.
+        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Updating NAT rule: rule_id={rule_id}")
 
@@ -280,7 +290,7 @@ async def mikrotik_update_nat_rule(
 
     cmd += " " + " ".join(updates)
 
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if update was successful
     if "failure:" in result.lower() or "error" in result.lower():
@@ -288,29 +298,30 @@ async def mikrotik_update_nat_rule(
 
     # Get the updated rule details
     details_cmd = f"/ip firewall nat print detail where .id={rule_id}"
-    details = await execute_mikrotik_command(details_cmd, ctx)
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"NAT rule updated successfully:\n\n{details}"
 
 @mcp.tool(name="remove_nat_rule", annotations=annotate(DESTRUCTIVE, "Remove NAT Rule"))
-async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str) -> str:
+async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
     """Removes a NAT rule from the MikroTik device.
 
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
+        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Removing NAT rule: rule_id={rule_id}")
 
     # First check if the rule exists
     check_cmd = f"/ip firewall nat print count-only where .id={rule_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"NAT rule with ID '{rule_id}' not found."
 
     # Remove the rule
     cmd = f"/ip firewall nat remove {rule_id}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove NAT rule: {result}"
@@ -318,25 +329,26 @@ async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str) -> str:
     return f"NAT rule with ID '{rule_id}' removed successfully."
 
 @mcp.tool(name="move_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Move NAT Rule"))
-async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int) -> str:
+async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int, device: Optional[str] = None) -> str:
     """Moves a NAT rule to a different position in the chain.
 
     Notes:
         rule_id: use the ID from list output e.g. "*1" or "0"
         destination: 0-based target position index
+        device: Device title from the inventory; omit when only one device is configured.
     """
     await ctx.info(f"Moving NAT rule: rule_id={rule_id} to position {destination}")
 
     # Check if the rule exists
     check_cmd = f"/ip firewall nat print count-only where .id={rule_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx)
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"NAT rule with ID '{rule_id}' not found."
 
     # Move the rule
     cmd = f"/ip firewall nat move {rule_id} destination={destination}"
-    result = await execute_mikrotik_command(cmd, ctx)
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to move NAT rule: {result}"
@@ -344,11 +356,19 @@ async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int) -
     return f"NAT rule with ID '{rule_id}' moved to position {destination}."
 
 @mcp.tool(name="enable_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Enable NAT Rule"))
-async def mikrotik_enable_nat_rule(ctx: Context, rule_id: str) -> str:
-    """Enables a NAT rule."""
-    return await mikrotik_update_nat_rule(rule_id, disabled=False, ctx=ctx)
+async def mikrotik_enable_nat_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
+    """Enables a NAT rule.
+
+    Notes:
+        device: Device title from the inventory; omit when only one device is configured.
+    """
+    return await mikrotik_update_nat_rule(rule_id, disabled=False, ctx=ctx, device=device)
 
 @mcp.tool(name="disable_nat_rule", annotations=annotate(WRITE_IDEMPOTENT, "Disable NAT Rule"))
-async def mikrotik_disable_nat_rule(ctx: Context, rule_id: str) -> str:
-    """Disables a NAT rule."""
-    return await mikrotik_update_nat_rule(rule_id, disabled=True, ctx=ctx)
+async def mikrotik_disable_nat_rule(ctx: Context, rule_id: str, device: Optional[str] = None) -> str:
+    """Disables a NAT rule.
+
+    Notes:
+        device: Device title from the inventory; omit when only one device is configured.
+    """
+    return await mikrotik_update_nat_rule(rule_id, disabled=True, ctx=ctx, device=device)
