@@ -10,15 +10,45 @@ argument can be omitted everywhere.
 
 ## Configuring the inventory
 
-Supply a JSON array either inline or from a file:
+The inventory is written in **YAML**. Two sources are supported:
 
 | Variable | Purpose |
 |---|---|
-| `MIKROTIK_INVENTORY` | the inventory as a JSON array |
-| `MIKROTIK_INVENTORY_FILE` | path to a file containing that JSON |
+| `MIKROTIK_INVENTORY_FILE` | path to a YAML file holding the inventory (recommended) |
+| `MIKROTIK_INVENTORY` | the inventory written inline |
 
-In an MCP client config these belong in the server's **`env`** block — that is
-the channel a client forwards to the spawned process:
+When both are set, **the inline `MIKROTIK_INVENTORY` wins** and the file is
+ignored. When neither is set, the flat single-device settings apply.
+
+A broken inventory (missing file, bad YAML, invalid entry) stops the server at
+startup with one clear message, so mistakes surface immediately rather than at
+the first tool call.
+
+### The YAML file (recommended)
+
+`inventory.yaml`:
+
+```yaml
+- title: TitleA
+  host: 127.0.0.1
+  port: 22
+  username: admin
+  password: admin
+  tags: [tag1, tag2]
+  region: NL
+
+- title: TitleB
+  host: 192.168.88.1
+  port: 22
+  username: admin
+  key_filename: /keys/id_ed25519
+  tags: [tag1, tag3]
+  region: DE
+```
+
+Point the server at it from the MCP client config — these belong in the
+server's **`env`** block, which is the channel a client forwards to the
+spawned process:
 
 ```json
 {
@@ -27,41 +57,38 @@ the channel a client forwards to the spawned process:
       "command": "python",
       "args": ["-m", "mcp_mikrotik.server"],
       "env": {
-        "MIKROTIK_INVENTORY": "[{\"title\":\"TitleA\",\"tags\":[\"tag1\",\"tag2\"],\"region\":\"NL\",\"host\":\"127.0.0.1\",\"port\":22,\"username\":\"admin\",\"password\":\"admin\"},{\"title\":\"TitleB\",\"tags\":[\"tag1\",\"tag3\"],\"region\":\"DE\",\"host\":\"192.168.88.1\",\"port\":22,\"username\":\"admin\",\"password\":\"admin\"}]"
+        "MIKROTIK_INVENTORY_FILE": "/etc/mikrotik/inventory.yaml"
       }
     }
   }
 }
 ```
 
-A file keeps the config readable and the secrets out of the client config:
+A file keeps the config readable and the secrets out of the client config.
+
+### Inline, without a file
+
+To skip the file entirely, put the inventory itself in `MIKROTIK_INVENTORY`.
+Environment values are single strings, so a nested object cannot appear under
+`env` directly — but YAML's inline (flow) syntax gives the same structure with
+no escaped quotes:
 
 ```json
-{ "env": { "MIKROTIK_INVENTORY_FILE": "/etc/mikrotik/inventory.json" } }
-```
-
-```json
-[
-  {
-    "title": "TitleA",
-    "tags": ["tag1", "tag2"],
-    "region": "NL",
-    "host": "127.0.0.1",
-    "port": 22,
-    "username": "admin",
-    "password": "admin"
-  },
-  {
-    "title": "TitleB",
-    "tags": ["tag1", "tag3"],
-    "region": "DE",
-    "host": "192.168.88.1",
-    "port": 22,
-    "username": "admin",
-    "key_filename": "/keys/id_ed25519"
+{
+  "mcpServers": {
+    "mikrotik-mcp-server": {
+      "command": "python",
+      "args": ["-m", "mcp_mikrotik.server"],
+      "env": {
+        "MIKROTIK_INVENTORY": "[{title: TitleA, host: 127.0.0.1, username: admin, password: admin, region: NL, tags: [tag1]}, {title: TitleB, host: 192.168.88.1, username: admin, region: DE}]"
+      }
+    }
   }
-]
+}
 ```
+
+JSON is a subset of YAML, so a plain JSON array (quotes escaped) is accepted
+here too — existing configs keep working unchanged.
 
 ### Device fields
 
@@ -73,8 +100,8 @@ A file keeps the config readable and the secrets out of the client config:
 | `username` | no | default `admin` |
 | `password` | no | omit when using `key_filename` |
 | `key_filename` | no | path to an SSH private key (preferred over a password) |
-| `tags` | no | free-form labels, e.g. `["branch", "eu"]` |
-| `region` | no | free-form label, e.g. `"NL"` |
+| `tags` | no | free-form labels, e.g. `[branch, eu]` |
+| `region` | no | free-form label, e.g. `NL` |
 
 ## Selecting a device
 
@@ -102,27 +129,50 @@ list_devices()
 
 ## Docker
 
-The image accepts the same two variables, and ships a `/config` directory to
-mount the inventory into:
+When running the image, the inventory YAML file **must be mounted into the
+container as a volume** — the file lives on your host, and the container can
+only see what is mounted in. The image ships `/config` as the mount point:
 
 ```bash
 docker run --rm -i \
-  -v "$PWD/inventory.json:/config/inventory.json:ro" \
-  -e MIKROTIK_INVENTORY_FILE=/config/inventory.json \
+  -v "$PWD/inventory.yaml:/config/inventory.yaml:ro" \
+  -e MIKROTIK_INVENTORY_FILE=/config/inventory.yaml \
   ghcr.io/jeff-nasseri/mikrotik-mcp:latest
 ```
 
-The entrypoint also takes `--inventory '<json>'` and `--inventory-file <path>`.
+Or with Compose:
 
-A mounted file is preferable to `MIKROTIK_INVENTORY`: environment values are
-visible in `docker inspect`, file contents are not. The container runs as **uid
-1000** (`mcpuser`), so the file must be readable by that uid; if it isn't, the
-entrypoint stops with an explicit message instead of starting with no devices.
+```yaml
+services:
+  mikrotik-mcp:
+    image: ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./inventory.yaml:/config/inventory.yaml:ro
+    environment:
+      MIKROTIK_INVENTORY_FILE: "/config/inventory.yaml"
+      MIKROTIK_MCP__TRANSPORT: "streamable-http"
+```
+
+The entrypoint also takes `--inventory '<yaml>'` and `--inventory-file <path>`.
+
+A mounted file is preferable to inline `MIKROTIK_INVENTORY`: environment values
+are visible in `docker inspect`, file contents are not. Two traps the
+entrypoint catches with an explicit error instead of starting a broken server:
+
+- The container runs as **uid 1000** (`mcpuser`), so the mounted file must be
+  readable by that uid — `chmod 644 inventory.yaml` is usually enough.
+- If the host file does not exist when the container starts, Docker silently
+  creates a **directory** at both ends of the mount. Create the YAML file
+  before `docker run` / `docker compose up`.
 
 When an inventory is configured it wins, so `MIKROTIK_HOST` / `MIKROTIK_USERNAME`
 / `MIKROTIK_PASSWORD` / `MIKROTIK_PORT` are ignored and can be dropped.
 
-See [Installation](../../getting-started/installation.md) for a Compose example.
+See [Installation](../../getting-started/installation.md) for the full Docker
+setup.
 
 ## Connections are per command
 
@@ -169,7 +219,11 @@ python tests/smoke_multi_device.py
 ## Security
 
 Credentials live in the inventory, so the whole inventory is a secret. Prefer
-`key_filename` over `password`, keep the JSON in a file with restricted
+`key_filename` over `password`, keep the YAML in a file with restricted
 permissions rather than inline in a client config, and remember that values
 passed as environment variables are visible via `docker inspect` — see
 [SECURITY.md](../../../SECURITY.md).
+
+Validation errors never echo the inventory's contents back: a malformed entry
+is reported by position and field name only, so a typo cannot leak a password
+into a log line or a tool result.

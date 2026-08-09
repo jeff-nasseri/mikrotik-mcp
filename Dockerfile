@@ -46,7 +46,7 @@ COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Mount point for a multi-device inventory, e.g.
-#   -v "$PWD/inventory.json:/config/inventory.json:ro" -e MIKROTIK_INVENTORY_FILE=/config/inventory.json
+#   -v "$PWD/inventory.yaml:/config/inventory.yaml:ro" -e MIKROTIK_INVENTORY_FILE=/config/inventory.yaml
 # Keeping credentials in a mounted file keeps them out of `docker inspect`,
 # unlike passing them through the environment.
 RUN mkdir -p /config

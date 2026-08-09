@@ -142,8 +142,8 @@ In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
    | `MIKROTIK_USERNAME` | SSH username | `admin` |
    | `MIKROTIK_PASSWORD` | SSH password | _(empty)_ |
    | `MIKROTIK_PORT` | SSH port | `22` |
-   | `MIKROTIK_INVENTORY` | Multiple devices, as a JSON array. Takes precedence over the four variables above. See [Inventory](../reference/inventory/README.md). | _(empty)_ |
-   | `MIKROTIK_INVENTORY_FILE` | Path **inside the container** to a file holding that JSON | _(empty)_ |
+   | `MIKROTIK_INVENTORY` | Multiple devices, written inline in YAML (or its JSON subset). Takes precedence over `MIKROTIK_INVENTORY_FILE` and the four variables above. See [Inventory](../reference/inventory/README.md). | _(empty)_ |
+   | `MIKROTIK_INVENTORY_FILE` | Path **inside the container** to a YAML file holding the inventory — mount it as a volume | _(empty)_ |
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |
    | `MIKROTIK_MCP__PORT` | HTTP server listen port | `8000` |
@@ -182,17 +182,39 @@ docker compose up -d
 #### Managing several devices
 
 To manage a fleet, give the container an **inventory** instead of the four
-single-device variables. Mounting it as a file is preferred: unlike an
+single-device variables. The inventory is a YAML file on your host, and it
+**must be mounted into the container as a volume** — the image ships `/config`
+as the mount point. A mounted file is also the safer channel: unlike an
 environment variable, its contents do not show up in `docker inspect`.
 
-`inventory.json`:
+`inventory.yaml`:
 
-```json
-[
-  { "title": "TitleA", "host": "192.168.88.1", "port": 22, "username": "admin", "password": "change-me", "region": "NL", "tags": ["branch"] },
-  { "title": "TitleB", "host": "192.168.89.1", "port": 22, "username": "admin", "key_filename": "/config/keys/id_ed25519" }
-]
+```yaml
+- title: TitleA
+  host: 192.168.88.1
+  port: 22
+  username: admin
+  password: change-me
+  region: NL
+  tags: [branch]
+
+- title: TitleB
+  host: 192.168.89.1
+  port: 22
+  username: admin
+  key_filename: /config/keys/id_ed25519
 ```
+
+With `docker run`:
+
+```bash
+docker run --rm -i \
+  -v "$PWD/inventory.yaml:/config/inventory.yaml:ro" \
+  -e MIKROTIK_INVENTORY_FILE=/config/inventory.yaml \
+  ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+```
+
+With Docker Compose:
 
 ```yaml
 services:
@@ -203,22 +225,27 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./inventory.json:/config/inventory.json:ro
+      - ./inventory.yaml:/config/inventory.yaml:ro
     environment:
-      MIKROTIK_INVENTORY_FILE: "/config/inventory.json"
+      MIKROTIK_INVENTORY_FILE: "/config/inventory.yaml"
       MIKROTIK_MCP__TRANSPORT: "streamable-http"
       MIKROTIK_MCP__HOST: "0.0.0.0"
       MIKROTIK_MCP__PORT: "8000"
 ```
 
-The image ships a `/config` directory for this. Or pass the JSON inline with
-`MIKROTIK_INVENTORY` (or `--inventory` / `--inventory-file` as entrypoint
-arguments) if a mount is inconvenient.
+If a mount is inconvenient, the inventory can go inline in
+`MIKROTIK_INVENTORY` using YAML flow syntax (no escaped quotes; JSON also
+works, since it is a YAML subset), or via the `--inventory` /
+`--inventory-file` entrypoint arguments. Inline always wins over the file.
 
-> The container runs as **uid 1000** (`mcpuser`), so the mounted file must be
-> readable by that uid — `chmod 644 inventory.json` is usually enough. If it
-> isn't readable the entrypoint stops with an explicit message rather than
-> starting a server with no devices.
+> Two traps the entrypoint catches with an explicit error rather than starting
+> a server with no devices:
+>
+> - The container runs as **uid 1000** (`mcpuser`), so the mounted file must
+>   be readable by that uid — `chmod 644 inventory.yaml` is usually enough.
+> - If `inventory.yaml` does not exist on the host when the container starts,
+>   Docker silently creates a **directory** in its place. Create the file
+>   before starting the container.
 
 When an inventory is set it takes precedence and `MIKROTIK_HOST` /
 `MIKROTIK_USERNAME` / `MIKROTIK_PASSWORD` / `MIKROTIK_PORT` are ignored, so you
