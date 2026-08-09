@@ -366,6 +366,30 @@ def test_inventory_file_error_names_entry_without_credentials(monkeypatch, tmp_p
     assert "core-nl" in msg and "host" in msg
 
 
+def test_shipped_example_inventory_is_valid(monkeypatch):
+    """inventory.example.yml at the repo root must always match the schema."""
+    import pathlib
+
+    import mcp_mikrotik.inventory as inv_mod
+    from mcp_mikrotik import config as cfg_mod
+
+    example = pathlib.Path(__file__).resolve().parents[2] / "inventory.example.yml"
+    assert example.is_file(), "inventory.example.yml is missing from the repo root"
+
+    monkeypatch.delenv("MIKROTIK_INVENTORY", raising=False)
+    monkeypatch.setattr(
+        cfg_mod, "mikrotik_config", MikrotikConfig(inventory_file=str(example))
+    )
+
+    devices = inv_mod._load_devices()
+    assert [d.title for d in devices] == ["TitleA", "TitleB"]
+    assert devices[0].password == "change-me"
+    assert devices[1].key_filename == "/config/keys/id_ed25519"
+    # and the example is usable as-is: unique titles, resolvable
+    inv = Inventory(devices)
+    assert inv.resolve("titlea").title == "TitleA"
+
+
 def test_inventory_file_rejects_non_list_shapes(monkeypatch, tmp_path):
     import mcp_mikrotik.inventory as inv_mod
     from mcp_mikrotik import config as cfg_mod

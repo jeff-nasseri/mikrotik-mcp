@@ -334,3 +334,8 @@ _templates/
 .aider*
 
 mcp-config.json
+
+# Real inventories hold device credentials; only the example ships
+inventory.yml
+inventory.yaml
+!inventory.example.yml

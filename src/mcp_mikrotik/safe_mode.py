@@ -123,7 +123,7 @@ class SafeModeManager:
 
             # Ctrl+X activates safe mode
             channel.send('\x18')
-            response = self._read_until_prompt(timeout=30)
+            response = self._read_until_safe_mode_ack(timeout=30)
 
             # RouterOS 7.21+ confirms with "Taking Safe Mode session...
             # Success!" and only redraws the <SAFE> prompt afterwards — on a
@@ -209,11 +209,19 @@ class SafeModeManager:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _answer_terminal_queries(self, chunk: str) -> None:
-        """Reply to VT terminal probes found in freshly received output."""
+    def _answer_terminal_queries(self, buf: str, answered: Dict[str, int]) -> None:
+        """Reply to VT terminal probes, remembering what was already answered.
+
+        Counting against the accumulated buffer rather than the last chunk
+        means a probe split across two network reads is still answered once
+        its tail arrives — a missed probe can stall the console (the DA query
+        after each prompt is sent exactly once and gates the final "> ").
+        """
         for query, reply in _TERMINAL_QUERIES:
-            for _ in range(chunk.count(query)):
+            seen = buf.count(query)
+            for _ in range(seen - answered.get(query, 0)):
                 self._channel.send(reply)
+            answered[query] = seen
 
     def _login_until_prompt(self, timeout: float = 45.0) -> str:
         """Read the login stream until the shell prompt, answering dialogs.
@@ -229,6 +237,7 @@ class SafeModeManager:
         generous default timeout.
         """
         buf = ""
+        answered: Dict[str, int] = {}
         answered_license = False
         skipped_password = False
         deadline = time.monotonic() + timeout
@@ -236,8 +245,8 @@ class SafeModeManager:
             try:
                 if self._channel.recv_ready():
                     chunk = self._channel.recv(4096).decode('utf-8', errors='replace')
-                    self._answer_terminal_queries(chunk)
                     buf += chunk
+                    self._answer_terminal_queries(buf, answered)
                     cleaned = _strip_ansi(buf)
                     if _PROMPT_RE.search(cleaned):
                         return cleaned
@@ -252,16 +261,45 @@ class SafeModeManager:
             time.sleep(0.05)
         return _strip_ansi(buf)
 
-    def _read_until_marker(self, timeout: float = 30.0) -> str:
-        """Read until the end-of-command sentinel appears on its own line."""
+    def _read_until_safe_mode_ack(self, timeout: float = 30.0) -> str:
+        """Read until safe-mode activation is acknowledged.
+
+        Waiting for the prompt alone would stall: RouterOS 7.21 prints
+        "Taking Safe Mode session... Success!" within a second, but its
+        colored <SAFE> prompt redraw does not reliably match the prompt
+        pattern — so without the early exit every enable would sit out the
+        whole timeout before the fallback check rescued it.
+        """
         buf = ""
+        answered: Dict[str, int] = {}
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             try:
                 if self._channel.recv_ready():
                     chunk = self._channel.recv(4096).decode('utf-8', errors='replace')
-                    self._answer_terminal_queries(chunk)
                     buf += chunk
+                    self._answer_terminal_queries(buf, answered)
+                    cleaned = _strip_ansi(buf)
+                    if '<SAFE>' in cleaned or (
+                        'Safe Mode session' in cleaned and 'Success' in cleaned
+                    ):
+                        return cleaned
+            except Exception:
+                break
+            time.sleep(0.05)
+        return _strip_ansi(buf)
+
+    def _read_until_marker(self, timeout: float = 30.0) -> str:
+        """Read until the end-of-command sentinel appears on its own line."""
+        buf = ""
+        answered: Dict[str, int] = {}
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                if self._channel.recv_ready():
+                    chunk = self._channel.recv(4096).decode('utf-8', errors='replace')
+                    buf += chunk
+                    self._answer_terminal_queries(buf, answered)
                     cleaned = _strip_ansi(buf).replace('\r\n', '\n').replace('\r', '\n')
                     if _EOC_LINE_RE.search(cleaned):
                         return cleaned
@@ -273,13 +311,14 @@ class SafeModeManager:
     def _read_until_prompt(self, timeout: float = 15.0) -> str:
         """Read from the channel until a RouterOS prompt is detected."""
         buf = ""
+        answered: Dict[str, int] = {}
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             try:
                 if self._channel.recv_ready():
                     chunk = self._channel.recv(4096).decode('utf-8', errors='replace')
-                    self._answer_terminal_queries(chunk)
                     buf += chunk
+                    self._answer_terminal_queries(buf, answered)
                     cleaned = _strip_ansi(buf)
                     if _PROMPT_RE.search(cleaned):
                         return cleaned

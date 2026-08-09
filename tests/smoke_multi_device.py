@@ -25,24 +25,30 @@ sys.path.insert(0, os.path.join(REPO, "src"))
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-# Matches the compose file: routeros-a -> 2222, routeros-b -> 2223
+# Matches the compose file: routeros-a -> 2222, routeros-b -> 2223.
+#
+# No password is ever written to disk (CodeQL: clear-text storage). The
+# default lab password is empty, which is also DeviceConfig's default, so the
+# file simply omits the field. A non-empty ROUTEROS_PASS is delivered through
+# the inline MIKROTIK_INVENTORY environment variable instead of the file.
 PASSWORD = os.environ.get("ROUTEROS_PASS", "")
-INVENTORY_YAML = f"""\
-- title: RouterA
-  host: 127.0.0.1
-  port: 2222
-  username: admin
-  password: "{PASSWORD}"
-  tags: [lab, primary]
-  region: NL
-- title: RouterB
-  host: 127.0.0.1
-  port: 2223
-  username: admin
-  password: "{PASSWORD}"
-  tags: [lab, secondary]
-  region: DE
-"""
+
+DEVICES = [
+    {"title": "RouterA", "host": "127.0.0.1", "port": 2222, "username": "admin",
+     "tags": ["lab", "primary"], "region": "NL"},
+    {"title": "RouterB", "host": "127.0.0.1", "port": 2223, "username": "admin",
+     "tags": ["lab", "secondary"], "region": "DE"},
+]
+
+INVENTORY_YAML = "".join(
+    f"- title: {d['title']}\n"
+    f"  host: {d['host']}\n"
+    f"  port: {d['port']}\n"
+    f"  username: {d['username']}\n"
+    f"  tags: [{', '.join(d['tags'])}]\n"
+    f"  region: {d['region']}\n"
+    for d in DEVICES
+)
 
 results = []
 
@@ -62,6 +68,12 @@ def env(inventory_file):
         "MIKROTIK_MCP__TRANSPORT": "stdio",
         "PYTHONPATH": os.path.join(REPO, "src"),
     })
+    if PASSWORD:
+        # Inline inventory wins over the file, so a real password rides the
+        # environment (never the filesystem).
+        e["MIKROTIK_INVENTORY"] = json.dumps(
+            [{**d, "password": PASSWORD} for d in DEVICES]
+        )
     return e
 
 

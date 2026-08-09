@@ -187,7 +187,8 @@ single-device variables. The inventory is a YAML file on your host, and it
 as the mount point. A mounted file is also the safer channel: unlike an
 environment variable, its contents do not show up in `docker inspect`.
 
-`inventory.yaml`:
+`inventory.yaml` (a ready-to-copy template ships at the repository root as
+[`inventory.example.yml`](../../inventory.example.yml)):
 
 ```yaml
 - title: TitleA
