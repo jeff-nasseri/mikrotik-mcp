@@ -21,8 +21,30 @@ _ANSI_RE = re.compile(
     r'|[()][0-9A-Za-z]'
     r'|\[?\?[0-9]+[hl]'
     r'|\[\d*[ABCDEFGHJKLMST]'
+    r'|\[c'
+    r'|Z'
     r')'
 )
+
+# The RouterOS console treats the session as a real terminal: it measures the
+# screen by moving the cursor to the extremes and asking where it ended up, and
+# probes the terminal type. If nothing answers, the console stays
+# half-initialised — slow to render, and RouterOS closes the channel outright
+# when Ctrl-X asks it to redraw for safe mode. Answer as a healthy 220x50 VT.
+_TERMINAL_QUERIES = (
+    ('\x1b[6n', '\x1b[50;220R'),   # DSR: report cursor position
+    ('\x1bZ', '\x1b[?6c'),         # DECID: identify terminal
+    ('\x1b[c', '\x1b[?6c'),        # DA: device attributes
+)
+
+# End-of-command sentinel for the safe-mode shell (see execute()).  The echoed
+# command line contains it inside quotes; the output occurrence stands alone.
+_EOC = "__MCP_SAFE_MODE_EOC__"
+_EOC_LINE_RE = re.compile(rf'^{_EOC}\s*$', re.MULTILINE)
+
+# A redraw can leave a prompt fragment without its trailing "> " on its own
+# line; treat those as prompt noise too when cleaning command output.
+_PROMPT_NOISE_RE = re.compile(r'^\[.+?@.+?\] (?:<SAFE> ?)?>? ?$')
 
 
 def _strip_ansi(text: str) -> str:
@@ -90,8 +112,9 @@ class SafeModeManager:
             self._ssh = ssh
             self._channel = channel
 
-            # Wait for the initial shell prompt
-            initial = self._read_until_prompt(timeout=20)
+            # Wait for the initial shell prompt, answering RouterOS's
+            # first-login dialogs on the way.
+            initial = self._login_until_prompt(timeout=45)
             if not _PROMPT_RE.search(initial):
                 self._cleanup()
                 return (
@@ -101,9 +124,16 @@ class SafeModeManager:
 
             # Ctrl+X activates safe mode
             channel.send('\x18')
-            response = self._read_until_prompt(timeout=10)
+            response = self._read_until_prompt(timeout=30)
 
-            if '<SAFE>' not in response:
+            # RouterOS 7.21+ confirms with "Taking Safe Mode session...
+            # Success!" and only redraws the <SAFE> prompt afterwards — on a
+            # slow (QEMU serial) console that redraw can outlast any sane read
+            # window, so the confirmation message must count as activation too.
+            activated = '<SAFE>' in response or (
+                'Safe Mode session' in response and 'Success' in response
+            )
+            if not activated:
                 self._cleanup()
                 return (
                     f"Error: Safe mode did not activate. "
@@ -118,13 +148,20 @@ class SafeModeManager:
             )
 
     def execute(self, command: str) -> str:
-        """Execute a command through the safe-mode persistent shell session."""
+        """Execute a command through the safe-mode persistent shell session.
+
+        The command is chained with ``:put`` of a sentinel, and the read runs
+        until that sentinel arrives on a line of its own.  Matching the
+        rendered prompt instead is a race: the console redraws prompt + echo
+        the moment the command is sent, so a prompt-shaped fragment can end a
+        chunk long before the command's real output has arrived.
+        """
         if not self._active or not self._channel:
             raise RuntimeError("Safe mode session is not active.")
 
         with self._lock:
-            self._channel.send(command + '\n')
-            raw = self._read_until_prompt()
+            self._channel.send(f'{command}; :put "{_EOC}"\n')
+            raw = self._read_until_marker()
             return self._extract_output(raw, command)
 
     def commit(self) -> str:
@@ -149,6 +186,10 @@ class SafeModeManager:
                 return "Safe mode is not active. Nothing to roll back."
 
             self._cleanup()
+            # RouterOS applies the revert asynchronously after the session
+            # drops; give it a moment so a follow-up read doesn't catch the
+            # pre-revert state.
+            time.sleep(2.0)
             return (
                 "Safe mode session closed. MikroTik has reverted all "
                 "uncommitted changes automatically."
@@ -169,6 +210,67 @@ class SafeModeManager:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _answer_terminal_queries(self, chunk: str) -> None:
+        """Reply to VT terminal probes found in freshly received output."""
+        for query, reply in _TERMINAL_QUERIES:
+            for _ in range(chunk.count(query)):
+                self._channel.send(reply)
+
+    def _login_until_prompt(self, timeout: float = 45.0) -> str:
+        """Read the login stream until the shell prompt, answering dialogs.
+
+        An interactive RouterOS login is not just a prompt: on a fresh device
+        it first asks "Do you want to see the software license? [Y/n]:", and as
+        long as the admin password is empty RouterOS 7.21+ interposes a
+        "Change your password" / "new password>" step on *every* login.  Both
+        block forever if unanswered, so decline the license and Ctrl-C the
+        password step (changing credentials behind the operator's back is not
+        this tool's call to make).  The QEMU serial console used by the test
+        containers also needs ~20s just to render the login banner, hence the
+        generous default timeout.
+        """
+        buf = ""
+        answered_license = False
+        skipped_password = False
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                if self._channel.recv_ready():
+                    chunk = self._channel.recv(4096).decode('utf-8', errors='replace')
+                    self._answer_terminal_queries(chunk)
+                    buf += chunk
+                    cleaned = _strip_ansi(buf)
+                    if _PROMPT_RE.search(cleaned):
+                        return cleaned
+                    if not answered_license and "[Y/n]" in cleaned:
+                        self._channel.send('n')
+                        answered_license = True
+                    if not skipped_password and "new password>" in cleaned:
+                        self._channel.send('\x03')
+                        skipped_password = True
+            except Exception:
+                break
+            time.sleep(0.05)
+        return _strip_ansi(buf)
+
+    def _read_until_marker(self, timeout: float = 30.0) -> str:
+        """Read until the end-of-command sentinel appears on its own line."""
+        buf = ""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                if self._channel.recv_ready():
+                    chunk = self._channel.recv(4096).decode('utf-8', errors='replace')
+                    self._answer_terminal_queries(chunk)
+                    buf += chunk
+                    cleaned = _strip_ansi(buf).replace('\r\n', '\n').replace('\r', '\n')
+                    if _EOC_LINE_RE.search(cleaned):
+                        return cleaned
+            except Exception:
+                break
+            time.sleep(0.05)
+        return _strip_ansi(buf)
+
     def _read_until_prompt(self, timeout: float = 15.0) -> str:
         """Read from the channel until a RouterOS prompt is detected."""
         buf = ""
@@ -177,6 +279,7 @@ class SafeModeManager:
             try:
                 if self._channel.recv_ready():
                     chunk = self._channel.recv(4096).decode('utf-8', errors='replace')
+                    self._answer_terminal_queries(chunk)
                     buf += chunk
                     cleaned = _strip_ansi(buf)
                     if _PROMPT_RE.search(cleaned):
@@ -187,23 +290,26 @@ class SafeModeManager:
         return _strip_ansi(buf)
 
     def _extract_output(self, raw: str, command: str) -> str:
-        """Strip the echoed command and trailing prompt from shell output."""
-        # Normalise line endings
-        text = raw.replace('\r\n', '\n').replace('\r', '\n')
-        lines = text.split('\n')
+        """Return the lines between the command's echo and the sentinel."""
+        text = _strip_ansi(raw).replace('\r\n', '\n').replace('\r', '\n')
 
         result_lines: list[str] = []
         past_echo = False
-        for line in lines:
+        for line in text.split('\n'):
             stripped = line.strip()
-            if not past_echo:
-                # The interactive shell echoes the command we sent
-                if command.strip() in stripped:
-                    past_echo = True
-                continue
-            # Stop at the next prompt
-            if _PROMPT_RE.match(stripped):
+            if stripped == _EOC:
+                # The ':put' output — everything after it is the next prompt.
                 break
+            if _EOC in stripped or (not past_echo and command.strip() in stripped):
+                # An echo of the sent line.  The console can replay it more
+                # than once (typing echo, then a history reprint), and every
+                # replay carries the chained ':put' suffix — skip them all.
+                past_echo = True
+                continue
+            if not past_echo:
+                continue
+            if _PROMPT_RE.match(stripped) or _PROMPT_NOISE_RE.match(stripped):
+                continue
             result_lines.append(line)
 
         return '\n'.join(result_lines).strip()
