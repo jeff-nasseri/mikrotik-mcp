@@ -1,30 +1,4 @@
-## Example 20: Complete Backup and Restore Strategy
-
-**Prompt to AI**:
-```
-Set up an automated backup system for my router. Create manual backup named 
-"daily-backup", export configuration to "daily-config" file. Schedule automatic 
-backups to run daily at 2:00 AM with date in filename. Schedule weekly cleanup 
-at 3:00 AM on Sundays to delete backups older than 7 days. If USB drive is 
-mounted as usb1, copy backups to USB drive in a backups folder.
-```
-
-**What AI Will Do**:
-1. Execute system backup save command with name "daily-backup"
-2. Execute export command to create "daily-config" file
-3. Create system scheduler named "daily-backup"
-4. Set start time to 02:00:00 with 1-day interval
-5. Configure script to create backup with date-stamped filename
-6. Add comment "Daily Backup"
-7. Create system scheduler named "cleanup-old-backups"
-8. Set start time to 03:00:00 with 7-day interval
-9. Configure script to remove files older than 7 days (604800 seconds)
-10. Use regex pattern to match backup files
-11. Add comment "Weekly Cleanup"
-12. Create file copy operation to USB drive (if mounted)
-13. Copy all backup files to usb1/backups/ directory
-14. Ensure backup rotation maintains only recent backups
-15. Configure error handling for USB drive availability# MikroTik MCP - 20 Practical Examples
+# MikroTik MCP - 25 Practical Examples
 
 This guide provides practical examples for developers learning to interact with MikroTik devices using the MCP (Model Context Protocol) tools.
 
@@ -617,7 +591,31 @@ and create firewall rule to allow SNMP (UDP port 161) from the monitoring subnet
 
 ## Example 20: Complete Backup and Restore Strategy
 
-**Scenario**: Automated daily backups with cloud upload.
+**Prompt to AI**:
+```
+Set up an automated backup system for my router. Create manual backup named 
+"daily-backup", export configuration to "daily-config" file. Schedule automatic 
+backups to run daily at 2:00 AM with date in filename. Schedule weekly cleanup 
+at 3:00 AM on Sundays to delete backups older than 7 days. If USB drive is 
+mounted as usb1, copy backups to USB drive in a backups folder.
+```
+
+**What AI Will Do**:
+1. Execute system backup save command with name "daily-backup"
+2. Execute export command to create "daily-config" file
+3. Create system scheduler named "daily-backup"
+4. Set start time to 02:00:00 with 1-day interval
+5. Configure script to create backup with date-stamped filename
+6. Add comment "Daily Backup"
+7. Create system scheduler named "cleanup-old-backups"
+8. Set start time to 03:00:00 with 7-day interval
+9. Configure script to remove files older than 7 days (604800 seconds)
+10. Use regex pattern to match backup files
+11. Add comment "Weekly Cleanup"
+12. Create file copy operation to USB drive (if mounted)
+13. Copy all backup files to usb1/backups/ directory
+14. Ensure backup rotation maintains only recent backups
+15. Configure error handling for USB drive availability
 
 **Manual Commands**:
 ```bash
@@ -681,3 +679,180 @@ Use these commands to verify your configurations:
 /interface print stats
 ```
 
+
+---
+
+# Multi-Device Examples (Inventory)
+
+The examples above target a single router. With an [inventory](../reference/inventory/README.md)
+configured, one MCP server manages a whole fleet: every tool accepts a `device`
+argument naming the inventory `title` to target, and a `list_devices` tool lets
+the AI discover the fleet on its own.
+
+The prompt engineering pattern is simple: **name your devices the way you talk
+about them** (`office-core`, `branch-berlin`), then refer to them by name, by
+tag, or just say "all devices". The AI resolves the rest. If it ever omits or
+mistypes a device, the server answers with the list of valid titles, so the AI
+corrects itself on the next call.
+
+These examples assume this inventory:
+
+```yaml
+- title: office-core
+  host: 192.168.88.1
+  username: admin
+  tags: [office, core]
+  region: NL
+
+- title: branch-berlin
+  host: 10.20.0.1
+  username: admin
+  tags: [branch]
+  region: DE
+```
+
+---
+
+## Example 21: Discover and Audit the Fleet
+
+**Prompt to AI**:
+```
+Which MikroTik devices do you manage? For each one, show me its identity, 
+RouterOS version, and which interfaces are actually running.
+```
+
+**What AI Will Do**:
+1. Call `list_devices` to discover the fleet (titles, hosts, tags, regions)
+2. Call `list_interfaces(device="office-core")` and filter for running interfaces
+3. Call `list_interfaces(device="branch-berlin")` and do the same
+4. Export the system identity from each device
+5. Summarize the fleet in one table: title, host, identity, version, running interfaces
+
+**Manual Commands**:
+```bash
+# on office-core
+/system identity print
+/system resource print
+/interface print where running
+
+# on branch-berlin
+/system identity print
+/system resource print
+/interface print where running
+```
+
+---
+
+## Example 22: Roll Out a VLAN Across Tagged Devices
+
+**Prompt to AI**:
+```
+On every device tagged "office", create VLAN 40 on ether2 named vlan40-voip 
+with IP 10.40.0.1/24. Verify each device afterwards and tell me if any of 
+them failed.
+```
+
+**What AI Will Do**:
+1. Call `list_devices` and select the devices whose tags include "office"
+2. For each matching device (here only office-core):
+   - `create_vlan_interface(device="office-core", name="vlan40-voip", vlan_id=40, interface="ether2")`
+   - `add_ip_address(device="office-core", address="10.40.0.1/24", interface="vlan40-voip")`
+3. Verify with `list_vlan_interfaces(device="office-core")` and `list_ip_addresses(device="office-core")`
+4. Report per-device success or failure instead of assuming the writes landed
+
+**Manual Commands**:
+```bash
+# on each device tagged "office"
+/interface vlan add name=vlan40-voip vlan-id=40 interface=ether2
+/ip address add address=10.40.0.1/24 interface=vlan40-voip
+/interface vlan print
+/ip address print where interface=vlan40-voip
+```
+
+---
+
+## Example 23: Compare Configuration Between Two Devices
+
+**Prompt to AI**:
+```
+Compare the firewall filter rules on office-core and branch-berlin. 
+Summarize what exists on one but not the other, and flag anything on 
+branch-berlin that allows traffic office-core would drop.
+```
+
+**What AI Will Do**:
+1. Call `list_filter_rules(device="office-core")`
+2. Call `list_filter_rules(device="branch-berlin")`
+3. Diff the two rule sets by chain, action, and match criteria
+4. Highlight rules present on only one device
+5. Call out permissive rules on branch-berlin that contradict office-core policy
+6. Present the result as a summary, not a raw dump
+
+**Manual Commands**:
+```bash
+# on office-core
+/ip firewall filter print detail
+
+# on branch-berlin
+/ip firewall filter print detail
+
+# then compare the two outputs by hand
+```
+
+---
+
+## Example 24: Risky Change on One Device, Guarded by Safe Mode
+
+**Prompt to AI**:
+```
+I need to tighten the firewall on branch-berlin, but I'm remote and can't 
+afford to lock myself out. Enable safe mode on it first, add a forward-chain 
+drop rule for 203.0.113.0/24, show me the resulting rules, and only commit 
+if the rule looks correct. office-core must not be touched.
+```
+
+**What AI Will Do**:
+1. Call `enable_safe_mode(device="branch-berlin")` — safe mode is tracked per
+   device, so office-core is unaffected
+2. Create the rule with `create_filter_rule(device="branch-berlin", chain="forward", action="drop", dst_address="203.0.113.0/24")`
+3. Verify with `list_filter_rules(device="branch-berlin")`
+4. If correct: `commit_safe_mode(device="branch-berlin")` to persist
+5. If wrong: `rollback_safe_mode(device="branch-berlin")` and the router reverts
+   the change automatically
+6. Confirm `safe_mode_status(device="office-core")` still reports inactive
+
+**Manual Commands**:
+```bash
+# on branch-berlin (interactive session)
+# Ctrl+X                                  <- enter safe mode
+/ip firewall filter add chain=forward action=drop dst-address=203.0.113.0/24
+/ip firewall filter print
+# Ctrl+X                                  <- commit and leave safe mode
+# (or drop the session to auto-revert)
+```
+
+---
+
+## Example 25: Fleet-Wide DNS Record with Per-Device Verification
+
+**Prompt to AI**:
+```
+Add a static DNS record printer.lan pointing to 192.168.88.50 on all devices. 
+Then query each device to prove the record resolves everywhere.
+```
+
+**What AI Will Do**:
+1. Call `list_devices` to enumerate the fleet
+2. For each device:
+   - `add_dns_static(device=..., name="printer.lan", address="192.168.88.50")`
+   - `list_dns_static(device=...)` to confirm the record exists
+   - `test_dns_query(device=..., hostname="printer.lan")` to prove resolution
+3. Report a per-device table: created, verified, resolved
+
+**Manual Commands**:
+```bash
+# on every device
+/ip dns static add name=printer.lan address=192.168.88.50
+/ip dns static print
+/resolve printer.lan
+```

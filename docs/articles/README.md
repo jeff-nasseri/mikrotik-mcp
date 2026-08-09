@@ -15,6 +15,10 @@ MikroTik MCP is an AI-powered interface that allows you to manage and configure 
    *Author: [@jeff-nasseri](https://medium.com/@sir.jeff.nasseri)*  
    An introductory guide exploring how AI transforms traditional network management workflows, with practical examples using MikroTik MCP.
 
+2. **[Managing a Whole MikroTik Fleet from One MCP Server](https://medium.com/@sir.jeff.nasseri/managing-a-whole-mikrotik-fleet-from-one-mcp-server-60245de07073)**  
+   *Author: [@jeff-nasseri](https://medium.com/@sir.jeff.nasseri)*  
+   How to manage multiple MikroTik devices from a single MCP server using the inventory: configuring the YAML file, wiring it up (including Docker), and prompt patterns for fleet work. Also available [in this repository](managing-a-mikrotik-fleet.md).
+
 ### Example Workflow
 
 ```
@@ -32,7 +36,10 @@ Result: Guest network is ready and operational!
 
 ## 📋 Example Library
 
-We provide **20 comprehensive examples** covering common network scenarios:
+We provide **25 comprehensive examples** covering common network scenarios,
+including five dedicated to **multi-device (inventory) prompt engineering**:
+discovering the fleet, rolling a change out across tagged devices, comparing
+configuration between routers, safe-mode-guarded changes on one device of the
+fleet, and fleet-wide changes with per-device verification.
 
-
-[**View All 20 Examples →**](examples.md)
+[**View All 25 Examples →**](examples.md)
