@@ -1,0 +1,216 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="trlXL1xQO_PXGSCdE1qr">
+    <mxGraphModel dx="4671" dy="1454" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="osESeonhqnULeVV8oHJ3-1" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" value="Mikrotik A" vertex="1">
+          <mxGeometry height="80" width="80" x="-890" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-2" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" value="Mikrotik B" vertex="1">
+          <mxGeometry height="80" width="80" x="-1000" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-3" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" value="Mikrotik C" vertex="1">
+          <mxGeometry height="80" width="80" x="-1110" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-30" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-4" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" value="LLM" vertex="1">
+          <mxGeometry height="80" width="80" x="425" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="Wd2XjzPnlQWw5xxU7Xru-2" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-71">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;" value="Inventory" vertex="1">
+          <mxGeometry height="60" width="120" x="-910" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-93" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;dashed=1;" target="osESeonhqnULeVV8oHJ3-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-94" connectable="0" parent="osESeonhqnULeVV8oHJ3-93" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="The mikrotik devices configurations&lt;div&gt;need to loaded into the inventory&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.008" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-6" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;align=left;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" value="&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;inventory&quot;: [&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; {&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;title&quot;: &quot;TitleA&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;tags&quot;: [&quot;tag1&quot;, &quot;tag2&quot;],&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;region&quot;: &quot;NL&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;host&quot;: &quot;${HOST_A}:-127.0.0.1&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;port&quot;: &quot;${SSH_PORT_A}:-22&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;username&quot;: &quot;${USERNAME_A}:-admin&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;password&quot;: &quot;${PASSWORD_A}:-admin&quot;&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; },&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; {&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;title&quot;: &quot;TitleB&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;tags&quot;: [&quot;tag1&quot;, &quot;tag3&quot;],&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;region&quot;: &quot;DE&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;host&quot;: &quot;${HOST_B}:-192.168.88.1&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;port&quot;: &quot;${SSH_PORT_B}:-22&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;username&quot;: &quot;${USERNAME_B}:-admin&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;password&quot;: &quot;${PASSWORD_B}:-admin&quot;&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; },&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; {&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;title&quot;: &quot;TitleC&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;tags&quot;: [&quot;tag2&quot;, &quot;tag4&quot;],&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;region&quot;: &quot;IR&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;host&quot;: &quot;${HOST_C}:-10.0.0.1&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;port&quot;: &quot;${SSH_PORT_C}:-22&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;username&quot;: &quot;${USERNAME_C}:-admin&quot;,&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &quot;password&quot;: &quot;${PASSWORD_C}:-admin&quot;&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; }&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; ],&lt;/div&gt;" vertex="1">
+          <mxGeometry height="450" width="513" x="-1080" y="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-51" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-92" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-14" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Actor" vertex="1">
+          <mxGeometry height="60" width="30" x="110" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-37" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" value="Tool A" vertex="1">
+          <mxGeometry height="60" width="120" x="-360" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-43" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-17" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" value="Tool B" vertex="1">
+          <mxGeometry height="60" width="120" x="-360" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-40" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-18" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" value="Tool C" vertex="1">
+          <mxGeometry height="60" width="120" x="-360" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-42" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-65" connectable="0" parent="osESeonhqnULeVV8oHJ3-42" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Connector need to load the right &lt;b&gt;&lt;i&gt;mikrotik_ssh_client&lt;/i&gt; &lt;/b&gt;object&lt;div&gt;within itself&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.2775" y="2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-83" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" target="osESeonhqnULeVV8oHJ3-82">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-90" connectable="0" parent="osESeonhqnULeVV8oHJ3-83" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="After connector get the right &lt;i style=&quot;font-weight: bold;&quot;&gt;mikrotik_ssh_client &lt;/i&gt;then the connector&lt;div&gt;can execut the tool command against the mikrotik device&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1167" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-19" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;" value="Connector" vertex="1">
+          <mxGeometry height="80" width="80" x="-610" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-22" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-23" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-24" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-20" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="Mikrotik Scop" vertex="1">
+          <mxGeometry height="80" width="80" x="-60" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-36" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-20">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="900" />
+              <mxPoint x="-20" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-49" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-47">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-27" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" value="MCP Server" vertex="1">
+          <mxGeometry height="80" width="80" x="240" y="980" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-29" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" value="Configuration" vertex="1">
+          <mxGeometry height="60" width="120" x="-90" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-50" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-48">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-47" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="Inventory Scop" vertex="1">
+          <mxGeometry height="80" width="80" x="-60" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="Wd2XjzPnlQWw5xxU7Xru-1" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-48" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-48" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" value="Tool D" vertex="1">
+          <mxGeometry height="60" width="120" x="-360" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-67" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-96" connectable="0" parent="osESeonhqnULeVV8oHJ3-67" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="SSH" vertex="1">
+          <mxGeometry relative="1" x="-0.1022" y="2" as="geometry">
+            <mxPoint y="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-53" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Channel A" vertex="1">
+          <mxGeometry height="80" width="80" x="-1110" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-68" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-54" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-97" connectable="0" parent="osESeonhqnULeVV8oHJ3-68" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="SSH" vertex="1">
+          <mxGeometry relative="1" x="-0.0502" y="4" as="geometry">
+            <mxPoint y="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-54" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Channel B" vertex="1">
+          <mxGeometry height="80" width="80" x="-1000" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-69" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-98" connectable="0" parent="osESeonhqnULeVV8oHJ3-69" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="SSH" vertex="1">
+          <mxGeometry relative="1" x="-0.0502" as="geometry">
+            <mxPoint y="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-55" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Channel C" vertex="1">
+          <mxGeometry height="80" width="80" x="-890" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-78" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="osESeonhqnULeVV8oHJ3-72">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-79" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-73">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-80" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-74">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-71" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" value="Switch" vertex="1">
+          <mxGeometry height="80" width="80" x="-1003" y="529" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-75" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-72" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-53" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-72" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Mikrotik SSH Client A" vertex="1">
+          <mxGeometry height="80" width="80" x="-1110" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-76" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-73" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-54" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-73" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Mikrotik SSH Client B" vertex="1">
+          <mxGeometry height="80" width="80" x="-1000" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-77" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-74" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="osESeonhqnULeVV8oHJ3-55" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-74" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Mikrotik SSH Client C" vertex="1">
+          <mxGeometry height="80" width="80" x="-890" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-85" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-82" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" target="osESeonhqnULeVV8oHJ3-84">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-82" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;" value="Command Execution" vertex="1">
+          <mxGeometry height="80" width="80" x="-610" y="409" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-87" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-84" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" target="osESeonhqnULeVV8oHJ3-86">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-84" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Mikrotik SSH Client A, Or B, or C" vertex="1">
+          <mxGeometry height="80" width="80" x="-617" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-89" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-86" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" target="osESeonhqnULeVV8oHJ3-88" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-86" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Channel A, Or B, or C" vertex="1">
+          <mxGeometry height="80" width="80" x="-617" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-88" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" value="Mikrotik A, Or B, Or C" vertex="1">
+          <mxGeometry height="80" width="80" x="-617" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="osESeonhqnULeVV8oHJ3-100" edge="1" parent="1" source="osESeonhqnULeVV8oHJ3-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.994;entryY=0.501;entryDx=0;entryDy=0;entryPerimeter=0;" target="osESeonhqnULeVV8oHJ3-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
