@@ -249,6 +249,37 @@ def test_inventory_parses_yaml_flow_from_env(monkeypatch):
     assert cfg.inventory[0].region == "NL"
 
 
+def test_inventory_env_accepts_tab_whitespace_json(monkeypatch):
+    """PyYAML rejects tabs that JSON allows — the JSON-first parse must win.
+
+    A tab-indented inventory.json worked before the YAML migration; it must
+    keep working after it.
+    """
+    monkeypatch.setenv(
+        "MIKROTIK_INVENTORY",
+        '[\n\t{"title": "TitleA", "host": "10.0.0.1"},\n\t{"title":\t"TitleB", "host": "10.0.0.2"}\n]',
+    )
+    cfg = MikrotikConfig()
+    assert [d.title for d in cfg.inventory] == ["TitleA", "TitleB"]
+
+
+def test_inventory_file_accepts_tab_whitespace_json(monkeypatch, tmp_path):
+    import mcp_mikrotik.inventory as inv_mod
+    from mcp_mikrotik import config as cfg_mod
+
+    path = tmp_path / "inventory.json"
+    path.write_text(
+        '[\n\t{"title": "TitleA", "host": "10.0.0.1"}\n]', encoding="utf-8"
+    )
+    monkeypatch.delenv("MIKROTIK_INVENTORY", raising=False)
+    monkeypatch.setattr(
+        cfg_mod, "mikrotik_config", MikrotikConfig(inventory_file=str(path))
+    )
+
+    devices = inv_mod._load_devices()
+    assert [d.title for d in devices] == ["TitleA"]
+
+
 def test_invalid_inventory_yaml_is_rejected_without_echoing_it(monkeypatch):
     """The value holds credentials, so the error must not quote it back."""
     monkeypatch.setenv("MIKROTIK_INVENTORY", "[{title: A, password: hunter2, ]")

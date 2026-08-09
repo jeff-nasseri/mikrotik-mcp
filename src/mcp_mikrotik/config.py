@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, List, Literal, Optional
 
 import yaml
@@ -95,16 +96,25 @@ class MikrotikConfig(BaseSettings):
             v = v.strip()
             if not v:
                 return []
+            # JSON first: PyYAML's scanner rejects tab whitespace, which is
+            # legal in JSON, so yaml.safe_load alone would break previously
+            # working tab-indented JSON inventories.
             try:
-                v = yaml.safe_load(v)
-            except yaml.YAMLError as exc:
-                # Report the position only — the value holds credentials and
-                # must not be echoed back into logs or tool results.
-                mark = getattr(exc, "problem_mark", None)
-                where = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
-                raise ValueError(
-                    f"MIKROTIK_INVENTORY is not valid YAML/JSON{where}"
-                ) from exc
+                v = json.loads(v)
+            except json.JSONDecodeError:
+                try:
+                    v = yaml.safe_load(v)
+                except yaml.YAMLError as exc:
+                    # Report the position only — the value holds credentials
+                    # and must not be echoed into logs or tool results.
+                    mark = getattr(exc, "problem_mark", None)
+                    where = (
+                        f" (line {mark.line + 1}, column {mark.column + 1})"
+                        if mark else ""
+                    )
+                    raise ValueError(
+                        f"MIKROTIK_INVENTORY is not valid YAML/JSON{where}"
+                    ) from exc
         if isinstance(v, dict):
             v = [v]
         return v

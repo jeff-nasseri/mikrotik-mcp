@@ -12,6 +12,7 @@ disconnecting, timing out or failing to authenticate cannot disturb a command
 another session is running against the same device.
 """
 
+import json
 import logging
 import os
 import threading
@@ -217,17 +218,28 @@ def _load_devices() -> List[DeviceConfig]:
         path = os.path.expanduser(cfg.inventory_file)
         try:
             with open(path, "r", encoding="utf-8") as fh:
-                raw = yaml.safe_load(fh)
+                text = fh.read()
         except OSError as exc:
             raise ValueError(
                 f"Cannot read inventory file {path!r}: {exc.strerror or exc}"
             ) from exc
-        except yaml.YAMLError as exc:
-            mark = getattr(exc, "problem_mark", None)
-            where = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
-            raise ValueError(
-                f"Inventory file {path!r} is not valid YAML{where}"
-            ) from exc
+        # JSON first: PyYAML's scanner rejects tab whitespace, which is legal
+        # in JSON, so yaml.safe_load alone would break previously working
+        # tab-indented inventory.json files.
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError:
+            try:
+                raw = yaml.safe_load(text)
+            except yaml.YAMLError as exc:
+                mark = getattr(exc, "problem_mark", None)
+                where = (
+                    f" (line {mark.line + 1}, column {mark.column + 1})"
+                    if mark else ""
+                )
+                raise ValueError(
+                    f"Inventory file {path!r} is not valid YAML{where}"
+                ) from exc
         return _validate_entries(raw, source=path)
 
     # Backwards-compatible single device.
