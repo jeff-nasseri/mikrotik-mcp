@@ -42,3 +42,4 @@ Complete tool documentation organized by category:
 ## Learning Resources
 
 - **[Articles](articles/README.md)** - Tutorials and learning materials
+- **[Diagrams](diagrams/README.md)** - Architecture and design diagrams (draw.io)

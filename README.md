@@ -39,6 +39,7 @@ https://github.com/user-attachments/assets/e0301ff2-8144-4503-83d0-48589d95027d
 - **[MCP Inspector](docs/integrations/inspector.md)** - Interactive testing tool
 - **[Contributing Guide](docs/contributing.md)** - Help improve MikroTik MCP
 - **[Articles](docs/articles/README.md)** - Learning resources and tutorials
+- **[Diagrams](docs/diagrams/README.md)** - Architecture and design diagrams (draw.io)
 
 ## License
 
