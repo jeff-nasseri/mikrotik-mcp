@@ -2,9 +2,8 @@ import logging
 import re
 import threading
 import time
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
-from . import config
 from .mikrotik_ssh_client import MikroTikSSHClient
 
 logger = logging.getLogger(__name__)
@@ -343,17 +342,24 @@ _manager_lock = threading.Lock()
 
 
 def _manager_key(device: Optional[str]) -> str:
-    """Resolve the device to a stable key, falling back to the raw value."""
-    try:
-        from .inventory import get_inventory
+    """Resolve the device to a stable key.
 
-        return get_inventory().resolve(device).title.casefold()
-    except Exception:
-        return (device or "").casefold()
+    Resolution failures must propagate: swallowing them here would fabricate a
+    fresh inactive manager under a phantom key, so a typo'd or omitted device
+    would be told "safe mode is not active — nothing to commit" while the real
+    device still holds uncommitted changes that revert when its session drops.
+    """
+    from .inventory import get_inventory
+
+    return get_inventory().resolve(device).title.casefold()
 
 
 def get_safe_mode_manager(device: Optional[str] = None) -> SafeModeManager:
-    """Return the safe-mode manager for ``device`` (the only device if omitted)."""
+    """Return the safe-mode manager for ``device`` (the only device if omitted).
+
+    Raises :class:`~mcp_mikrotik.inventory.DeviceNotFoundError` when the device
+    cannot be resolved, exactly like every other device-scoped operation.
+    """
     key = _manager_key(device)
     manager = _managers.get(key)
     if manager is None:
@@ -364,7 +370,3 @@ def get_safe_mode_manager(device: Optional[str] = None) -> SafeModeManager:
                 _managers[key] = manager
     return manager
 
-
-def get_active_safe_mode_devices() -> List[str]:
-    """Titles of devices that currently have an active safe-mode session."""
-    return [m.device or key for key, m in _managers.items() if m.is_active]
