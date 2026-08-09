@@ -29,8 +29,7 @@ https://github.com/user-attachments/assets/e0301ff2-8144-4503-83d0-48589d95027d
 > [!NOTE]
 > Since MikroTik MCP version `0.14.0`, the MikroTik MCP will allow you to manage multiple MikroTik devices within your fleet structure. The following video simply shows how to use the inventory of MikroTik devices to let LLMs talk with your MikroTik devices.
 
-https://github.com/user-attachments/assets/267cd9bb-ab4f-4e22-b597-5e9f6d8be2aa
-
+https://github.com/user-attachments/assets/185b2c39-8f55-4f26-a74c-2ac459ad38f5
 
 ## Documentation
 
