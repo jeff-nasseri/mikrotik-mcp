@@ -1,0 +1,35 @@
+# MikroTik MCP inventory — example
+#
+# Copy this file, edit it for your fleet, and point the server at it:
+#
+#   MIKROTIK_INVENTORY_FILE=/path/to/inventory.yml
+#
+# Docker (the image ships /config as the mount point):
+#
+#   docker run --rm -i \
+#     -v "$PWD/inventory.yml:/config/inventory.yml:ro" \
+#     -e MIKROTIK_INVENTORY_FILE=/config/inventory.yml \
+#     ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+#
+# Each entry is one device. `title` is the identifier the LLM passes as the
+# `device` argument of every tool; it must be unique (matching is
+# case-insensitive). `host` is the only other required field.
+#
+# This file holds credentials — treat the whole file as a secret:
+# restrict its permissions (chmod 600), keep it out of version control,
+# and prefer `key_filename` over `password` where you can.
+
+- title: TitleA                 # required, unique — used as the `device` argument
+  host: 192.168.88.1            # required — IP or hostname
+  port: 22                      # optional, default 22
+  username: admin               # optional, default admin
+  password: change-me           # optional — omit when using key_filename
+  tags: [branch, eu]            # optional, free-form labels
+  region: NL                    # optional, free-form label
+
+- title: TitleB
+  host: 192.168.89.1
+  username: admin
+  key_filename: /config/keys/id_ed25519   # SSH private key, preferred over a password
+  tags: [datacenter]
+  region: DE

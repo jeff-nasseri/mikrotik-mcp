@@ -268,6 +268,44 @@ def test_execute_ignores_prompt_shaped_fragment_arriving_before_output(
     assert out == ""          # a clean add produces no output — and no junk
 
 
+def test_terminal_probe_split_across_chunks_is_still_answered(
+    monkeypatch, single_device_inventory
+):
+    """A 4-byte probe can straddle two network reads; the answer must not be lost.
+
+    The DA probe after each prompt is sent exactly once and gates the final
+    "> ", so a missed probe stalls the console until a timeout.
+    """
+    channel = ScriptedChannel(license_prompt=False, password_nag=False)
+    # Deliver the size probe split in the middle: "\x1b[6" ... "n"
+    channel._pending = channel.BANNER + "\x1b[6"
+    original_send = channel.send
+    state = {"tail_sent": False}
+
+    def recv(n):
+        out, channel._pending = channel._pending[:n], channel._pending[n:]
+        if not channel._pending and not state["tail_sent"]:
+            channel._pending = "n"          # the probe's last byte arrives late
+            state["tail_sent"] = True
+        return out.encode("utf-8")
+
+    def send(data):
+        if data == "\x1b[50;220R":
+            channel.sent.append(data)
+            channel._pending += "\r\n[admin@RouterA-NL] > "
+        else:
+            original_send(data)
+
+    channel.recv = recv
+    channel.send = send
+    mgr = _patched_manager(monkeypatch, channel)
+
+    result = mgr.enable()
+
+    assert "ENABLED" in result, result
+    assert channel.sent == ["\x1b[50;220R", "\x18"]
+
+
 def test_enable_accepts_ros721_success_message_without_safe_prompt(
     monkeypatch, single_device_inventory
 ):

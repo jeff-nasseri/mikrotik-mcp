@@ -26,6 +26,9 @@ the first tool call.
 
 ### The YAML file (recommended)
 
+A ready-to-copy template ships at the repository root:
+[`inventory.example.yml`](../../../inventory.example.yml).
+
 `inventory.yaml`:
 
 ```yaml
