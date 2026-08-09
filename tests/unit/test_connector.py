@@ -76,8 +76,12 @@ class FakeInventory:
 
 def _patch_inventory(monkeypatch, inv):
     from mcp_mikrotik import connector
+    from mcp_mikrotik import inventory as inv_mod
 
     monkeypatch.setattr(connector, "get_inventory", lambda: inv)
+    # The safe-mode manager resolves through the module-level inventory when
+    # the connector checks for an active session — keep both views consistent.
+    monkeypatch.setattr(inv_mod, "get_inventory", lambda: inv)
     return connector
 
 

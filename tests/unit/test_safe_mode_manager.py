@@ -88,6 +88,56 @@ def _patched_manager(monkeypatch, channel):
     return SafeModeManager("RouterA")
 
 
+def test_get_safe_mode_manager_propagates_resolution_errors(monkeypatch):
+    """A typo'd or omitted device must error — not fabricate a fresh manager.
+
+    A phantom manager answers "safe mode is not active — nothing to commit"
+    while the real device still holds uncommitted changes that revert when its
+    session drops.
+    """
+    import mcp_mikrotik.inventory as inv_mod
+    from mcp_mikrotik.inventory import DeviceNotFoundError
+
+    def raising_resolve(title=None):
+        raise DeviceNotFoundError("Unknown device 'Ghost'. Available: RouterA.")
+
+    monkeypatch.setattr(
+        inv_mod, "get_inventory",
+        lambda: SimpleNamespace(resolve=raising_resolve),
+    )
+
+    with pytest.raises(DeviceNotFoundError):
+        safe_mode_mod.get_safe_mode_manager("Ghost")
+
+
+def test_safe_mode_tools_surface_resolution_errors(monkeypatch):
+    """status/commit/rollback report the error instead of 'not active'."""
+    import asyncio
+
+    from mcp_mikrotik.inventory import DeviceNotFoundError
+    from mcp_mikrotik.scope import safe_mode as scope_safe_mode
+    from unittest.mock import AsyncMock, MagicMock
+
+    def raising(device=None):
+        raise DeviceNotFoundError(
+            "Unknown device 'Ghost'. Available devices: RouterA, RouterB."
+        )
+
+    monkeypatch.setattr(scope_safe_mode, "get_safe_mode_manager", raising)
+    ctx = MagicMock()
+    ctx.info = AsyncMock()
+
+    for tool in (
+        scope_safe_mode.mikrotik_safe_mode_status,
+        scope_safe_mode.mikrotik_commit_safe_mode,
+        scope_safe_mode.mikrotik_rollback_safe_mode,
+        scope_safe_mode.mikrotik_enable_safe_mode,
+    ):
+        result = asyncio.run(tool(ctx, device="Ghost"))
+        assert result.startswith("Error:"), result
+        assert "RouterA" in result          # the choices are listed
+
+
 def test_enable_answers_license_and_password_dialogs(monkeypatch, single_device_inventory):
     channel = ScriptedChannel(license_prompt=True, password_nag=True)
     mgr = _patched_manager(monkeypatch, channel)
