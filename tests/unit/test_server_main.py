@@ -105,6 +105,67 @@ def test_server_main_exits_on_exception(monkeypatch):
     assert exc.value.code == 1
 
 
+def test_server_main_exits_cleanly_on_bad_inventory_file(monkeypatch, tmp_path, caplog):
+    """A broken inventory stops the server at startup: exit 1, run() never called."""
+    import logging
+
+    from mcp_mikrotik import server
+
+    calls = {"run": 0}
+
+    class FakeMcp:
+        def run(self, transport: str, **kwargs):
+            calls["run"] += 1
+
+    bad = tmp_path / "inventory.yaml"
+    bad.write_text(
+        "- title: core-nl\n  hostname: 10.0.0.1\n  password: FleetSecret9!\n",
+        encoding="utf-8",
+    )
+    cfg = types.SimpleNamespace(
+        host="10.0.0.1", username="admin", password="", port=22,
+        key_filename=None, inventory=[], inventory_file=str(bad),
+        mcp=types.SimpleNamespace(host="127.0.0.1", port=8123, transport="stdio",
+                                  allowed_hosts="", allowed_origins=""),
+    )
+    monkeypatch.setattr(server, "MikrotikConfig", lambda _cli_parse_args=True: cfg)
+    monkeypatch.setattr(server, "mcp", FakeMcp())
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(SystemExit) as exc:
+            server.main()
+
+    assert exc.value.code == 1
+    assert calls["run"] == 0, "the server must not start with a broken inventory"
+    assert "Invalid MikroTik inventory" in caplog.text
+    assert "FleetSecret9!" not in caplog.text
+
+
+def test_server_main_exits_cleanly_on_bad_inline_inventory(monkeypatch, caplog):
+    """Config-level validation errors get the clean message, not a traceback."""
+    import logging
+
+    from pydantic import ValidationError
+
+    from mcp_mikrotik import server
+    from mcp_mikrotik.config import MikrotikConfig
+
+    def bad_config(_cli_parse_args=True):
+        # A schema-invalid inline inventory raises at config construction.
+        return MikrotikConfig(inventory='[{title: A, password: Hunter22}]')
+
+    monkeypatch.setattr(server, "MikrotikConfig", bad_config)
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(SystemExit) as exc:
+            server.main()
+
+    assert exc.value.code == 1
+    assert "Invalid MikroTik configuration" in caplog.text
+    assert "host" in caplog.text            # the missing field is named
+    assert "Hunter22" not in caplog.text    # the credential is not
+
+
 def test_credential_warning_emitted_in_container_with_password(monkeypatch):
     """Warning fires when a plaintext password is set inside a container."""
     from mcp_mikrotik.server import _warn_if_plaintext_password_in_container

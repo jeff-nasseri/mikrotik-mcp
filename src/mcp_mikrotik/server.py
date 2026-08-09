@@ -3,10 +3,28 @@ import os
 import sys
 
 from mcp.server.transport_security import TransportSecuritySettings
+from pydantic import ValidationError
 
-from mcp_mikrotik import config
-from mcp_mikrotik.app import mcp
-from mcp_mikrotik.config import McpServerSettings, MikrotikConfig
+
+def _config_error_message(exc: ValidationError) -> str:
+    """One readable line per problem, without echoing any input values."""
+    problems = "; ".join(
+        f"{'.'.join(str(p) for p in err['loc']) or 'config'}: {err['msg']}"
+        for err in exc.errors()
+    )
+    return f"Invalid MikroTik configuration: {problems}"
+
+
+# An inline MIKROTIK_INVENTORY is parsed the moment MikrotikConfig is built,
+# which happens at import — so a broken one must be caught here to die with
+# one clear message rather than a raw traceback.
+try:
+    from mcp_mikrotik import config
+    from mcp_mikrotik.app import mcp
+    from mcp_mikrotik.config import McpServerSettings, MikrotikConfig
+except ValidationError as _exc:
+    print(_config_error_message(_exc), file=sys.stderr)
+    sys.exit(1)
 
 _LOCALHOST_HOSTS = ("127.0.0.1", "localhost", "::1")
 
@@ -89,9 +107,13 @@ def main():
     """
     Entry point for the MCP MikroTik server when run as a command-line program.
     """
-    config.mikrotik_config = MikrotikConfig(_cli_parse_args=True)
-
     logger = logging.getLogger(__name__)
+
+    try:
+        config.mikrotik_config = MikrotikConfig(_cli_parse_args=True)
+    except ValidationError as e:
+        logger.error(_config_error_message(e))
+        sys.exit(1)
 
     logger.info("Starting MCP MikroTik server")
 
