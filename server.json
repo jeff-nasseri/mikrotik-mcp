@@ -6,50 +6,64 @@
     "url": "https://github.com/jeff-nasseri/mikrotik-mcp",
     "source": "github"
   },
-  "version": "0.7.1.0",
+  "version": "0.14.1.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "mcp-server-mikrotik",
-      "version": "0.7.1.0",
+      "version": "0.14.1.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
           "name": "MIKROTIK_HOST",
-          "description": "IP address or hostname of the MikroTik router",
-          "isRequired": true,
+          "description": "IP address or hostname of the MikroTik router (single-device mode; default: 127.0.0.1). Not needed when an inventory is configured.",
+          "isRequired": false,
           "format": "string",
           "isSecret": false
         },
         {
           "name": "MIKROTIK_USERNAME",
-          "description": "SSH username for the MikroTik router (default: admin)",
+          "description": "SSH username for the MikroTik router (single-device mode; default: admin)",
           "isRequired": false,
           "format": "string",
           "isSecret": false
         },
         {
           "name": "MIKROTIK_PASSWORD",
-          "description": "SSH password for the MikroTik router",
+          "description": "SSH password for the MikroTik router (single-device mode)",
           "isRequired": false,
           "format": "string",
           "isSecret": true
         },
         {
           "name": "MIKROTIK_PORT",
-          "description": "SSH port of the MikroTik router (default: 22)",
+          "description": "SSH port of the MikroTik router (single-device mode; default: 22)",
           "isRequired": false,
           "format": "string",
           "isSecret": false
         },
         {
           "name": "MIKROTIK_KEY_FILENAME",
-          "description": "Path to SSH private key file for key-based authentication",
+          "description": "Path to SSH private key file for key-based authentication (single-device mode)",
           "isRequired": false,
           "format": "string",
           "isSecret": false
+        },
+        {
+          "name": "MIKROTIK_INVENTORY_FILE",
+          "description": "Path to a YAML file listing multiple MikroTik devices (title, host, port, username, password, key_filename, tags, region). See docs/reference/inventory.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MIKROTIK_INVENTORY",
+          "description": "Inline multi-device inventory as a YAML (or JSON) list; takes precedence over MIKROTIK_INVENTORY_FILE and the single-device variables. Holds credentials.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
         }
       ]
     }
