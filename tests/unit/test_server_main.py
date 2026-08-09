@@ -18,7 +18,11 @@ def test_server_main_runs_mcp_stdio(monkeypatch):
     cfg = types.SimpleNamespace(
         host="10.0.0.1",
         username="admin",
+        password="",
+        port=22,
         key_filename=None,
+        inventory=[],
+        inventory_file=None,
         mcp=types.SimpleNamespace(host="127.0.0.1", port=8123, transport="stdio",
                                   allowed_hosts="", allowed_origins=""),
     )
@@ -46,7 +50,11 @@ def test_server_main_passes_http_options_to_run(monkeypatch):
     cfg = types.SimpleNamespace(
         host="10.0.0.1",
         username="admin",
+        password="",
+        port=22,
         key_filename=None,
+        inventory=[],
+        inventory_file=None,
         mcp=types.SimpleNamespace(host="0.0.0.0", port=8123, transport="streamable-http",
                                   allowed_hosts="mcp.example.com", allowed_origins=""),
     )
@@ -76,7 +84,11 @@ def test_server_main_exits_on_exception(monkeypatch):
     cfg = types.SimpleNamespace(
         host="10.0.0.1",
         username="admin",
+        password="",
+        port=22,
         key_filename=None,
+        inventory=[],
+        inventory_file=None,
         mcp=types.SimpleNamespace(host="127.0.0.1", port=8123, transport="stdio"),
     )
 
@@ -226,7 +238,11 @@ def test_server_main_handles_keyboard_interrupt(monkeypatch):
     cfg = types.SimpleNamespace(
         host="10.0.0.1",
         username="admin",
+        password="",
+        port=22,
         key_filename=None,
+        inventory=[],
+        inventory_file=None,
         mcp=types.SimpleNamespace(host="127.0.0.1", port=8123, transport="stdio"),
     )
 

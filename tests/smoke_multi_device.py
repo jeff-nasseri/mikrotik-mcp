@@ -6,6 +6,10 @@ lands on the device named by the `device` argument.
 
     docker-compose -f routeros-docker/docker-compose.yml up -d
     python tests/smoke_multi_device.py
+
+Every check is self-establishing: nothing here depends on state left behind by
+earlier runs (fresh containers boot with default identities, and RouterOS may
+rename NICs across container recreations, so neither can be assumed).
 """
 
 import asyncio
@@ -13,6 +17,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "src"))
@@ -21,14 +26,23 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 # Matches the compose file: routeros-a -> 2222, routeros-b -> 2223
-INVENTORY = [
-    {"title": "RouterA", "host": "127.0.0.1", "port": 2222,
-     "username": "admin", "password": os.environ.get("ROUTEROS_PASS", ""),
-     "tags": ["lab", "primary"], "region": "NL"},
-    {"title": "RouterB", "host": "127.0.0.1", "port": 2223,
-     "username": "admin", "password": os.environ.get("ROUTEROS_PASS", ""),
-     "tags": ["lab", "secondary"], "region": "DE"},
-]
+PASSWORD = os.environ.get("ROUTEROS_PASS", "")
+INVENTORY_YAML = f"""\
+- title: RouterA
+  host: 127.0.0.1
+  port: 2222
+  username: admin
+  password: "{PASSWORD}"
+  tags: [lab, primary]
+  region: NL
+- title: RouterB
+  host: 127.0.0.1
+  port: 2223
+  username: admin
+  password: "{PASSWORD}"
+  tags: [lab, secondary]
+  region: DE
+"""
 
 results = []
 
@@ -40,10 +54,11 @@ def check(label, ok, detail=""):
         print("        " + str(detail).replace("\n", " ")[:160])
 
 
-def env():
+def env(inventory_file):
     e = dict(os.environ)
+    e.pop("MIKROTIK_INVENTORY", None)
     e.update({
-        "MIKROTIK_INVENTORY": json.dumps(INVENTORY),
+        "MIKROTIK_INVENTORY_FILE": inventory_file,
         "MIKROTIK_MCP__TRANSPORT": "stdio",
         "PYTHONPATH": os.path.join(REPO, "src"),
     })
@@ -54,101 +69,125 @@ def txt(res):
     return "\n".join(getattr(c, "text", "") for c in res.content)
 
 
-def ether2_mac(output):
-    """Pull ether2's MAC from a list_interfaces response.
-
-    Each container generates its own ether2 MAC, so the MAC in a response
-    identifies which router actually produced it.
-    """
-    m = re.search(r"ether2\s+\S+\s+\d+\s+([0-9A-Fa-f:]{17})", output)
-    return m.group(1) if m else ""
+def macs(list_interfaces_output):
+    """Map interface name -> MAC from a list_interfaces response."""
+    return dict(re.findall(
+        r"(\S+)\s+\S+\s+\d+\s+([0-9A-Fa-f:]{17})", list_interfaces_output
+    ))
 
 
 async def main():
-    params = StdioServerParameters(
-        command=sys.executable, args=["-m", "mcp_mikrotik.server"], env=env(), cwd=REPO
-    )
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as s:
-            await s.initialize()
+    with tempfile.TemporaryDirectory() as tmp:
+        inv_path = os.path.join(tmp, "inventory.yaml")
+        with open(inv_path, "w", encoding="utf-8") as fh:
+            fh.write(INVENTORY_YAML)
 
-            tools = (await s.list_tools()).tools
-            names = [t.name for t in tools]
-            check(f"server exposes {len(tools)} tools incl. list_devices",
-                  "list_devices" in names)
+        params = StdioServerParameters(
+            command=sys.executable, args=["-m", "mcp_mikrotik.server"],
+            env=env(inv_path), cwd=REPO,
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as s:
+                await s.initialize()
 
-            # every device-scoped tool advertises the device argument
-            sample = [t for t in tools if t.name == "list_interfaces"][0]
-            check("tools advertise a `device` argument",
-                  "device" in (sample.input_schema.get("properties") or {}))
+                tools = (await s.list_tools()).tools
+                names = [t.name for t in tools]
+                check(f"server exposes {len(tools)} tools incl. list_devices",
+                      "list_devices" in names)
 
-            # ── Tool D ────────────────────────────────────────────────────
-            out = txt(await s.call_tool("list_devices", {}))
-            check("list_devices shows both devices",
-                  "RouterA" in out and "RouterB" in out, out)
-            check("list_devices leaks no credentials",
-                  "password" not in out.lower(), out)
+                sample = [t for t in tools if t.name == "list_interfaces"][0]
+                check("tools advertise a `device` argument",
+                      "device" in (sample.input_schema.get("properties") or {}))
 
-            # ── Targeting ─────────────────────────────────────────────────
-            a = txt(await s.call_tool("list_interfaces", {"device": "RouterA"}))
-            check("command routed to RouterA", "Failed to connect" not in a and "Error" not in a[:20], a)
+                # ── Tool D (inventory loaded from the YAML file) ──────────
+                out = txt(await s.call_tool("list_devices", {}))
+                check("YAML inventory loaded: list_devices shows both devices",
+                      "RouterA" in out and "RouterB" in out, out)
+                check("list_devices leaks no credentials",
+                      "password" not in out.lower(), out)
 
-            b = txt(await s.call_tool("list_interfaces", {"device": "RouterB"}))
-            check("command routed to RouterB", "Failed to connect" not in b and "Error" not in b[:20], b)
+                # ── Fingerprint the two boxes ─────────────────────────────
+                a = txt(await s.call_tool("list_interfaces", {"device": "RouterA"}))
+                b = txt(await s.call_tool("list_interfaces", {"device": "RouterB"}))
+                check("command routed to RouterA", "Error" not in a[:20], a)
+                check("command routed to RouterB", "Error" not in b[:20], b)
 
-            # Decisive proof: each router carries a distinct system identity, so
-            # exporting it shows which box actually executed the command.
-            ia = txt(await s.call_tool("export_section",
-                                       {"device": "RouterA", "section": "system identity"}))
-            ib = txt(await s.call_tool("export_section",
-                                       {"device": "RouterB", "section": "system identity"}))
-            check("RouterA reports its own identity", "RouterA-NL" in ia, ia)
-            check("RouterB reports its own identity", "RouterB-DE" in ib, ib)
-            check("the two devices are genuinely different hosts",
-                  "RouterB-DE" not in ia and "RouterA-NL" not in ib)
+                macs_a, macs_b = macs(a), macs(b)
+                distinct = sorted(
+                    n for n in macs_a.keys() & macs_b.keys()
+                    if macs_a[n] != macs_b[n]
+                )
+                check("routers expose an interface with distinct MACs (fingerprint)",
+                      bool(distinct),
+                      f"A={macs_a} B={macs_b}")
+                fp = distinct[0] if distinct else None
+                parent_a = sorted(n for n in macs_a if n.startswith("ether"))[-1]
+                parent_b = sorted(n for n in macs_b if n.startswith("ether"))[-1]
 
-            # ── Selection rules ───────────────────────────────────────────
-            out = txt(await s.call_tool("list_interfaces", {}))
-            check("omitting device with >1 device errors and lists choices",
-                  "RouterA" in out and "RouterB" in out and "Error" in out, out)
+                # ── Write isolation: a VLAN per router, then cross-check ──
+                out = txt(await s.call_tool("create_vlan_interface", {
+                    "device": "RouterA", "name": "smoke-vlan-a", "vlan_id": 210,
+                    "interface": parent_a, "comment": "smoke test"}))
+                check("VLAN created on RouterA", "successfully" in out, out)
+                out = txt(await s.call_tool("create_vlan_interface", {
+                    "device": "RouterB", "name": "smoke-vlan-b", "vlan_id": 220,
+                    "interface": parent_b, "comment": "smoke test"}))
+                check("VLAN created on RouterB", "successfully" in out, out)
 
-            out = txt(await s.call_tool("list_interfaces", {"device": "Ghost"}))
-            check("unknown device errors and lists choices",
-                  "Unknown device" in out and "RouterA" in out, out)
+                va = txt(await s.call_tool("list_vlan_interfaces", {"device": "RouterA"}))
+                vb = txt(await s.call_tool("list_vlan_interfaces", {"device": "RouterB"}))
+                check("RouterA has only its own VLAN",
+                      "smoke-vlan-a" in va and "smoke-vlan-b" not in va, va)
+                check("RouterB has only its own VLAN",
+                      "smoke-vlan-b" in vb and "smoke-vlan-a" not in vb, vb)
 
-            out = txt(await s.call_tool("list_interfaces", {"device": "routera"}))
-            check("device matching is case-insensitive", "Failed to connect" not in out, out)
+                # ── Selection rules ───────────────────────────────────────
+                out = txt(await s.call_tool("list_interfaces", {}))
+                check("omitting device with >1 device errors and lists choices",
+                      "RouterA" in out and "RouterB" in out and "Error" in out, out)
 
-            # ── Session isolation ─────────────────────────────────────────
-            mac_a = ether2_mac(a)
-            mac_b = ether2_mac(b)
-            check("the routers have distinct ether2 MACs (usable as a fingerprint)",
-                  bool(mac_a) and bool(mac_b) and mac_a != mac_b,
-                  f"A={mac_a} B={mac_b}")
+                out = txt(await s.call_tool("list_interfaces", {"device": "Ghost"}))
+                check("unknown device errors and lists choices",
+                      "Unknown device" in out and "RouterA" in out, out)
 
-            # Fire interleaved calls at both routers at once.  These run in
-            # parallel threads sharing the inventory, so a pooled or shared
-            # SSH client would surface here as cross-talk between devices or
-            # as a session dropped out from under a running command.
-            targets = ["RouterA", "RouterB"] * 6
-            outs = [txt(o) for o in await asyncio.gather(
-                *[s.call_tool("list_interfaces", {"device": d}) for d in targets]
-            )]
-            got = [ether2_mac(o) for o in outs]
-            want = [mac_a if d == "RouterA" else mac_b for d in targets]
+                out = txt(await s.call_tool("list_interfaces", {"device": "routera"}))
+                check("device matching is case-insensitive",
+                      "Error" not in out[:20], out)
 
-            check(f"{len(targets)} concurrent calls each reached the right router",
-                  got == want, f"want {want[:4]}... got {got[:4]}...")
-            check("no concurrent call errored",
-                  not any("Error" in o for o in outs),
-                  next((o for o in outs if "Error" in o), ""))
+                # ── Concurrency: interleaved calls must not cross-talk ────
+                if fp:
+                    targets = ["RouterA", "RouterB"] * 6
+                    outs = [txt(o) for o in await asyncio.gather(
+                        *[s.call_tool("list_interfaces", {"device": d})
+                          for d in targets]
+                    )]
+                    got = [macs(o).get(fp) for o in outs]
+                    want = [macs_a[fp] if d == "RouterA" else macs_b[fp]
+                            for d in targets]
+                    check(f"{len(targets)} concurrent calls each reached the right router",
+                          got == want, f"want {want[:4]}... got {got[:4]}...")
+                    check("no concurrent call errored",
+                          not any("Error" in o for o in outs),
+                          next((o for o in outs if "Error" in o), ""))
 
-            # Connection churn must not exhaust the router's session limit.
-            serial = [txt(await s.call_tool("list_interfaces", {"device": "RouterA"}))
-                      for _ in range(10)]
-            check("10 back-to-back commands all succeed (no session exhaustion)",
-                  all(ether2_mac(o) == mac_a for o in serial),
-                  next((o for o in serial if ether2_mac(o) != mac_a), ""))
+                    serial = [txt(await s.call_tool(
+                        "list_interfaces", {"device": "RouterA"}))
+                        for _ in range(10)]
+                    check("10 back-to-back commands all succeed (no session exhaustion)",
+                          all(macs(o).get(fp) == macs_a[fp] for o in serial),
+                          next((o for o in serial if macs(o).get(fp) != macs_a[fp]), ""))
+
+                # ── Cleanup (also exercises remove + routing) ─────────────
+                out = txt(await s.call_tool("remove_vlan_interface",
+                                            {"device": "RouterA", "name": "smoke-vlan-a"}))
+                check("VLAN removed from RouterA", "successfully" in out, out)
+                out = txt(await s.call_tool("remove_vlan_interface",
+                                            {"device": "RouterB", "name": "smoke-vlan-b"}))
+                check("VLAN removed from RouterB", "successfully" in out, out)
+                va = txt(await s.call_tool("list_vlan_interfaces", {"device": "RouterA"}))
+                vb = txt(await s.call_tool("list_vlan_interfaces", {"device": "RouterB"}))
+                check("both routers back to baseline",
+                      "smoke-vlan" not in va and "smoke-vlan" not in vb)
 
     print()
     passed = sum(1 for _, ok in results if ok)

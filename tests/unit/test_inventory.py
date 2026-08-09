@@ -221,6 +221,7 @@ def test_session_propagates_connect_failure(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_inventory_parses_json_from_env(monkeypatch):
+    """JSON is a YAML subset, so the old inline JSON form keeps working."""
     payload = json.dumps([
         {"title": "TitleA", "host": "127.0.0.1", "port": 2222,
          "username": "admin", "password": "pw", "tags": ["t1"], "region": "NL"},
@@ -234,10 +235,120 @@ def test_inventory_parses_json_from_env(monkeypatch):
     assert cfg.inventory[1].port == 22          # default
 
 
-def test_invalid_inventory_json_is_rejected(monkeypatch):
-    monkeypatch.setenv("MIKROTIK_INVENTORY", "{not json")
-    with pytest.raises(Exception):
+def test_inventory_parses_yaml_flow_from_env(monkeypatch):
+    """YAML flow syntax needs no escaped quotes inside an MCP JSON config."""
+    monkeypatch.setenv(
+        "MIKROTIK_INVENTORY",
+        "[{title: TitleA, host: 127.0.0.1, port: 2222, region: NL, tags: [t1]},"
+        " {title: TitleB, host: 192.168.88.1}]",
+    )
+    cfg = MikrotikConfig()
+    assert [d.title for d in cfg.inventory] == ["TitleA", "TitleB"]
+    assert cfg.inventory[0].port == 2222
+    assert cfg.inventory[0].tags == ["t1"]
+    assert cfg.inventory[0].region == "NL"
+
+
+def test_invalid_inventory_yaml_is_rejected_without_echoing_it(monkeypatch):
+    """The value holds credentials, so the error must not quote it back."""
+    monkeypatch.setenv("MIKROTIK_INVENTORY", "[{title: A, password: hunter2, ]")
+    with pytest.raises(Exception) as exc:
         MikrotikConfig()
+    assert "hunter2" not in str(exc.value)
+
+
+def test_invalid_inventory_entry_error_hides_credentials(monkeypatch):
+    """A schema-invalid entry (e.g. 'hostname' typo) must not echo values."""
+    monkeypatch.setenv(
+        "MIKROTIK_INVENTORY",
+        '[{"title": "core-nl", "hostname": "10.0.0.1", "password": "FleetSecret9!"}]',
+    )
+    with pytest.raises(Exception) as exc:
+        MikrotikConfig()
+    msg = str(exc.value)
+    assert "FleetSecret9!" not in msg
+    assert "host" in msg                        # the offending field is named
+
+
+def test_inventory_file_accepts_yaml(monkeypatch, tmp_path):
+    import mcp_mikrotik.inventory as inv_mod
+    from mcp_mikrotik import config as cfg_mod
+
+    path = tmp_path / "inventory.yaml"
+    path.write_text(
+        "- title: TitleA\n"
+        "  host: 127.0.0.1\n"
+        "  port: 2222\n"
+        "  tags: [lab, primary]\n"
+        "  region: NL\n"
+        "- title: TitleB\n"
+        "  host: 192.168.88.1\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("MIKROTIK_INVENTORY", raising=False)
+    monkeypatch.setattr(
+        cfg_mod, "mikrotik_config", MikrotikConfig(inventory_file=str(path))
+    )
+
+    devices = inv_mod._load_devices()
+    assert [d.title for d in devices] == ["TitleA", "TitleB"]
+    assert devices[0].port == 2222
+    assert devices[0].tags == ["lab", "primary"]
+    assert devices[1].port == 22
+
+
+def test_inline_inventory_wins_over_file(monkeypatch, tmp_path):
+    import mcp_mikrotik.inventory as inv_mod
+    from mcp_mikrotik import config as cfg_mod
+
+    path = tmp_path / "inventory.yaml"
+    path.write_text("- title: FromFile\n  host: 10.0.0.9\n", encoding="utf-8")
+    monkeypatch.setenv("MIKROTIK_INVENTORY", "[{title: Inline, host: 10.0.0.1}]")
+    monkeypatch.setattr(
+        cfg_mod, "mikrotik_config", MikrotikConfig(inventory_file=str(path))
+    )
+
+    devices = inv_mod._load_devices()
+    assert [d.title for d in devices] == ["Inline"]
+
+
+def test_inventory_file_error_names_entry_without_credentials(monkeypatch, tmp_path):
+    import mcp_mikrotik.inventory as inv_mod
+    from mcp_mikrotik import config as cfg_mod
+
+    path = tmp_path / "inventory.yaml"
+    path.write_text(
+        "- title: core-nl\n"
+        "  hostname: 10.0.0.1\n"          # typo: should be 'host'
+        "  password: FleetSecret9!\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("MIKROTIK_INVENTORY", raising=False)
+    monkeypatch.setattr(
+        cfg_mod, "mikrotik_config", MikrotikConfig(inventory_file=str(path))
+    )
+
+    with pytest.raises(ValueError) as exc:
+        inv_mod._load_devices()
+    msg = str(exc.value)
+    assert "FleetSecret9!" not in msg
+    assert "core-nl" in msg and "host" in msg
+
+
+def test_inventory_file_rejects_non_list_shapes(monkeypatch, tmp_path):
+    import mcp_mikrotik.inventory as inv_mod
+    from mcp_mikrotik import config as cfg_mod
+
+    path = tmp_path / "inventory.yaml"
+    path.write_text("inventory:\n  title: NotAList\n  host: 10.0.0.1\n",
+                    encoding="utf-8")
+    monkeypatch.delenv("MIKROTIK_INVENTORY", raising=False)
+    monkeypatch.setattr(
+        cfg_mod, "mikrotik_config", MikrotikConfig(inventory_file=str(path))
+    )
+
+    with pytest.raises(ValueError, match="must be a list"):
+        inv_mod._load_devices()
 
 
 def test_falls_back_to_single_device_config(monkeypatch):

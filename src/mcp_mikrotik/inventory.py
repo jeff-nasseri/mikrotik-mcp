@@ -12,12 +12,14 @@ disconnecting, timing out or failing to authenticate cannot disturb a command
 another session is running against the same device.
 """
 
-import json
 import logging
 import os
 import threading
 from contextlib import contextmanager
 from typing import Dict, Iterator, List, Optional
+
+import yaml
+from pydantic import ValidationError
 
 from . import config
 from .config import DeviceConfig
@@ -162,12 +164,49 @@ _inventory: Optional[Inventory] = None
 _inventory_lock = threading.Lock()
 
 
+def _validate_entries(raw, source: str) -> List[DeviceConfig]:
+    """Turn parsed YAML/JSON into DeviceConfigs with credential-safe errors.
+
+    A malformed entry must fail with the entry's position and the offending
+    field names only — the inventory holds passwords, and anything raised here
+    can end up verbatim in a tool result or a log line.
+    """
+    if isinstance(raw, dict):
+        raw = raw.get("inventory", [raw])
+    if not isinstance(raw, list):
+        raise ValueError(
+            f"{source}: the inventory must be a list of devices "
+            f"(got {type(raw).__name__})"
+        )
+
+    devices: List[DeviceConfig] = []
+    for index, item in enumerate(raw, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(
+                f"{source}: device #{index} must be a mapping "
+                f"(got {type(item).__name__})"
+            )
+        try:
+            devices.append(DeviceConfig(**item))
+        except ValidationError as exc:
+            problems = "; ".join(
+                f"{'.'.join(str(p) for p in err['loc']) or 'entry'}: {err['msg']}"
+                for err in exc.errors()
+            )
+            label = item.get("title") or f"#{index}"
+            raise ValueError(
+                f"{source}: device {label!r} is invalid — {problems}"
+            ) from None
+    return devices
+
+
 def _load_devices() -> List[DeviceConfig]:
     """Build the device list from configuration.
 
-    Precedence: ``inventory`` (inline JSON) > ``inventory_file`` > the flat
-    single-device settings.  The last case keeps every existing single-device
-    deployment working with no configuration change.
+    Precedence: inline ``MIKROTIK_INVENTORY`` (YAML, or its JSON subset) >
+    ``MIKROTIK_INVENTORY_FILE`` (a YAML file) > the flat single-device
+    settings.  The last case keeps every existing single-device deployment
+    working with no configuration change.
     """
     cfg = config.mikrotik_config
 
@@ -176,11 +215,20 @@ def _load_devices() -> List[DeviceConfig]:
 
     if cfg.inventory_file:
         path = os.path.expanduser(cfg.inventory_file)
-        with open(path, "r", encoding="utf-8") as fh:
-            raw = json.load(fh)
-        if isinstance(raw, dict):
-            raw = raw.get("inventory", [raw])
-        return [DeviceConfig(**item) for item in raw]
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                raw = yaml.safe_load(fh)
+        except OSError as exc:
+            raise ValueError(
+                f"Cannot read inventory file {path!r}: {exc.strerror or exc}"
+            ) from exc
+        except yaml.YAMLError as exc:
+            mark = getattr(exc, "problem_mark", None)
+            where = f" (line {mark.line + 1}, column {mark.column + 1})" if mark else ""
+            raise ValueError(
+                f"Inventory file {path!r} is not valid YAML{where}"
+            ) from exc
+        return _validate_entries(raw, source=path)
 
     # Backwards-compatible single device.
     return [

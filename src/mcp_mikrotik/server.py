@@ -94,10 +94,20 @@ def main():
     logger = logging.getLogger(__name__)
 
     logger.info("Starting MCP MikroTik server")
-    logger.info(f"Using host: {config.mikrotik_config.host}")
-    logger.info(f"Using username: {config.mikrotik_config.username}")
-    if config.mikrotik_config.key_filename:
-        logger.info(f"Using key from: {config.mikrotik_config.key_filename}")
+
+    # Build the inventory now rather than at the first tool call, so a broken
+    # inventory (unreadable file, bad YAML, invalid entry) stops the server at
+    # startup with one clear message instead of failing every tool call later.
+    # No connections are opened here — those stay lazy, per command.
+    from mcp_mikrotik.inventory import get_inventory, reset_inventory
+
+    reset_inventory()
+    try:
+        inventory = get_inventory()
+    except ValueError as e:
+        logger.error(f"Invalid MikroTik inventory: {e}")
+        sys.exit(1)
+    logger.info(f"Managing {len(inventory)} device(s): {', '.join(inventory.titles)}")
 
     _warn_if_plaintext_password_in_container(config.mikrotik_config, logger)
 
