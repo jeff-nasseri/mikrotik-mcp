@@ -30,8 +30,6 @@ BROKEN_WRAPPER_FUNCS = {
     # They currently raise TypeError ("multiple values for argument 'ctx'").
     "mikrotik_disable_dns_static",
     "mikrotik_enable_dns_static",
-    "mikrotik_disable_filter_rule",
-    "mikrotik_enable_filter_rule",
     "mikrotik_disable_nat_rule",
     "mikrotik_enable_nat_rule",
     "mikrotik_disable_route",
