@@ -854,5 +854,5 @@ Then query each device to prove the record resolves everywhere.
 # on every device
 /ip dns static add name=printer.lan address=192.168.88.50
 /ip dns static print
-/resolve printer.lan
+:put [:resolve domain-name=printer.lan]
 ```

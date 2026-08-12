@@ -383,21 +383,32 @@ async def mikrotik_test_dns_query(
     type: str = "A",
     device: Optional[str] = None
 ) -> str:
-    """Tests a DNS query."""
+    """Tests a DNS query.
+
+    Notes:
+        type: accepted values are A/ipv4, AAAA/ipv6, any, any6
+    """
     await ctx.info(f"Testing DNS query: name={name}, type={type}")
 
-    cmd = f"/resolve {name}"
+    t = {"a": "ipv4", "aaaa": "ipv6"}.get(type.strip().lower(), type.strip().lower())
+    if t not in ("ipv4", "ipv6", "any", "any6"):
+        return (f"Invalid type '{type}': RouterOS :resolve supports A/ipv4, AAAA/ipv6, any, any6 "
+                "(record-type queries such as MX/TXT are not supported).")
+
+    resolve = f':resolve domain-name="{name}"'
 
     if server:
-        cmd += f" server={server}"
+        resolve += f" server={server}"
 
-    if type != "A":
-        cmd += f" type={type}"
+    if t != "ipv4":
+        resolve += f" type={t}"
+
+    cmd = f":put [{resolve}]"
 
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
-    if not result:
-        return f"Failed to resolve {name}"
+    if not result.strip() or "failure" in result.lower() or result.startswith("Error"):
+        return f"Failed to resolve {name}: {result.strip() or 'no response'}"
 
     return f"DNS QUERY RESULT for {name}:\n\n{result}"
 
