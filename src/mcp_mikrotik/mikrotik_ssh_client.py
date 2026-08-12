@@ -91,6 +91,31 @@ class MikroTikSSHClient:
             logger.error(f"Error executing command: {e}")
             raise
 
+    def _open_sftp(self):
+        """Open an SFTP session, translating RouterOS's policy rejection.
+
+        RouterOS accepts the SSH session but closes the channel when the
+        "sftp" subsystem is requested by a user whose group lacks the "ftp"
+        policy — paramiko surfaces that as SSHException("Channel closed.").
+        Plain exec commands do not need the policy, so the rest of the tools
+        keep working on the same credentials, which makes the bare message
+        look like a transport bug (issue #113).  Translate it into an
+        actionable error; every other SSHException passes through unchanged.
+        """
+        try:
+            return self.client.open_sftp()
+        except paramiko.SSHException as e:
+            if "channel closed" in str(e).lower():
+                raise ConnectionError(
+                    "The device rejected the SFTP subsystem ('Channel closed'). "
+                    "RouterOS serves file transfers over SFTP only when the SSH "
+                    "user's group has the 'ftp' policy; ordinary commands do not "
+                    "need it, which is why other tools still work. Check with "
+                    "'/user group print' and add the policy with "
+                    "'/user group set <group> policy=ftp,<existing policies>'."
+                ) from e
+            raise
+
     def download_file(self, remote_filename: str) -> bytes:
         """Download a file from the device over SFTP and return its raw bytes.
 
@@ -100,7 +125,7 @@ class MikroTikSSHClient:
         if not self.client:
             raise Exception("Not connected to MikroTik device")
 
-        sftp = self.client.open_sftp()
+        sftp = self._open_sftp()
         try:
             buffer = io.BytesIO()
             sftp.getfo(remote_filename, buffer)
@@ -113,7 +138,7 @@ class MikroTikSSHClient:
         if not self.client:
             raise Exception("Not connected to MikroTik device")
 
-        sftp = self.client.open_sftp()
+        sftp = self._open_sftp()
         try:
             sftp.putfo(io.BytesIO(data), remote_filename)
         finally:
