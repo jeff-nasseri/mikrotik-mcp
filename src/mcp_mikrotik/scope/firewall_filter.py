@@ -15,6 +15,8 @@ async def mikrotik_create_filter_rule(
     protocol: Optional[str] = None,
     in_interface: Optional[str] = None,
     out_interface: Optional[str] = None,
+    in_interface_list: Optional[str] = None,
+    out_interface_list: Optional[str] = None,
     connection_state: Optional[str] = None,
     connection_nat_state: Optional[str] = None,
     src_address_list: Optional[str] = None,
@@ -35,6 +37,7 @@ async def mikrotik_create_filter_rule(
         limit: RouterOS rate/burst string e.g. "10,5:packet" or "10/1s:packet"
         tcp_flags: RouterOS flag expression e.g. "syn,!ack"
         place_before: rule number or ID (*N) to insert before e.g. "0" or "*3"
+        in_interface_list/out_interface_list: name of an /interface list (e.g. "LAN", "WAN") rather than a single interface
     """
     await ctx.info(f"Creating firewall filter rule: chain={chain}, action={action}")
 
@@ -62,6 +65,12 @@ async def mikrotik_create_filter_rule(
 
     if out_interface:
         cmd += f' out-interface="{out_interface}"'
+
+    if in_interface_list:
+        cmd += f' in-interface-list="{in_interface_list}"'
+
+    if out_interface_list:
+        cmd += f' out-interface-list="{out_interface_list}"'
 
     if connection_state:
         cmd += f" connection-state={connection_state}"
@@ -208,6 +217,8 @@ async def mikrotik_update_filter_rule(
     protocol: Optional[str] = None,
     in_interface: Optional[str] = None,
     out_interface: Optional[str] = None,
+    in_interface_list: Optional[str] = None,
+    out_interface_list: Optional[str] = None,
     connection_state: Optional[str] = None,
     connection_nat_state: Optional[str] = None,
     src_address_list: Optional[str] = None,
@@ -275,6 +286,16 @@ async def mikrotik_update_filter_rule(
             updates.append("!out-interface")
         else:
             updates.append(f'out-interface="{out_interface}"')
+    if in_interface_list is not None:
+        if in_interface_list == "":
+            updates.append("!in-interface-list")
+        else:
+            updates.append(f'in-interface-list="{in_interface_list}"')
+    if out_interface_list is not None:
+        if out_interface_list == "":
+            updates.append("!out-interface-list")
+        else:
+            updates.append(f'out-interface-list="{out_interface_list}"')
     if connection_state is not None:
         if connection_state == "":
             updates.append("!connection-state")
