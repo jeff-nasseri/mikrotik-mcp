@@ -2,7 +2,7 @@ from typing import List, Literal, Optional
 
 from mcp.server.mcpserver import Context
 
-from ..app import mcp, READ, WRITE, DESTRUCTIVE, annotate
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 from ..connector import execute_mikrotik_command
 
 
@@ -157,6 +157,94 @@ async def mikrotik_create_dhcp_network(
     details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"DHCP network created successfully:\n\n{details}"
+
+@mcp.tool(name="update_dhcp_network", annotations=annotate(WRITE_IDEMPOTENT, "Update DHCP Network"))
+async def mikrotik_update_dhcp_network(
+    ctx: Context,
+    network: str,
+    gateway: Optional[str] = None,
+    netmask: Optional[str] = None,
+    dns_servers: Optional[List[str]] = None,
+    domain: Optional[str] = None,
+    wins_servers: Optional[List[str]] = None,
+    ntp_servers: Optional[List[str]] = None,
+    dhcp_option: Optional[List[str]] = None,
+    comment: Optional[str] = None,
+    device: Optional[str] = None
+) -> str:
+    """Updates fields on an existing DHCP network entry on the MikroTik device.
+
+    Notes:
+        Pass an empty list for dns_servers/wins_servers/ntp_servers/dhcp_option
+        (or "" for domain) to clear that field.
+    """
+    await ctx.info(f"Updating DHCP network: network={network}")
+
+    # First check if the network exists
+    check_cmd = f'/ip dhcp-server network print count-only where address="{network}"'
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
+
+    if count.strip() == "0":
+        return f"DHCP network '{network}' not found."
+
+    # Build the command
+    cmd = f'/ip dhcp-server network set [find address="{network}"]'
+
+    # Add parameters to update
+    updates = []
+    if gateway:
+        updates.append(f"gateway={gateway}")
+    if netmask:
+        updates.append(f"netmask={netmask}")
+    if dns_servers is not None:
+        updates.append("!dns-server" if not dns_servers else f"dns-server={','.join(dns_servers)}")
+    if domain is not None:
+        updates.append("!domain" if domain == "" else f'domain="{domain}"')
+    if wins_servers is not None:
+        updates.append("!wins-server" if not wins_servers else f"wins-server={','.join(wins_servers)}")
+    if ntp_servers is not None:
+        updates.append("!ntp-server" if not ntp_servers else f"ntp-server={','.join(ntp_servers)}")
+    if dhcp_option is not None:
+        updates.append("!dhcp-option" if not dhcp_option else f"dhcp-option={','.join(dhcp_option)}")
+    if comment is not None:
+        updates.append(f'comment="{comment}"')
+
+    if not updates:
+        return "No updates specified."
+
+    cmd += " " + " ".join(updates)
+
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
+
+    if "failure:" in result.lower() or "error" in result.lower():
+        return f"Failed to update DHCP network: {result}"
+
+    # Get the updated network details
+    details_cmd = f'/ip dhcp-server network print detail where address="{network}"'
+    details = await execute_mikrotik_command(details_cmd, ctx, device=device)
+
+    return f"DHCP network updated successfully:\n\n{details}"
+
+@mcp.tool(name="remove_dhcp_network", annotations=annotate(DESTRUCTIVE, "Remove DHCP Network"))
+async def mikrotik_remove_dhcp_network(ctx: Context, network: str, device: Optional[str] = None) -> str:
+    """Removes a DHCP network configuration from the MikroTik device."""
+    await ctx.info(f"Removing DHCP network: network={network}")
+
+    # First check if the network exists
+    check_cmd = f'/ip dhcp-server network print count-only where address="{network}"'
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
+
+    if count.strip() == "0":
+        return f"DHCP network '{network}' not found."
+
+    # Remove the network
+    cmd = f'/ip dhcp-server network remove [find address="{network}"]'
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
+
+    if "failure:" in result.lower() or "error" in result.lower():
+        return f"Failed to remove DHCP network: {result}"
+
+    return f"DHCP network '{network}' removed successfully."
 
 @mcp.tool(name="create_dhcp_pool", annotations=annotate(WRITE, "Create DHCP Pool"))
 async def mikrotik_create_dhcp_pool(
