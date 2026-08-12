@@ -229,9 +229,35 @@ test(users): expand integration test coverage
 Add tests for user group management and permission validation
 ```
 
+## Branching Strategy
+
+Branches for new pull requests carry the issue number they address:
+
+```
+<type>/issue-<number>-<short-description>
+```
+
+- `<type>` is one of the conventional commit types above (`feat`, `fix`, `docs`, …)
+- `<number>` is the GitHub issue number the branch addresses
+- when the change has **no issue**, put `#` in place of the number
+- `<short-description>` is a few kebab-case words describing the change
+
+### Examples
+
+```
+feat/issue-123-branch-one
+fix/issue-#-branch-two
+```
+
+This makes every branch self-documenting: the type tells reviewers what kind
+of change to expect, and the issue number links the work back to its context
+(or `#` states explicitly that no issue exists, rather than leaving reviewers
+to search for one).
+
 ## Submitting a Pull Request
 
-1. **Fork the repository** and create your feature branch from `master`
+1. **Fork the repository** and create your feature branch from `master`,
+   named according to the [branching strategy](#branching-strategy) above
 2. **Implement your changes** following the guidelines above
 3. **Run all tests** to ensure nothing is broken
 4. **Test with MCP Inspector** to verify tools work correctly
