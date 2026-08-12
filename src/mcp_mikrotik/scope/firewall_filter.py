@@ -38,6 +38,18 @@ async def mikrotik_create_filter_rule(
     """
     await ctx.info(f"Creating firewall filter rule: chain={chain}, action={action}")
 
+    has_match = any((
+        src_address, dst_address, src_port, dst_port, protocol,
+        in_interface, out_interface, connection_state, connection_nat_state,
+        src_address_list, dst_address_list, limit, tcp_flags
+    ))
+    warning = "" if has_match else (
+        f"WARNING: this rule has no match conditions - it matches ALL traffic in the '{chain}' chain "
+        f"and applies action '{action}' to every packet. Verify this is intentional (e.g. a final drop-all rule).\n\n"
+    )
+    if not has_match:
+        await ctx.warning(f"Creating filter rule with no match conditions - it will match all traffic in chain '{chain}'")
+
     # Build the command
     cmd = f"/ip firewall filter add chain={chain} action={action}"
 
@@ -107,9 +119,9 @@ async def mikrotik_create_filter_rule(
             details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
             if details.strip():
-                return f"Firewall filter rule created successfully:\n\n{details}"
+                return f"{warning}Firewall filter rule created successfully:\n\n{details}"
             else:
-                return f"Firewall filter rule created with ID: {result}"
+                return f"{warning}Firewall filter rule created with ID: {result}"
         else:
             # Error occurred
             return f"Failed to create firewall filter rule: {result}"
@@ -122,9 +134,9 @@ async def mikrotik_create_filter_rule(
             # Get the last rule
             last_rule_cmd = f"/ip firewall filter print detail from={int(count.strip())-1}"
             details = await execute_mikrotik_command(last_rule_cmd, ctx, device=device)
-            return f"Firewall filter rule created successfully:\n\n{details}"
+            return f"{warning}Firewall filter rule created successfully:\n\n{details}"
         else:
-            return "Firewall filter rule creation completed but unable to verify."
+            return f"{warning}Firewall filter rule creation completed but unable to verify."
 
 @mcp.tool(name="list_filter_rules", annotations=annotate(READ, "List Firewall Filter Rules"))
 async def mikrotik_list_filter_rules(
