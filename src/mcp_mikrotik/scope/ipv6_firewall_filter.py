@@ -109,7 +109,7 @@ async def mikrotik_create_ipv6_filter_rule(
     rule_id = result.strip()
     if rule_id:
         details = await execute_mikrotik_command(
-            f'/ipv6 firewall filter print detail where .id="{rule_id}"', ctx, device=device
+            f'/ipv6 firewall filter print detail where .id={rule_id}', ctx, device=device
         )
         if "chain=" in details:
             return f"IPv6 firewall filter rule created successfully:\n\n{details}"
@@ -189,7 +189,7 @@ async def mikrotik_get_ipv6_filter_rule(
     """
     await ctx.info(f"Getting IPv6 firewall filter rule details: rule_id={rule_id}")
 
-    cmd = f'/ipv6 firewall filter print detail where .id="{rule_id}"'
+    cmd = f'/ipv6 firewall filter print detail where .id={rule_id}'
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # `print detail` emits the Flags legend even when nothing matches, so the
@@ -287,7 +287,7 @@ async def mikrotik_update_ipv6_filter_rule(
         return f"Failed to update IPv6 firewall filter rule: {result}"
 
     details = await execute_mikrotik_command(
-        f'/ipv6 firewall filter print detail where .id="{rule_id}"', ctx, device=device
+        f'/ipv6 firewall filter print detail where .id={rule_id}', ctx, device=device
     )
 
     return f"IPv6 firewall filter rule updated successfully:\n\n{details}"
@@ -304,7 +304,7 @@ async def mikrotik_remove_ipv6_filter_rule(
     """
     await ctx.info(f"Removing IPv6 firewall filter rule: rule_id={rule_id}")
 
-    check_cmd = f'/ipv6 firewall filter print count-only where .id="{rule_id}"'
+    check_cmd = f'/ipv6 firewall filter print count-only where .id={rule_id}'
     count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
@@ -332,7 +332,7 @@ async def mikrotik_move_ipv6_filter_rule(
     """
     await ctx.info(f"Moving IPv6 firewall filter rule: rule_id={rule_id} to position {destination}")
 
-    check_cmd = f'/ipv6 firewall filter print count-only where .id="{rule_id}"'
+    check_cmd = f'/ipv6 firewall filter print count-only where .id={rule_id}'
     count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
