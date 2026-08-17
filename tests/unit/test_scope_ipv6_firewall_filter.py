@@ -234,7 +234,7 @@ def test_remove_existing_rule(ctx, monkeypatch):
     monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
 
     _run(m.mikrotik_remove_ipv6_filter_rule(ctx, rule_id="*1"))
-    assert fake.commands[-1] == "/ipv6 firewall filter remove *1"
+    assert fake.commands[-1] == "/ipv6 firewall filter remove [find .id=*1]"
 
 
 def test_move_rule(ctx, monkeypatch):
@@ -273,8 +273,30 @@ def test_update_sets_and_clears(ctx, monkeypatch):
     ))
     cmd = fake.commands[0]
     assert cmd.startswith("/ipv6 firewall filter set *1 ")
-    assert 'protocol="icmpv6"' in cmd
+    assert "protocol=icmpv6" in cmd
     assert "!src-address" in cmd
+
+
+def test_update_quotes_only_name_bearing_fields(ctx, monkeypatch):
+    """Same split as `create` and the IPv4 scope: names quoted, values bare."""
+    from mcp_mikrotik.scope import ipv6_firewall_filter as m
+
+    fake = FakeExecutor()
+    monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
+
+    _run(m.mikrotik_update_ipv6_filter_rule(
+        ctx, rule_id="*1",
+        in_interface="ether1", src_address_list="trusted", jump_target="chain-a",
+        hop_limit="equal:255", tcp_flags="syn,!ack", limit="10,5:packet",
+        dst_port="443", protocol="tcp",
+    ))
+    cmd = fake.commands[0]
+    for quoted in ('in-interface="ether1"', 'src-address-list="trusted"',
+                   'jump-target="chain-a"'):
+        assert quoted in cmd
+    for bare in ("hop-limit=equal:255", "tcp-flags=syn,!ack", "limit=10,5:packet",
+                 "dst-port=443", "protocol=tcp"):
+        assert bare in cmd
 
 
 def test_enable_and_disable_wrappers(ctx, monkeypatch):
@@ -300,3 +322,91 @@ def test_device_argument_is_forwarded(ctx, monkeypatch):
 
     _run(m.mikrotik_list_ipv6_filter_rules(ctx, device="RouterB"))
     assert fake.devices == ["RouterB"]
+
+
+# ---------------------------------------------------------------------------
+# failure paths
+# ---------------------------------------------------------------------------
+
+def test_create_failure_path(ctx, monkeypatch):
+    from mcp_mikrotik.scope import ipv6_firewall_filter as m
+
+    async def failing(command, _ctx, device=None):
+        return "failure: already have such entry"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", failing, raising=True)
+
+    out = _run(m.mikrotik_create_ipv6_filter_rule(ctx, chain="input", action="accept"))
+    assert out.startswith("Failed to create IPv6 firewall filter rule:")
+
+
+def test_create_rejects_error_text_that_says_neither_failure_nor_error(ctx, monkeypatch):
+    """RouterOS rejections do not all contain "failure:" or "error".
+
+    Without a positive-evidence check the rejection is mistaken for a rule id
+    and reported as a successful create.
+    """
+    from mcp_mikrotik.scope import ipv6_firewall_filter as m
+
+    async def odd(command, _ctx, device=None):
+        return "no such item (4)"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", odd, raising=True)
+
+    out = _run(m.mikrotik_create_ipv6_filter_rule(ctx, chain="input", action="accept"))
+    assert out.startswith("Failed to create IPv6 firewall filter rule:")
+    assert "created" not in out.lower()
+
+
+def test_create_returns_detail_when_router_echoes_an_id(ctx, monkeypatch):
+    from mcp_mikrotik.scope import ipv6_firewall_filter as m
+
+    async def echo_id(command, _ctx, device=None):
+        if command.startswith("/ipv6 firewall filter add"):
+            return "*7"
+        return "Flags: X - disabled\n 0  chain=input action=accept"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", echo_id, raising=True)
+
+    out = _run(m.mikrotik_create_ipv6_filter_rule(ctx, chain="input", action="accept"))
+    assert "created successfully" in out
+    assert "chain=input" in out
+
+
+def test_get_positive_path(ctx, monkeypatch):
+    from mcp_mikrotik.scope import ipv6_firewall_filter as m
+
+    async def detail(command, _ctx, device=None):
+        return "Flags: X - disabled\n 0  chain=forward action=drop protocol=icmpv6"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", detail, raising=True)
+
+    out = _run(m.mikrotik_get_ipv6_filter_rule(ctx, rule_id="*1"))
+    assert out.startswith("IPV6 FIREWALL FILTER RULE DETAILS:")
+    assert "protocol=icmpv6" in out
+
+
+def test_remove_failure_path(ctx, monkeypatch):
+    from mcp_mikrotik.scope import ipv6_firewall_filter as m
+
+    async def exists_then_fails(command, _ctx, device=None):
+        if "count-only" in command:
+            return "1"
+        return "failure: cannot remove builtin"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", exists_then_fails, raising=True)
+
+    out = _run(m.mikrotik_remove_ipv6_filter_rule(ctx, rule_id="*1"))
+    assert out.startswith("Failed to remove IPv6 firewall filter rule:")
+
+
+def test_move_missing_rule(ctx, monkeypatch):
+    from mcp_mikrotik.scope import ipv6_firewall_filter as m
+
+    async def absent(command, _ctx, device=None):
+        return "0"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", absent, raising=True)
+
+    out = _run(m.mikrotik_move_ipv6_filter_rule(ctx, rule_id="*99", destination=1))
+    assert "not found" in out

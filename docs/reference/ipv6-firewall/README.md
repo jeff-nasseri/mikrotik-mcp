@@ -65,7 +65,8 @@ Lists IPv6 firewall filter rules. Runs `/ipv6 firewall filter print [where …]`
 Gets one rule in detail. Runs `/ipv6 firewall filter print detail where .id=…`.
 
 - Parameters:
-  - `rule_id` (required): ID from the list output, e.g. `*1` or `0`
+  - `rule_id` (required): a RouterOS internal id, e.g. `*1`. The positional
+    numbers shown by `print` are per-session and do not resolve here.
 
 - Example:
   ```

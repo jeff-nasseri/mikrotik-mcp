@@ -14,7 +14,7 @@ def test_device_guidance_lives_in_server_instructions_not_every_tool():
     """The `device` argument is explained once, at initialize.
 
     Repeating it in each tool description put the same sentence in front of
-    the model ~173 times, for no extra information.
+    the model ~182 times, for no extra information.
     """
     from mcp_mikrotik.app import mcp
 

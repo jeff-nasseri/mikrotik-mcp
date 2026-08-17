@@ -103,17 +103,30 @@ async def mikrotik_create_ipv6_filter_rule(
 
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
-    if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to create IPv6 firewall filter rule: {result}"
+    # A successful add prints nothing or the new id; anything else is RouterOS
+    # rejecting the command, and not every rejection says "failure:" or "error"
+    # ("no such item", "input does not match any value of …").
+    if result.strip():
+        if "*" not in result and not result.strip().isdigit():
+            return f"Failed to create IPv6 firewall filter rule: {result}"
 
-    rule_id = result.strip()
-    if rule_id:
+        rule_id = result.strip()
         details = await execute_mikrotik_command(
             f'/ipv6 firewall filter print detail where .id={rule_id}', ctx, device=device
         )
         if "chain=" in details:
             return f"IPv6 firewall filter rule created successfully:\n\n{details}"
         return f"IPv6 firewall filter rule created with ID: {rule_id}"
+
+    count = await execute_mikrotik_command(
+        "/ipv6 firewall filter print count-only", ctx, device=device
+    )
+    if count.strip().isdigit() and int(count.strip()) > 0:
+        details = await execute_mikrotik_command(
+            f"/ipv6 firewall filter print detail from={int(count.strip()) - 1}", ctx, device=device
+        )
+        if "chain=" in details:
+            return f"IPv6 firewall filter rule created successfully:\n\n{details}"
 
     return f"IPv6 firewall filter rule created in chain '{chain}'."
 
@@ -185,7 +198,8 @@ async def mikrotik_get_ipv6_filter_rule(
     """Gets detailed information about a specific IPv6 firewall filter rule.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
+            by `print` are per-session and do not resolve here.
     """
     await ctx.info(f"Getting IPv6 firewall filter rule details: rule_id={rule_id}")
 
@@ -233,23 +247,28 @@ async def mikrotik_update_ipv6_filter_rule(
     """Updates an existing IPv6 firewall filter rule on the MikroTik device.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
+            by `print` are per-session and do not resolve here.
         Pass "" to clear an optional field (e.g. src_address="").
     """
     await ctx.info(f"Updating IPv6 firewall filter rule: rule_id={rule_id}")
 
-    clearable = {
+    # Name-bearing fields are quoted, everything else bare — the same split the
+    # IPv4 scope and this scope's own `create` use.
+    quoted = {
         "jump-target": jump_target,
+        "in-interface": in_interface,
+        "out-interface": out_interface,
+        "src-address-list": src_address_list,
+        "dst-address-list": dst_address_list,
+    }
+    bare = {
         "src-address": src_address,
         "dst-address": dst_address,
         "src-port": src_port,
         "dst-port": dst_port,
         "protocol": protocol,
-        "in-interface": in_interface,
-        "out-interface": out_interface,
         "connection-state": connection_state,
-        "src-address-list": src_address_list,
-        "dst-address-list": dst_address_list,
         "src-address-type": src_address_type,
         "dst-address-type": dst_address_type,
         "icmp-options": icmp_options,
@@ -264,10 +283,12 @@ async def mikrotik_update_ipv6_filter_rule(
         updates.append(f"chain={chain}")
     if action:
         updates.append(f"action={action}")
-    for field, value in clearable.items():
-        if value is None:
-            continue
-        updates.append(f"!{field}" if value == "" else f'{field}="{value}"')
+    for field, value in quoted.items():
+        if value is not None:
+            updates.append(f"!{field}" if value == "" else f'{field}="{value}"')
+    for field, value in bare.items():
+        if value is not None:
+            updates.append(f"!{field}" if value == "" else f"{field}={value}")
     if comment is not None:
         updates.append(f'comment="{comment}"')
     if disabled is not None:
@@ -300,7 +321,8 @@ async def mikrotik_remove_ipv6_filter_rule(
     """Removes an IPv6 firewall filter rule from the MikroTik device.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
+            by `print` are per-session and do not resolve here.
     """
     await ctx.info(f"Removing IPv6 firewall filter rule: rule_id={rule_id}")
 
@@ -311,7 +333,7 @@ async def mikrotik_remove_ipv6_filter_rule(
         return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
 
     result = await execute_mikrotik_command(
-        f"/ipv6 firewall filter remove {rule_id}", ctx, device=device
+        f"/ipv6 firewall filter remove [find .id={rule_id}]", ctx, device=device
     )
 
     if "failure:" in result.lower() or "error" in result.lower():
@@ -327,7 +349,8 @@ async def mikrotik_move_ipv6_filter_rule(
     """Moves an IPv6 firewall filter rule to a different position in the chain.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
+            by `print` are per-session and do not resolve here.
         destination: 0-based target position index
     """
     await ctx.info(f"Moving IPv6 firewall filter rule: rule_id={rule_id} to position {destination}")
