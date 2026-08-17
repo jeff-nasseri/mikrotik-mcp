@@ -17,6 +17,7 @@ Complete reference documentation for all MikroTik MCP tools.
 - **[Backup](backup/README.md)** - Backup and Export Management
 - **[Logs](logs/README.md)** - Log Management
 - **[Firewall](firewall/README.md)** - Firewall Filter Rules Management
+- **[IPv6 Firewall](ipv6-firewall/README.md)** - IPv6 Firewall Filter Rules Management
 - **[Routes](routes/README.md)** - Route Management
 - **[DNS](dns/README.md)** - DNS Management
 - **[Users](users/README.md)** - User Management

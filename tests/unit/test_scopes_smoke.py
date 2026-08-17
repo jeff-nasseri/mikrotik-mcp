@@ -14,6 +14,7 @@ SCOPE_MODULES = [
     "firewall_nat",
     "ip_address",
     "ipv6_address",
+    "ipv6_firewall_filter",
     "ip_pool",
     "logs",
     "poe",
