@@ -512,7 +512,12 @@ async def mikrotik_update_wireless_interface(
     if new_name:
         updates.append(f"name={new_name}")
     if ssid:
-        updates.append(f'ssid="{ssid}"')
+        # v7 wifi/wifiwave2 has no top-level ssid property; it lives under
+        # configuration.ssid (and setting it inline overrides any profile)
+        if interface_type in ("/interface wifi", "/interface wifiwave2"):
+            updates.append(f'configuration.ssid="{ssid}"')
+        else:
+            updates.append(f'ssid="{ssid}"')
     if disabled is not None:
         updates.append(f"disabled={'yes' if disabled else 'no'}")
     if comment:
@@ -524,7 +529,11 @@ async def mikrotik_update_wireless_interface(
     cmd = f'{interface_type} set [find name="{name}"] {" ".join(updates)}'
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
-    if "failure:" in result.lower() or "error" in result.lower():
+    result_lower = result.lower()
+    if ("failure:" in result_lower or "error" in result_lower
+            or "expected end of command" in result_lower
+            or "bad command name" in result_lower
+            or "input does not match" in result_lower):
         return f"Failed to update wireless interface: {result}"
 
     # Get updated details
