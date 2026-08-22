@@ -38,15 +38,17 @@ Creates a configuration export on MikroTik device.
   ```
 
 ## `mikrotik_export_section`
-Exports a specific configuration section.
+Returns a configuration section as an export script, straight from the device.
+A genuine read: nothing is written to device storage, so it works on
+read-only accounts (`policy=ssh,read`). To produce an export *file* on the
+device, use `mikrotik_create_export` instead.
 - Parameters:
-  - `section` (required): Section to export
-  - `name` (optional): Export filename
-  - `hide_sensitive` (optional): Hide sensitive data
+  - `section` (required): Menu path without leading slash, e.g. `ip firewall filter`
+  - `hide_sensitive` (optional): Keep secrets out of the output (default true)
   - `compact` (optional): Compact output
 - Example:
   ```
-  mikrotik_export_section(section="/ip/firewall", name="firewall-config")
+  mikrotik_export_section(section="ip firewall filter")
   ```
 
 ## `mikrotik_download_file`

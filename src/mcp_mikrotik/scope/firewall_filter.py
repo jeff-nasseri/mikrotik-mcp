@@ -183,14 +183,25 @@ async def mikrotik_get_filter_rule(ctx: Context, rule_id: str, device: Optional[
     """Gets detailed information about a specific firewall filter rule.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: positional number from list output e.g. "0", or internal ID e.g. "*1"
     """
     await ctx.info(f"Getting firewall filter rule details: rule_id={rule_id}")
 
-    cmd = f"/ip firewall filter print detail where .id={rule_id}"
+    # Internal *hex IDs resolve via .id; plain numbers from list output are
+    # positional, which "where .id=" never matches — use "print detail from=".
+    if rule_id.startswith("*"):
+        cmd = f"/ip firewall filter print detail where .id={rule_id}"
+    else:
+        cmd = f"/ip firewall filter print detail from={rule_id}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
-    if not result or result.strip() == "":
+    # A zero-match print still emits the "Flags: ..." legend line, so an
+    # empty-string check alone lets not-found results through as details.
+    meaningful_lines = [
+        line for line in result.splitlines()
+        if line.strip() and not line.strip().startswith("Flags:")
+    ]
+    if "no such item" in result or not meaningful_lines:
         return f"Firewall filter rule with ID '{rule_id}' not found."
 
     return f"FIREWALL FILTER RULE DETAILS:\n\n{result}"

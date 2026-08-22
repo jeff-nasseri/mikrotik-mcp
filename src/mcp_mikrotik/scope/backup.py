@@ -4,6 +4,7 @@ from ..connector import execute_mikrotik_command, download_file_sync, upload_fil
 from mcp.server.mcpserver import Context
 import asyncio
 import base64
+import re
 import time
 import os
 
@@ -139,30 +140,37 @@ async def mikrotik_create_export(
     else:
         return f"Failed to create export: {result}"
 
+_SECTION_RE = re.compile(r"^[a-z][a-z0-9-]*(?:[ /][a-z0-9-]+)*$", re.IGNORECASE)
+
+
 @mcp.tool(name="export_section", annotations=annotate(READ, "Export Config Section"))
 async def mikrotik_export_section(
     ctx: Context,
     section: str,
-    name: Optional[str] = None,
     hide_sensitive: bool = True,
     compact: bool = False,
     device: Optional[str] = None
 ) -> str:
-    """Exports a specific RouterOS configuration section to a file.
+    """Returns a RouterOS configuration section as an export script.
 
     Notes:
         section: RouterOS path without leading slash e.g. "ip address", "interface vlan",
             "ip firewall filter", "ip firewall nat", "queue simple"
+        hide_sensitive: keep secrets out of the output (False appends show-sensitive)
     """
-    # Generate filename if not provided
-    if not name:
-        clean_section = section.replace(" ", "_").replace("/", "_")
-        name = f"export_{clean_section}_{int(time.time())}"
+    # "/{section} export" without file= streams the config over stdout, so this
+    # stays a genuine read: no file is written on the device and no write or
+    # ftp policy is needed — a read-only account can use it (issue #112).
+    section = section.strip().lstrip("/").replace("/", " ")
+    if not _SECTION_RE.match(section):
+        return (
+            f"Error: invalid section {section!r} — expected a RouterOS menu "
+            'path like "ip firewall filter".'
+        )
 
-    await ctx.info(f"Exporting section: section={section}, name={name}")
+    await ctx.info(f"Exporting section: {section}")
 
-    # Build the command
-    cmd = f"/{section} export file={name}"
+    cmd = f"/{section} export"
 
     if not hide_sensitive:
         cmd += " show-sensitive"
@@ -172,18 +180,18 @@ async def mikrotik_export_section(
 
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
-    # Check if export was successful
-    if not result.strip() or "failure:" not in result.lower():
-        # Get file details
-        file_cmd = f"/file print detail where name={name}.rsc"
-        file_details = await execute_mikrotik_command(file_cmd, ctx, device=device)
+    # The console reports unknown menus and refusals on stdout; require
+    # positive evidence of failure rather than treating any output as config.
+    lowered = result.lower()
+    for marker in ("bad command name", "syntax error", "expected end of command",
+                   "failure:", "not enough permissions"):
+        if marker in lowered:
+            return f"Failed to export section '{section}': {result.strip()}"
 
-        if file_details:
-            return f"Section export created successfully:\n\n{file_details}"
-        else:
-            return f"Section export '{name}.rsc' created successfully."
-    else:
-        return f"Failed to export section: {result}"
+    if not result.strip():
+        return f"Section '{section}' has no non-default configuration to export."
+
+    return f"CONFIGURATION EXPORT of /{section}:\n\n{result}"
 
 @mcp.tool(name="download_file", annotations=annotate(READ, "Download File"))
 async def mikrotik_download_file(
