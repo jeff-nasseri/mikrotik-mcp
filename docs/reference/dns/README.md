@@ -148,7 +148,7 @@ Tests a DNS query.
 - Parameters:
   - `name` (required): DNS name to query
   - `server` (optional): DNS server to use
-  - `type` (optional): Query type
+  - `type` (optional): Query type; accepted values: `A`/`ipv4` (default), `AAAA`/`ipv6`, `any`, `any6` (record-type queries such as MX/TXT are not supported by RouterOS `:resolve`)
 - Example:
   ```
   mikrotik_test_dns_query(name="google.com")
