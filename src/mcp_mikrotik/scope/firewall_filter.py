@@ -1,7 +1,27 @@
+import re
 from typing import Literal, Optional, List
 from mcp.server.mcpserver import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, DANGEROUS, annotate
 from ..connector import execute_mikrotik_command
+
+
+async def _resolve_filter_rule_id(rule_id: str, ctx: Context, device: Optional[str]) -> Optional[str]:
+    """Resolve a positional print number to the internal *hex rule ID; pass *hex IDs through."""
+    rule_id = rule_id.strip()
+    if rule_id.startswith("*"):
+        return rule_id
+    if not rule_id.isdigit():
+        return None
+    # `find` (no where clause) lists all rules in the same order plain `print`
+    # numbers them, so index N maps exactly to the number list output shows;
+    # resolving to the stable *hex ID in one session avoids RouterOS's
+    # per-session console numbering.
+    result = await execute_mikrotik_command(
+        f":put [:pick [/ip firewall filter find] {int(rule_id)}]", ctx, device=device
+    )
+    resolved = result.strip()
+    return resolved if re.fullmatch(r"\*[0-9A-Fa-f]+", resolved) else None
+
 
 @mcp.tool(name="create_filter_rule", annotations=annotate(WRITE, "Create Firewall Filter Rule"))
 async def mikrotik_create_filter_rule(
@@ -183,11 +203,15 @@ async def mikrotik_get_filter_rule(ctx: Context, rule_id: str, device: Optional[
     """Gets detailed information about a specific firewall filter rule.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: positional number from list output (e.g. "12") or internal ID (e.g. "*1A")
     """
     await ctx.info(f"Getting firewall filter rule details: rule_id={rule_id}")
 
-    cmd = f"/ip firewall filter print detail where .id={rule_id}"
+    resolved = await _resolve_filter_rule_id(rule_id, ctx, device)
+    if resolved is None:
+        return f"Firewall filter rule with ID '{rule_id}' not found."
+
+    cmd = f"/ip firewall filter print detail where .id={resolved}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if not result or result.strip() == "":
@@ -223,7 +247,7 @@ async def mikrotik_update_filter_rule(
     """Updates an existing firewall filter rule on the MikroTik device.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: positional number from list output (e.g. "12") or internal ID (e.g. "*1A")
         connection_state: comma-separated e.g. "established,related"
         limit: RouterOS rate string e.g. "10,5:packet"
         tcp_flags: RouterOS flag expression e.g. "syn,!ack"
@@ -231,8 +255,12 @@ async def mikrotik_update_filter_rule(
     """
     await ctx.info(f"Updating firewall filter rule: rule_id={rule_id}")
 
+    resolved = await _resolve_filter_rule_id(rule_id, ctx, device)
+    if resolved is None:
+        return f"Firewall filter rule with ID '{rule_id}' not found."
+
     # Build the command
-    cmd = f"/ip firewall filter set {rule_id}"
+    cmd = f"/ip firewall filter set {resolved}"
 
     # Add parameters to update
     updates = []
@@ -326,7 +354,7 @@ async def mikrotik_update_filter_rule(
         return f"Failed to update firewall filter rule: {result}"
 
     # Get the updated rule details
-    details_cmd = f"/ip firewall filter print detail where .id={rule_id}"
+    details_cmd = f"/ip firewall filter print detail where .id={resolved}"
     details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"Firewall filter rule updated successfully:\n\n{details}"
@@ -336,19 +364,23 @@ async def mikrotik_remove_filter_rule(ctx: Context, rule_id: str, device: Option
     """Removes a firewall filter rule from the MikroTik device.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: positional number from list output (e.g. "12") or internal ID (e.g. "*1A")
     """
     await ctx.info(f"Removing firewall filter rule: rule_id={rule_id}")
 
+    resolved = await _resolve_filter_rule_id(rule_id, ctx, device)
+    if resolved is None:
+        return f"Firewall filter rule with ID '{rule_id}' not found."
+
     # First check if the rule exists
-    check_cmd = f"/ip firewall filter print count-only where .id={rule_id}"
+    check_cmd = f"/ip firewall filter print count-only where .id={resolved}"
     count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Firewall filter rule with ID '{rule_id}' not found."
 
     # Remove the rule
-    cmd = f"/ip firewall filter remove {rule_id}"
+    cmd = f"/ip firewall filter remove {resolved}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
@@ -361,20 +393,24 @@ async def mikrotik_move_filter_rule(ctx: Context, rule_id: str, destination: int
     """Moves a firewall filter rule to a different position in the chain.
 
     Notes:
-        rule_id: use the ID from list output e.g. "*1" or "0"
+        rule_id: positional number from list output (e.g. "12") or internal ID (e.g. "*1A")
         destination: 0-based target position index
     """
     await ctx.info(f"Moving firewall filter rule: rule_id={rule_id} to position {destination}")
 
+    resolved = await _resolve_filter_rule_id(rule_id, ctx, device)
+    if resolved is None:
+        return f"Firewall filter rule with ID '{rule_id}' not found."
+
     # Check if the rule exists
-    check_cmd = f"/ip firewall filter print count-only where .id={rule_id}"
+    check_cmd = f"/ip firewall filter print count-only where .id={resolved}"
     count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Firewall filter rule with ID '{rule_id}' not found."
 
     # Move the rule
-    cmd = f"/ip firewall filter move {rule_id} destination={destination}"
+    cmd = f"/ip firewall filter move {resolved} destination={destination}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "failure:" in result.lower() or "error" in result.lower():
