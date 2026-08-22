@@ -533,3 +533,49 @@ async def mikrotik_update_wireless_interface(
     details = await execute_mikrotik_command(details_cmd, ctx, device=device)
 
     return f"Wireless interface updated successfully:\n\n{details}"
+
+
+@mcp.tool(name="set_wireless_passphrase", annotations=annotate(WRITE_IDEMPOTENT, "Set Wireless Passphrase"))
+async def mikrotik_set_wireless_passphrase(
+        ctx: Context,
+        name: str,
+        passphrase: str,
+        authentication_types: Optional[str] = None,
+        device: Optional[str] = None,
+) -> str:
+    """Sets the WiFi passphrase directly on a RouterOS v7 wireless interface (/interface wifi or wifiwave2).
+
+    Notes:
+        authentication_types: comma-separated RouterOS auth types, e.g. "wpa2-psk,wpa3-psk"; unset keeps the current setting.
+    """
+    # Deliberately do not log the passphrase or the full command
+    await ctx.info(f"Setting wireless passphrase on interface: {name}")
+
+    # Detect wireless interface type
+    interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
+
+    if not interface_type:
+        return "Error: No wireless interface support detected on this device."
+
+    if interface_type not in ["/interface wifi", "/interface wifiwave2"]:
+        return "Legacy /interface wireless stores passphrases in security profiles and is not supported by this tool. Use RouterOS v7 (/interface wifi or wifiwave2)."
+
+    # Check if interface exists
+    check_cmd = f'{interface_type} print count-only where name="{name}"'
+    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
+
+    if count.strip() == "0":
+        return f"Wireless interface '{name}' not found."
+
+    # Inline dotted security.* settings override any assigned security profile
+    cmd = f'{interface_type} set [find name="{name}"] security.passphrase="{passphrase}"'
+    if authentication_types:
+        cmd += f" security.authentication-types={authentication_types}"
+
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
+
+    if "failure:" in result.lower() or "error" in result.lower():
+        return f"Failed to set wireless passphrase: {result}"
+
+    # Do not print details afterwards: detail output can include security.passphrase in plaintext
+    return f"Wireless passphrase updated successfully on '{name}' using {interface_type}."
