@@ -44,17 +44,19 @@ def mikrotik_container():
     if not _docker_available():
         pytest.skip("Docker is not available/running; skipping integration tests.")
 
+    # with_kwargs REPLACES earlier kwargs rather than merging them, so
+    # everything must go in a single call — a second call silently dropped
+    # privileged/cap_add, and the entrypoint died in ~5s without them.
+    # (The ROUTEROS_* env vars are gone: the image never reads them.)
+    kwargs = {"privileged": True, "cap_add": ["NET_ADMIN", "NET_RAW"]}
+    if os.name != "nt":
+        kwargs["devices"] = ["/dev/net/tun:/dev/net/tun"]
+
     container = (
         DockerContainer("evilfreelancer/docker-routeros:latest")
-        .with_env("ROUTEROS_USER", "admin")
-        .with_env("ROUTEROS_PASS", "mikrotik123")
-        .with_env("ROUTEROS_LICENSE", "true")
         .with_exposed_ports(22)
-        .with_kwargs(privileged=True, cap_add=["NET_ADMIN", "NET_RAW"])
+        .with_kwargs(**kwargs)
     )
-
-    if os.name != "nt":
-        container = container.with_kwargs(devices=["/dev/net/tun:/dev/net/tun"])
 
     try:
         container.start()
@@ -78,18 +80,25 @@ def mikrotik_container():
 
 
 def _wait_for_mikrotik_ready(host: str, port: int, max_attempts: int = 60, delay: int = 5):
+    """Wait for the guest's SSH banner — a bare TCP accept proves nothing.
+
+    QEMU's hostfwd listener accepts connections the moment QEMU starts, long
+    before RouterOS inside has booted, so connect_ex()==0 was permanently
+    true against dead routers. Only the "SSH-..." greeting comes from the
+    actual guest.
+    """
     import socket
     for attempt in range(max_attempts):
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = socket.create_connection((host, port), timeout=5)
             sock.settimeout(5)
-            result = sock.connect_ex((host, port))
+            banner = sock.recv(64)
             sock.close()
-            if result == 0:
-                print(f"MikroTik SSH port {port} accessible after {attempt + 1} attempts")
+            if banner.startswith(b"SSH-"):
+                print(f"MikroTik SSH banner received after {attempt + 1} attempts")
                 return True
         except Exception as e:
-            print(f"Attempt {attempt + 1}: Connection failed - {e}")
+            print(f"Attempt {attempt + 1}: not ready - {e}")
         time.sleep(delay)
     raise Exception("MikroTik container failed to become ready within timeout period")
 
@@ -108,9 +117,17 @@ def _try_set_mikrotik_password(host: str, port: int, new_password: str) -> bool:
             look_for_keys=False,
             allow_agent=False,
         )
-        ssh.exec_command(f'/password set 0 name=admin password={new_password}')
+        # "/password set ..." is not a RouterOS command; the router answers
+        # "expected end of command" on stdout with a zero exit status, so the
+        # old fire-and-forget call silently did nothing. Use the real command
+        # and read the reply back: any output at all means it was rejected.
+        stdin, stdout, stderr = ssh.exec_command(f'/user set 0 password={new_password}')
+        reply = (stdout.read() + stderr.read()).decode(errors="replace").strip()
         ssh.close()
-        print("Initial MikroTik password set successfully.")
+        if reply:
+            print(f"Password set rejected by RouterOS: {reply[:120]}")
+            return False
+        print("MikroTik password set from the empty factory default.")
         return True
     except Exception:
         return False
@@ -154,12 +171,16 @@ def setup_mikrotik_config(mikrotik_container, monkeypatch):
 
 
 def _ensure_mikrotik_password(host: str, port: int, password: str) -> None:
-    # Prefer the configured password; fall back to setting from empty password if needed.
-    if _verify_ssh_auth(host, port, password, max_attempts=12, delay=5):
-        return
+    # A fresh RouterOS always boots as admin with an EMPTY password (the
+    # ROUTEROS_PASS env var was never implemented by the image), so set the
+    # password from that state first. Trying the target password first burned
+    # the whole 60s retry budget on guaranteed failures.
     if _try_set_mikrotik_password(host, port, password):
-        if _verify_ssh_auth(host, port, password, max_attempts=12, delay=5):
+        if _verify_ssh_auth(host, port, password, max_attempts=6, delay=5):
             return
+    # Fall back for a reused container that already has the password.
+    if _verify_ssh_auth(host, port, password, max_attempts=6, delay=5):
+        return
     raise Exception("Unable to authenticate to MikroTik container over SSH")
 
 

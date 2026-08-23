@@ -12,20 +12,17 @@ services:
     hostname: ${HOSTNAME_A:-routeros-a}
     privileged: true
     restart: ${RESTART_POLICY:-unless-stopped}
-    platform: ${PLATFORM:-linux/amd64}
 
     # Healthcheck: with eth1 present, QEMU enables hostfwd so 127.0.0.1:8728 is valid
     healthcheck:
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 8728 || exit 1"]
+      # QEMU accepts TCP the instant it starts, long before the guest boots —
+      # only the SSH banner proves RouterOS itself is up.
+      test: ["CMD-SHELL", "nc -w 3 127.0.0.1 22 </dev/null | grep -q '^SSH-2.0'"]
       interval: 15s
       timeout: 5s
       retries: 40        # ~10 minutes max
       start_period: 120s # RouterOS needs ~2 min to boot inside QEMU
 
-    environment:
-      ROUTEROS_USER: ${ROUTEROS_USER:-admin}
-      ROUTEROS_PASS: ${ROUTEROS_PASS:-admin}
-      ROUTEROS_LICENSE: ${ROUTEROS_LICENSE:-true}
 
     ports:
       - "${WINBOX_PORT_A:-8291}:8291"
@@ -64,19 +61,16 @@ services:
     hostname: ${HOSTNAME_B:-routeros-b}
     privileged: true
     restart: ${RESTART_POLICY:-unless-stopped}
-    platform: ${PLATFORM:-linux/amd64}
 
     healthcheck:
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 8728 || exit 1"]
+      # QEMU accepts TCP the instant it starts, long before the guest boots —
+      # only the SSH banner proves RouterOS itself is up.
+      test: ["CMD-SHELL", "nc -w 3 127.0.0.1 22 </dev/null | grep -q '^SSH-2.0'"]
       interval: 15s
       timeout: 5s
       retries: 40
       start_period: 120s
 
-    environment:
-      ROUTEROS_USER: ${ROUTEROS_USER:-admin}
-      ROUTEROS_PASS: ${ROUTEROS_PASS:-admin}
-      ROUTEROS_LICENSE: ${ROUTEROS_LICENSE:-true}
 
     ports:
       - "${WINBOX_PORT_B:-8292}:8291"
