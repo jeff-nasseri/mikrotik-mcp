@@ -52,6 +52,13 @@
           "isSecret": false
         },
         {
+          "name": "MIKROTIK_READ_ONLY",
+          "description": "When true, expose only tools that do not modify RouterOS or its file store. Use a read-only RouterOS account as defence in depth.",
+          "isRequired": false,
+          "format": "boolean",
+          "isSecret": false
+        },
+        {
           "name": "MIKROTIK_INVENTORY_FILE",
           "description": "Path to a YAML file listing multiple MikroTik devices (title, host, port, username, password, key_filename, tags, region). See docs/reference/inventory.",
           "isRequired": false,

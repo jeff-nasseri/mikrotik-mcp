@@ -52,9 +52,13 @@ mcp-server-mikrotik --mcp.transport streamable-http
 | `--password` | SSH password | from config |
 | `--key-filename` | SSH key filename | from config |
 | `--port` | SSH port | `22` |
+| `--read-only` | Expose only tools that do not modify RouterOS or its file store | `false` |
 | `--mcp.transport` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
 | `--mcp.host` | HTTP server listen address | `0.0.0.0` |
 | `--mcp.port` | HTTP server listen port | `8000` |
+
+`--read-only` limits the MCP tool catalogue only. Use a restricted RouterOS
+account for actual write protection.
 
 HTTP-based transports (`sse`, `streamable-http`) expose a `GET /health` endpoint for health checks. This endpoint is **not available** in `stdio` mode.
 
@@ -141,14 +145,21 @@ In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
    | `MIKROTIK_HOST` | MikroTik device IP/hostname | `192.168.88.1` |
    | `MIKROTIK_USERNAME` | SSH username | `admin` |
    | `MIKROTIK_PASSWORD` | SSH password | _(empty)_ |
-   | `MIKROTIK_PORT` | SSH port | `22` |
+    | `MIKROTIK_PORT` | SSH port | `22` |
+    | `MIKROTIK_READ_ONLY` | Set to `true` to expose only tools that do not modify RouterOS or its file store | `false` |
    | `MIKROTIK_INVENTORY` | Multiple devices, written inline in YAML (or its JSON subset). Takes precedence over `MIKROTIK_INVENTORY_FILE` and the four variables above. See [Inventory](../reference/inventory/README.md). | _(empty)_ |
    | `MIKROTIK_INVENTORY_FILE` | Path **inside the container** to a YAML file holding the inventory — mount it as a volume | _(empty)_ |
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |
    | `MIKROTIK_MCP__PORT` | HTTP server listen port | `8000` |
    | `MIKROTIK_MCP__ALLOWED_HOSTS` | Comma-separated `Host` header allowlist for the HTTP transports (DNS-rebinding protection). Set to your domain behind a reverse proxy; `*` disables the check. | _(empty)_ |
-   | `MIKROTIK_MCP__ALLOWED_ORIGINS` | Comma-separated `Origin` header allowlist for the HTTP transports. | _(empty)_ |
+    | `MIKROTIK_MCP__ALLOWED_ORIGINS` | Comma-separated `Origin` header allowlist for the HTTP transports. | _(empty)_ |
+
+    > **Read-only deployments:** Set `MIKROTIK_READ_ONLY=true` to keep modifying
+    > tools out of the MCP tool catalogue. Also use a RouterOS account with only
+    > the permissions it needs (ideally read-only): this is the enforcement layer
+    > that protects the router if another SSH client or a server defect bypasses
+    > the MCP catalogue.
 
 ### Docker Compose
 

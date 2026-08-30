@@ -20,13 +20,13 @@ def _config_error_message(exc: ValidationError) -> str:
 # one clear message rather than a raw traceback.
 try:
     from mcp_mikrotik import config
-    from mcp_mikrotik.app import mcp
     from mcp_mikrotik.config import McpServerSettings, MikrotikConfig
 except ValidationError as _exc:
     print(_config_error_message(_exc), file=sys.stderr)
     sys.exit(1)
 
 _LOCALHOST_HOSTS = ("127.0.0.1", "localhost", "::1")
+mcp = None
 
 
 def _warn_if_plaintext_password_in_container(cfg: MikrotikConfig, logger: logging.Logger) -> None:
@@ -107,6 +107,8 @@ def main():
     """
     Entry point for the MCP MikroTik server when run as a command-line program.
     """
+    global mcp
+
     logger = logging.getLogger(__name__)
 
     try:
@@ -114,6 +116,13 @@ def main():
     except ValidationError as e:
         logger.error(_config_error_message(e))
         sys.exit(1)
+
+    # Tool registration depends on read_only, including when it was supplied as
+    # a CLI flag. Import the application only after the final config is ready.
+    if mcp is None:
+        from mcp_mikrotik.app import mcp as configured_mcp
+
+        mcp = configured_mcp
 
     logger.info("Starting MCP MikroTik server")
 
