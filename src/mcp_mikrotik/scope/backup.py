@@ -82,7 +82,7 @@ async def mikrotik_list_backups(
 
     return f"BACKUP FILES:\n\n{result}"
 
-@mcp.tool(name="create_export", annotations=annotate(READ, "Create Config Export"))
+@mcp.tool(name="create_export", annotations=annotate(WRITE, "Create Config Export"))
 async def mikrotik_create_export(
     ctx: Context,
     name: Optional[str] = None,
