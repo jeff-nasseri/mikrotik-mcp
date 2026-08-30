@@ -4,7 +4,7 @@ import time
 from typing import Literal, Optional
 from mcp.server.mcpserver import Context
 from ..connector import execute_mikrotik_command
-from ..app import mcp, READ, annotate
+from ..app import mcp, READ, WRITE, annotate
 
 # RouterOS durations like 5m, 1h, 2d — validated before being spliced into a
 # where clause so a malformed value fails here with a clear message instead of
@@ -290,7 +290,7 @@ async def mikrotik_get_log_statistics(ctx: Context, device: Optional[str] = None
     return "LOG STATISTICS:\n\n" + "\n".join(stats)
 
 
-@mcp.tool(name="export_logs", annotations=annotate(READ, "Export Logs"))
+@mcp.tool(name="export_logs", annotations=annotate(WRITE, "Export Logs"))
 async def mikrotik_export_logs(
     ctx: Context,
     filename: Optional[str] = None,

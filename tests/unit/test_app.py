@@ -43,3 +43,32 @@ def test_every_tool_still_accepts_a_device_argument():
     ]
     assert missing == []
 
+
+def test_read_only_server_registers_only_read_tools(monkeypatch):
+    from mcp_mikrotik import config
+    from mcp_mikrotik.app import ConfiguredMCPServer, READ, WRITE, annotate
+    from mcp_mikrotik.config import MikrotikConfig
+
+    monkeypatch.setattr(config, "mikrotik_config", MikrotikConfig(read_only=True))
+    server = ConfiguredMCPServer("read-only-test")
+
+    @server.tool(name="read", annotations=annotate(READ, "Read"))
+    async def read_tool() -> str:
+        return "read"
+
+    @server.tool(name="write", annotations=annotate(WRITE, "Write"))
+    async def write_tool() -> str:
+        return "write"
+
+    tools = asyncio.run(server.list_tools())
+    assert [tool.name for tool in tools] == ["read"]
+    assert tools[0].annotations.title == "Read"
+    assert tools[0].annotations.read_only_hint is True
+
+
+def test_file_creating_tools_are_not_marked_read_only():
+    from mcp_mikrotik.app import mcp
+
+    tools = {tool.name: tool for tool in asyncio.run(mcp.list_tools())}
+    assert tools["create_export"].annotations.read_only_hint is not True
+    assert tools["export_logs"].annotations.read_only_hint is not True
