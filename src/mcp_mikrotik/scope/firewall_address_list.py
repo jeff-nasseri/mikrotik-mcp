@@ -12,22 +12,33 @@ def _tree(family: str) -> str:
     return "/ipv6 firewall address-list" if family == "ipv6" else "/ip firewall address-list"
 
 
+def _is_hostname(address: str) -> bool:
+    """True when the value is an FQDN rather than an address or prefix.
+
+    A hostname is a first-class address-list entry: RouterOS stores the name
+    itself and maintains a dynamic child entry per resolved address. It must
+    therefore never be rewritten into address form.
+    """
+    try:
+        ipaddress.ip_interface(address) if "/" in address else ipaddress.ip_address(address)
+    except ValueError:
+        return True
+    return False
+
+
 def _canonical(family: str, address: str) -> str:
-    """Return the address as RouterOS stores it.
+    """Return the value as RouterOS stores it, for use in a `where` clause.
 
     The IPv6 list keeps host entries with an explicit /128 and lowercases the
     address, so "2001:DB8::5" has to become "2001:db8::5/128" or an exact
-    `where address=` comparison finds nothing. IPv4 is stored verbatim.
-    Unparseable input is returned unchanged.
+    `where address=` comparison finds nothing. IPv4 addresses and hostnames of
+    either family are stored verbatim.
     """
-    if family != "ipv6":
+    if family != "ipv6" or _is_hostname(address):
         return address
-    try:
-        if "/" in address:
-            return str(ipaddress.ip_interface(address))
-        return f"{ipaddress.ip_address(address)}/128"
-    except ValueError:
-        return address
+    if "/" in address:
+        return str(ipaddress.ip_interface(address))
+    return f"{ipaddress.ip_address(address)}/128"
 
 
 def _selector(family: str, list_name: str, address: str) -> str:
@@ -212,7 +223,8 @@ async def mikrotik_remove_address_list_entry(
     """Removes an address list entry by list name and address.
 
     Notes:
-        Removes every entry matching the pair, dynamic ones included.
+        Removing a hostname entry also clears the dynamic entries RouterOS
+        derived from it.
     """
     await ctx.info(f"Removing {family} address list entry: list={list_name}, address={address}")
 

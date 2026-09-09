@@ -81,7 +81,8 @@ Updates an entry located by its current list name and address.
 
 ## `remove_address_list_entry`
 
-Removes every entry matching the list/address pair, dynamic ones included.
+Removes the matching entry. Removing a hostname entry also clears the dynamic
+entries RouterOS derived from it.
 
 - Example:
   ```
