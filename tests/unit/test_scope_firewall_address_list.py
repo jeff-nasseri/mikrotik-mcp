@@ -87,6 +87,18 @@ def test_ipv4_address_is_not_rewritten(ctx, monkeypatch):
     assert "/32" not in fake.commands[0]
 
 
+def test_is_hostname_classifies_correctly():
+    """FQDN detection decides whether an entry may be rewritten at all."""
+    from mcp_mikrotik.scope.firewall_address_list import _is_hostname
+
+    assert _is_hostname("one.one.one.one")
+    assert _is_hostname("example.com")
+    assert not _is_hostname("203.0.113.9")
+    assert not _is_hostname("203.0.113.0/24")
+    assert not _is_hostname("2001:db8::5")
+    assert not _is_hostname("2001:db8:1::/64")
+
+
 def test_hostname_is_passed_through_unchanged(ctx, monkeypatch):
     from mcp_mikrotik.scope import firewall_address_list as m
 
@@ -342,3 +354,16 @@ def test_device_argument_is_forwarded(ctx, monkeypatch):
 
     _run(m.mikrotik_list_address_list_entries(ctx, family="ipv4", device="RouterB"))
     assert fake.devices == ["RouterB"]
+
+
+def test_fqdn_survives_ipv6_canonicalisation_on_create(ctx, monkeypatch):
+    """An FQDN is a real entry type — it must not gain a /128."""
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    fake = FakeExecutor()
+    monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
+
+    _run(m.mikrotik_create_address_list_entry(
+        ctx, family="ipv6", list_name="l", address="one.one.one.one"))
+    assert "address=one.one.one.one" in fake.commands[0]
+    assert "/128" not in fake.commands[0]
