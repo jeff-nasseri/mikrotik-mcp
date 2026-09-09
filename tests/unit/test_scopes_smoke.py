@@ -10,6 +10,7 @@ SCOPE_MODULES = [
     "backup",
     "dhcp",
     "dns",
+    "firewall_address_list",
     "firewall_filter",
     "firewall_nat",
     "ip_address",
