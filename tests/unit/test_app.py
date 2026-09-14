@@ -46,8 +46,9 @@ def test_every_tool_still_accepts_a_device_argument():
 
 def test_read_only_server_registers_only_read_tools(monkeypatch):
     from mcp_mikrotik import config
-    from mcp_mikrotik.app import ConfiguredMCPServer, READ, WRITE, annotate
+    from mcp_mikrotik.app import READ, WRITE, annotate
     from mcp_mikrotik.config import MikrotikConfig
+    from mcp_mikrotik.configured_mcp_server import ConfiguredMCPServer
 
     monkeypatch.setattr(config, "mikrotik_config", MikrotikConfig(read_only=True))
     server = ConfiguredMCPServer("read-only-test")
