@@ -1,9 +1,8 @@
-from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
 
-from . import config
+from .configured_mcp_server import ConfiguredMCPServer
 
 # Sent once, in the initialize response, instead of being repeated in all 182
 # tool descriptions — the same guidance costs ~60 tokens here rather than ~4k.
@@ -14,18 +13,6 @@ INSTRUCTIONS = (
     "are, it is required. Titles match case-insensitively, and an omitted or "
     "unknown device returns an error naming the valid titles."
 )
-
-class ConfiguredMCPServer(MCPServer):
-    """Register only explicitly read-only tools when read-only mode is enabled."""
-
-    def tool(self, *args, **kwargs):
-        annotations = kwargs.get("annotations")
-        if config.mikrotik_config.read_only and not (
-            annotations and annotations.read_only_hint
-        ):
-            return lambda fn: fn
-        return super().tool(*args, **kwargs)
-
 
 mcp = ConfiguredMCPServer("mcp-mikrotik", instructions=INSTRUCTIONS)
 
