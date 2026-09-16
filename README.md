@@ -47,6 +47,26 @@ https://github.com/user-attachments/assets/185b2c39-8f55-4f26-a74c-2ac459ad38f5
 - **[Articles](docs/articles/README.md)** - Learning resources and tutorials
 - **[Diagrams](docs/diagrams/README.md)** - Architecture and design diagrams (draw.io)
 
+## Contributors ❤️
+
+MikroTik MCP is built by the people below. Thank you for every commit, issue,
+review and idea.
+
+<p>
+<a href="https://github.com/jeff-nasseri" title="jeff-nasseri"><img src="https://avatars.githubusercontent.com/u/57312476?s=72" width="72" height="72" alt="jeff-nasseri" /></a>
+<a href="https://github.com/goto1134" title="goto1134"><img src="https://avatars.githubusercontent.com/u/9569795?s=72" width="72" height="72" alt="goto1134" /></a>
+<a href="https://github.com/vavan11" title="vavan11"><img src="https://avatars.githubusercontent.com/u/12846521?s=72" width="72" height="72" alt="vavan11" /></a>
+<a href="https://github.com/shahabbahojb" title="shahabbahojb"><img src="https://avatars.githubusercontent.com/u/75182541?s=72" width="72" height="72" alt="shahabbahojb" /></a>
+<a href="https://github.com/lwsinclair" title="lwsinclair"><img src="https://avatars.githubusercontent.com/u/2829939?s=72" width="72" height="72" alt="lwsinclair" /></a>
+<a href="https://github.com/nieomylnieja" title="nieomylnieja"><img src="https://avatars.githubusercontent.com/u/48822818?s=72" width="72" height="72" alt="nieomylnieja" /></a>
+<a href="https://github.com/hassan-khurram-hsol" title="hassan-khurram-hsol"><img src="https://avatars.githubusercontent.com/u/138897539?s=72" width="72" height="72" alt="hassan-khurram-hsol" /></a>
+<a href="https://github.com/OronF" title="OronF"><img src="https://avatars.githubusercontent.com/u/133911424?s=72" width="72" height="72" alt="OronF" /></a>
+</p>
+
+Contributions of every kind are welcome: code, bug reports, documentation and
+reviews all move the project forward. Start with the
+[Contributing Guide](docs/contributing.md).
+
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
