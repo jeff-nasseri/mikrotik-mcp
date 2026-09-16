@@ -245,7 +245,7 @@ async def mikrotik_remove_wireless_interface(ctx: Context, name: str, device: Op
         return "Error: No wireless interface support detected on this device."
 
     # Check if interface exists
-    check_cmd = f'{interface_type} print count-only where name="{name}"'
+    check_cmd = f'{interface_type} print count-only where name="{_ros_quoted(name)}"'
     count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
@@ -500,7 +500,7 @@ async def mikrotik_update_wireless_interface(
         return "Error: No wireless interface support detected on this device."
 
     # Check if interface exists
-    check_cmd = f'{interface_type} print count-only where name="{name}"'
+    check_cmd = f'{interface_type} print count-only where name="{_ros_quoted(name)}"'
     count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
@@ -544,6 +544,20 @@ async def mikrotik_update_wireless_interface(
     return f"Wireless interface updated successfully:\n\n{details}"
 
 
+# WPA-PSK accepts any printable ASCII, 8-63 characters.
+_PSK_MIN, _PSK_MAX = 8, 63
+
+
+def _ros_quoted(value: str) -> str:
+    """Escape a value for a RouterOS double-quoted string.
+
+    A bare `"` ends the string early, so RouterOS answers "expected end of
+    command" and the write never happens -- and quotes are legal in a WPA
+    passphrase. Backslash first, or it would escape the escapes.
+    """
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
 @mcp.tool(name="set_wireless_passphrase", annotations=annotate(WRITE_IDEMPOTENT, "Set Wireless Passphrase"))
 async def mikrotik_set_wireless_passphrase(
         ctx: Context,
@@ -557,8 +571,16 @@ async def mikrotik_set_wireless_passphrase(
     Notes:
         authentication_types: comma-separated RouterOS auth types, e.g. "wpa2-psk,wpa3-psk"; unset keeps the current setting.
     """
-    # Deliberately do not log the passphrase or the full command
+    # Deliberately do not log the passphrase. Note the connector still logs the
+    # command it runs, so the passphrase reaches the server log and the client
+    # until that is redacted centrally.
     await ctx.info(f"Setting wireless passphrase on interface: {name}")
+
+    if not _PSK_MIN <= len(passphrase) <= _PSK_MAX:
+        return (
+            f"Passphrase must be {_PSK_MIN}-{_PSK_MAX} characters for WPA-PSK "
+            f"(got {len(passphrase)})."
+        )
 
     # Detect wireless interface type
     interface_type = await mikrotik_detect_wireless_interface_type(ctx, device=device)
@@ -570,21 +592,30 @@ async def mikrotik_set_wireless_passphrase(
         return "Legacy /interface wireless stores passphrases in security profiles and is not supported by this tool. Use RouterOS v7 (/interface wifi or wifiwave2)."
 
     # Check if interface exists
-    check_cmd = f'{interface_type} print count-only where name="{name}"'
+    check_cmd = f'{interface_type} print count-only where name="{_ros_quoted(name)}"'
     count = await execute_mikrotik_command(check_cmd, ctx, device=device)
 
     if count.strip() == "0":
         return f"Wireless interface '{name}' not found."
 
     # Inline dotted security.* settings override any assigned security profile
-    cmd = f'{interface_type} set [find name="{name}"] security.passphrase="{passphrase}"'
+    cmd = (
+        f'{interface_type} set [find name="{_ros_quoted(name)}"] '
+        f'security.passphrase="{_ros_quoted(passphrase)}"'
+    )
     if authentication_types:
         cmd += f" security.authentication-types={authentication_types}"
 
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
-    if "failure:" in result.lower() or "error" in result.lower():
-        return f"Failed to set wireless passphrase: {result}"
+    # A successful `set` prints nothing, so ANY output means the write did not
+    # happen. Matching on "failure:"/"error" missed the two refusals that
+    # actually occur here -- "not enough permissions (9)" and "expected end of
+    # command" -- and reported an unchanged passphrase as updated.
+    if result.strip():
+        # Never echo the passphrase back, even if RouterOS quoted it.
+        detail = result.strip().replace(passphrase, "***")
+        return f"Failed to set wireless passphrase on '{name}': {detail}"
 
     # Do not print details afterwards: detail output can include security.passphrase in plaintext
     return f"Wireless passphrase updated successfully on '{name}' using {interface_type}."
