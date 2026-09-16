@@ -52,6 +52,8 @@ https://github.com/user-attachments/assets/185b2c39-8f55-4f26-a74c-2ac459ad38f5
 MikroTik MCP is built by the people below. Thank you for every commit, issue,
 review and idea.
 
+<!-- hassankhurram is listed by request: the commit carries an org email, so the
+     API still reports hassan-khurram-hsol. Keep this override on regeneration. -->
 <p>
 <a href="https://github.com/jeff-nasseri" title="jeff-nasseri"><img src="https://avatars.githubusercontent.com/u/57312476?s=72" width="72" height="72" alt="jeff-nasseri" /></a>
 <a href="https://github.com/goto1134" title="goto1134"><img src="https://avatars.githubusercontent.com/u/9569795?s=72" width="72" height="72" alt="goto1134" /></a>
@@ -59,7 +61,7 @@ review and idea.
 <a href="https://github.com/shahabbahojb" title="shahabbahojb"><img src="https://avatars.githubusercontent.com/u/75182541?s=72" width="72" height="72" alt="shahabbahojb" /></a>
 <a href="https://github.com/lwsinclair" title="lwsinclair"><img src="https://avatars.githubusercontent.com/u/2829939?s=72" width="72" height="72" alt="lwsinclair" /></a>
 <a href="https://github.com/nieomylnieja" title="nieomylnieja"><img src="https://avatars.githubusercontent.com/u/48822818?s=72" width="72" height="72" alt="nieomylnieja" /></a>
-<a href="https://github.com/hassan-khurram-hsol" title="hassan-khurram-hsol"><img src="https://avatars.githubusercontent.com/u/138897539?s=72" width="72" height="72" alt="hassan-khurram-hsol" /></a>
+<a href="https://github.com/hassankhurram" title="hassankhurram"><img src="https://avatars.githubusercontent.com/u/22665312?s=72" width="72" height="72" alt="hassankhurram" /></a>
 <a href="https://github.com/OronF" title="OronF"><img src="https://avatars.githubusercontent.com/u/133911424?s=72" width="72" height="72" alt="OronF" /></a>
 </p>
 
