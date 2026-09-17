@@ -3,7 +3,7 @@ from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
 
-# Sent once, in the initialize response, instead of being repeated in all 189
+# Sent once, in the initialize response, instead of being repeated in all 192
 # tool descriptions — the same guidance costs ~60 tokens here rather than ~4k.
 INSTRUCTIONS = (
     "This server manages one or more MikroTik devices. Every tool accepts an "
