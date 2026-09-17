@@ -8,7 +8,7 @@ Adds a route to MikroTik routing table.
   - `distance` (optional): Administrative distance
   - `scope` (optional): Route scope
   - `target_scope` (optional): Target scope
-  - `routing_mark` (optional): Routing mark
+  - `routing_table` (optional): Routing table name from `/routing table` (RouterOS 6 called this the routing mark)
   - `comment` (optional): Description
   - `disabled` (optional): Disable route
   - `vrf_interface` (optional): VRF interface
@@ -24,7 +24,7 @@ Lists routes in MikroTik routing table.
 - Parameters:
   - `dst_filter` (optional): Filter by destination
   - `gateway_filter` (optional): Filter by gateway
-  - `routing_mark_filter` (optional): Filter by routing mark
+  - `routing_table_filter` (optional): Filter by routing table name
   - `distance_filter` (optional): Filter by distance
   - `active_only` (optional): Show only active routes
   - `disabled_only` (optional): Show only disabled routes
@@ -97,7 +97,7 @@ Checks the route path to a destination.
 - Parameters:
   - `destination` (required): Destination address
   - `source` (optional): Source address
-  - `routing_mark` (optional): Routing mark
+  - `routing_table` (optional): Routing table name from `/routing table` (RouterOS 6 called this the routing mark)
 - Example:
   ```
   mikrotik_check_route_path(destination="8.8.8.8")
