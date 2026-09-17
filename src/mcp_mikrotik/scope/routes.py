@@ -11,7 +11,7 @@ async def mikrotik_add_route(
     distance: Optional[int] = None,
     scope: Optional[int] = None,
     target_scope: Optional[int] = None,
-    routing_mark: Optional[str] = None,
+    routing_table: Optional[str] = None,
     comment: Optional[str] = None,
     disabled: bool = False,
     vrf_interface: Optional[str] = None,
@@ -23,6 +23,8 @@ async def mikrotik_add_route(
 
     Notes:
         dst_address: CIDR e.g. "0.0.0.0/0", "192.168.1.0/24"
+        routing_table: name of a table from /routing table, e.g. "via_ISP2";
+            defaults to "main". RouterOS 6 called this the routing mark.
         check_gateway: "ping" or "arp"
         distance: 1-255 (lower = higher priority)
     """
@@ -36,8 +38,8 @@ async def mikrotik_add_route(
         cmd += f" scope={scope}"
     if target_scope is not None:
         cmd += f" target-scope={target_scope}"
-    if routing_mark:
-        cmd += f' routing-mark="{routing_mark}"'
+    if routing_table:
+        cmd += f' routing-table="{routing_table}"'
     if comment:
         cmd += f' comment="{comment}"'
     if disabled:
@@ -77,7 +79,7 @@ async def mikrotik_list_routes(
     ctx: Context,
     dst_filter: Optional[str] = None,
     gateway_filter: Optional[str] = None,
-    routing_mark_filter: Optional[str] = None,
+    routing_table_filter: Optional[str] = None,
     distance_filter: Optional[int] = None,
     active_only: bool = False,
     disabled_only: bool = False,
@@ -95,8 +97,8 @@ async def mikrotik_list_routes(
         filters.append(f'dst-address~"{dst_filter}"')
     if gateway_filter:
         filters.append(f'gateway~"{gateway_filter}"')
-    if routing_mark_filter:
-        filters.append(f'routing-mark="{routing_mark_filter}"')
+    if routing_table_filter:
+        filters.append(f'routing-table="{routing_table_filter}"')
     if distance_filter is not None:
         filters.append(f"distance={distance_filter}")
     if active_only:
@@ -144,7 +146,7 @@ async def mikrotik_update_route(
     distance: Optional[int] = None,
     scope: Optional[int] = None,
     target_scope: Optional[int] = None,
-    routing_mark: Optional[str] = None,
+    routing_table: Optional[str] = None,
     comment: Optional[str] = None,
     disabled: Optional[bool] = None,
     vrf_interface: Optional[str] = None,
@@ -159,7 +161,9 @@ async def mikrotik_update_route(
         dst_address: CIDR e.g. "192.168.1.0/24"
         check_gateway: "ping" or "arp"
         distance: 1-255
-        Pass "" to routing_mark, vrf_interface, or pref_src to clear them.
+        routing_table: name of a table from /routing table; "" moves the route
+            back to "main", since every RouterOS 7 route belongs to a table.
+        Pass "" to vrf_interface or pref_src to clear them.
     """
     await ctx.info(f"Updating route: route_id={route_id}")
 
@@ -176,11 +180,10 @@ async def mikrotik_update_route(
         updates.append(f"scope={scope}")
     if target_scope is not None:
         updates.append(f"target-scope={target_scope}")
-    if routing_mark is not None:
-        if routing_mark == "":
-            updates.append("!routing-mark")
-        else:
-            updates.append(f'routing-mark="{routing_mark}"')
+    if routing_table is not None:
+        # There is no unset: "!routing-table" is a syntax error, and a route
+        # always belongs to a table, so clearing means back to "main".
+        updates.append(f'routing-table="{routing_table or "main"}"')
     if comment is not None:
         updates.append(f'comment="{comment}"')
     if disabled is not None:
@@ -289,19 +292,15 @@ async def mikrotik_get_routing_table(
 async def mikrotik_check_route_path(
     ctx: Context,
     destination: str,
-    source: Optional[str] = None,
-    routing_mark: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Checks the route path to a destination."""
+    """Checks the route MikroTik would use to reach a destination."""
     await ctx.info(f"Checking route path to: {destination}")
 
-    cmd = f"/ip route check {destination}"
-
-    if source:
-        cmd += f" src-address={source}"
-    if routing_mark:
-        cmd += f' routing-mark="{routing_mark}"'
+    # "once" is required: without it RouterOS keeps streaming status updates
+    # and the command never returns. RouterOS 7 takes no other argument here --
+    # src-address and routing-mark/-table are all rejected after the address.
+    cmd = f"/ip route check {destination} once"
 
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
