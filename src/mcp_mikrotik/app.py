@@ -1,7 +1,8 @@
-from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import Response
+
+from .configured_mcp_server import ConfiguredMCPServer
 
 # Sent once, in the initialize response, instead of being repeated in all 182
 # tool descriptions — the same guidance costs ~60 tokens here rather than ~4k.
@@ -13,7 +14,7 @@ INSTRUCTIONS = (
     "unknown device returns an error naming the valid titles."
 )
 
-mcp = MCPServer("mcp-mikrotik", instructions=INSTRUCTIONS)
+mcp = ConfiguredMCPServer("mcp-mikrotik", instructions=INSTRUCTIONS)
 
 # ── Behaviour presets ──────────────────────────────────────────────────────
 # These capture the *risk profile* of a tool (MCP spec §Tool Annotations).

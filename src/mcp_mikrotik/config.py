@@ -56,6 +56,7 @@ class MikrotikConfig(BaseSettings):
         nested_model_default_partial_update=True,
         cli_prog_name="mcp-server-mikrotik",
         cli_kebab_case=True,
+        cli_implicit_flags=True,
         # The inventory value carries credentials; validation errors must not
         # echo the offending input into logs or tool results.
         hide_input_in_errors=True,
@@ -67,6 +68,7 @@ class MikrotikConfig(BaseSettings):
     password: str = ""
     port: int = 22
     key_filename: Optional[str] = None
+    read_only: bool = False
     mcp: McpServerSettings = McpServerSettings()
 
     # ── Multi-device inventory ─────────────────────────────────────────────
