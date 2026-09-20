@@ -412,7 +412,7 @@ async def mikrotik_test_dns_query(
 
     return f"DNS QUERY RESULT for {name}:\n\n{result}"
 
-@mcp.tool(name="export_dns_config", annotations=annotate(READ, "Export DNS Config"))
+@mcp.tool(name="export_dns_config", annotations=annotate(WRITE, "Export DNS Config"))
 async def mikrotik_export_dns_config(ctx: Context, filename: Optional[str] = None, device: Optional[str] = None) -> str:
     """Exports DNS configuration to a file."""
     await ctx.info("Exporting DNS configuration")
