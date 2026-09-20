@@ -392,7 +392,7 @@ async def mikrotik_disconnect_user(ctx: Context, user_id: str, device: Optional[
 
     return f"User session {user_id} disconnected successfully."
 
-@mcp.tool(name="export_user_config", annotations=annotate(READ, "Export User Config"))
+@mcp.tool(name="export_user_config", annotations=annotate(WRITE, "Export User Config"))
 async def mikrotik_export_user_config(ctx: Context, filename: Optional[str] = None, device: Optional[str] = None) -> str:
     """Exports user configuration to a file."""
     await ctx.info("Exporting user configuration")
