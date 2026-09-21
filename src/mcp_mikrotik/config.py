@@ -5,6 +5,8 @@ import yaml
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from .http_security import parse_allowed_ips
+
 
 class McpServerSettings(BaseModel):
     transport: Literal["stdio", "sse", "streamable-http"] = "stdio"
@@ -19,6 +21,18 @@ class McpServerSettings(BaseModel):
     # "mcp.example.com"); a value of "*" disables the host check entirely.
     allowed_hosts: str = ""
     allowed_origins: str = ""
+    # Comma-separated client IP addresses and CIDR networks. Unlike the Host
+    # header allowlist above, this restricts which remote clients may connect.
+    allowed_ips: str = ""
+
+    @field_validator("allowed_ips")
+    @classmethod
+    def _valid_allowed_ips(cls, value: str) -> str:
+        try:
+            parse_allowed_ips(value)
+        except ValueError as exc:
+            raise ValueError(f"invalid IP address or network: {exc}") from exc
+        return value
 
 
 class DeviceConfig(BaseModel):

@@ -55,6 +55,7 @@ MikroTik MCP uses SSH to connect to RouterOS devices. Be aware of the following:
 - **Network Segmentation**: Run the MCP server in a secure network segment
 - **Authentication**: When exposing the MCP server via MCPO or other REST APIs, always use strong authentication (API keys, OAuth, etc.)
 - **Firewall Rules**: Implement appropriate firewall rules to restrict access to both the MCP server and MikroTik devices
+- **HTTP IP Allowlist**: Set `MIKROTIK_MCP__ALLOWED_IPS` to restrict the native HTTP transports to trusted client addresses or networks; treat it as defense in depth, not authentication
 
 ### 4. Logging and Auditing
 

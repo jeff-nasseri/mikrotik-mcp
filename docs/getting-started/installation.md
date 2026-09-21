@@ -56,6 +56,7 @@ mcp-server-mikrotik --mcp.transport streamable-http
 | `--mcp.transport` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
 | `--mcp.host` | HTTP server listen address | `0.0.0.0` |
 | `--mcp.port` | HTTP server listen port | `8000` |
+| `--mcp.allowed-ips` | Comma-separated client IP addresses and CIDR networks allowed to use HTTP transports | _(empty)_ |
 
 `--read-only` limits the MCP tool catalogue only. Use a restricted RouterOS
 account for actual write protection.
@@ -153,7 +154,8 @@ In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
    | `MIKROTIK_MCP__HOST` | HTTP server listen address | `0.0.0.0` |
    | `MIKROTIK_MCP__PORT` | HTTP server listen port | `8000` |
    | `MIKROTIK_MCP__ALLOWED_HOSTS` | Comma-separated `Host` header allowlist for the HTTP transports (DNS-rebinding protection). Set to your domain behind a reverse proxy; `*` disables the check. | _(empty)_ |
-    | `MIKROTIK_MCP__ALLOWED_ORIGINS` | Comma-separated `Origin` header allowlist for the HTTP transports. | _(empty)_ |
+   | `MIKROTIK_MCP__ALLOWED_ORIGINS` | Comma-separated `Origin` header allowlist for the HTTP transports. | _(empty)_ |
+   | `MIKROTIK_MCP__ALLOWED_IPS` | Comma-separated client IP addresses and CIDR networks allowed to use HTTP transports | _(empty; unrestricted)_ |
 
     > **Read-only deployments:** Set `MIKROTIK_READ_ONLY=true` to keep modifying
     > tools out of the MCP tool catalogue. Also use a RouterOS account with only
@@ -299,6 +301,36 @@ Both accept a **comma-separated** list, e.g.:
 - Set `MIKROTIK_MCP__ALLOWED_HOSTS: "*"` to disable the host check entirely.
 - If you leave it unset on a non-localhost bind, the check is auto-disabled (a
   warning is logged) so the server still works out of the box.
+
+#### Restricting client IP addresses
+
+`MIKROTIK_MCP__ALLOWED_IPS` limits all HTTP endpoints, including `/mcp`,
+`/sse`, `/messages/`, and `/health`, to specific IPv4 or IPv6 addresses and
+networks. Requests from other addresses receive HTTP 403. Leave it unset to
+preserve unrestricted access:
+
+```yaml
+    environment:
+      MIKROTIK_MCP__TRANSPORT: "streamable-http"
+      MIKROTIK_MCP__ALLOWED_IPS: "192.168.1.50, 10.20.0.0/16, 2001:db8::/48"
+```
+
+Addresses and CIDR networks are validated at startup. CIDRs must use a network
+address, so use `10.0.0.0/8`, not `10.0.0.1/8`.
+
+The allowlist uses the client address supplied by Uvicorn. For direct
+connections, no additional configuration is needed. Behind a reverse proxy,
+set Uvicorn's `FORWARDED_ALLOW_IPS` environment variable to the proxy address
+or network so the allowlist sees the original address from `X-Forwarded-For`:
+
+```yaml
+    environment:
+      MIKROTIK_MCP__ALLOWED_IPS: "192.168.1.0/24"
+      FORWARDED_ALLOW_IPS: "172.18.0.0/16"
+```
+
+Only trust addresses controlled by your proxy. Setting `FORWARDED_ALLOW_IPS=*`
+allows direct clients to spoof their source address through forwarded headers.
 
 > ⚠️ Passing `MIKROTIK_PASSWORD` as an environment variable makes it visible via
 > `docker inspect`. See [SECURITY.md](../../SECURITY.md) for safer alternatives.
