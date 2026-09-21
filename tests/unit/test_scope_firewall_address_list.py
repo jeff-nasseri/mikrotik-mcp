@@ -289,7 +289,7 @@ def test_update_sets_and_clears(ctx, monkeypatch):
         new_list_name="l2", comment="", timeout="2h"))
     cmd = _cmd(fake, " set ")
     assert 'list="l2"' in cmd
-    assert "!comment" in cmd
+    assert 'comment=""' in cmd
     assert "timeout=2h" in cmd
 
 
@@ -325,8 +325,10 @@ def test_remove_existing_entry(ctx, monkeypatch):
 
     _run(m.mikrotik_remove_address_list_entry(
         ctx, family="ipv4", list_name="l", address="203.0.113.1"))
-    assert fake.commands[-1] == (
+    assert _cmd(fake, " remove ") == (
         '/ip firewall address-list remove [find list="l" address="203.0.113.1"]')
+    # and the outcome is confirmed afterwards, not assumed
+    assert fake.commands[-1].startswith("/ip firewall address-list print count-only")
 
 
 def test_enable_and_disable_wrappers(ctx, monkeypatch):
@@ -367,3 +369,111 @@ def test_fqdn_survives_ipv6_canonicalisation_on_create(ctx, monkeypatch):
         ctx, family="ipv6", list_name="l", address="one.one.one.one"))
     assert "address=one.one.one.one" in fake.commands[0]
     assert "/128" not in fake.commands[0]
+
+
+# ---------------------------------------------------------------------------
+# review follow-ups: a refused write must not be reported as success
+# ---------------------------------------------------------------------------
+
+def test_update_rejects_a_refusal_that_says_neither_failure_nor_error(ctx, monkeypatch):
+    """A read-only account answers "not enough permissions (9)"."""
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    async def refused(command, _ctx, device=None):
+        if "count-only" in command:
+            return "1"
+        if " set " in command:
+            return "not enough permissions (9)"
+        return "Flags: X - disabled, D - dynamic\n 0 ;;; BEFORE\n  address=203.0.113.1"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", refused, raising=True)
+
+    out = _run(m.mikrotik_update_address_list_entry(
+        ctx, family="ipv4", list_name="l", address="203.0.113.1", comment="AFTER"))
+    assert out.startswith("Failed to update address list entry:")
+    assert "updated successfully" not in out
+
+
+def test_update_rejects_a_silent_no_op(ctx, monkeypatch):
+    """Silent set, but the new value never lands — assert it, do not assume."""
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    async def silent_noop(command, _ctx, device=None):
+        if "count-only" in command:
+            # entry exists, but not with the asserted comment
+            return "0" if 'comment="AFTER"' in command else "1"
+        if " set " in command:
+            return ""
+        return "address=203.0.113.1"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", silent_noop, raising=True)
+
+    out = _run(m.mikrotik_update_address_list_entry(
+        ctx, family="ipv4", list_name="l", address="203.0.113.1", comment="AFTER"))
+    assert out.startswith("Failed to update address list entry:")
+    assert "not present" in out
+
+
+def test_disable_inherits_the_update_guard(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    async def refused(command, _ctx, device=None):
+        if "count-only" in command:
+            return "1"
+        if " set " in command:
+            return "not enough permissions (9)"
+        return "address=203.0.113.1"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", refused, raising=True)
+
+    out = _run(m.mikrotik_disable_address_list_entry(
+        ctx, family="ipv4", list_name="l", address="203.0.113.1"))
+    assert out.startswith("Failed to update address list entry:")
+    assert "successfully" not in out
+
+
+def test_remove_rejects_a_refusal_that_says_neither_failure_nor_error(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    async def refused(command, _ctx, device=None):
+        if "count-only" in command:
+            return "1"
+        return "not enough permissions (9)"
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", refused, raising=True)
+
+    out = _run(m.mikrotik_remove_address_list_entry(
+        ctx, family="ipv4", list_name="l", address="203.0.113.1"))
+    assert out.startswith("Failed to remove address list entry:")
+    assert "removed from" not in out
+
+
+def test_remove_requires_the_entry_to_be_gone(ctx, monkeypatch):
+    """Silent remove, entry still there — a false success on a firewall list."""
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    async def still_there(command, _ctx, device=None):
+        if "count-only" in command:
+            return "1"
+        return ""
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", still_there, raising=True)
+
+    out = _run(m.mikrotik_remove_address_list_entry(
+        ctx, family="ipv4", list_name="l", address="203.0.113.1"))
+    assert out.startswith("Failed to remove address list entry:")
+    assert "still present" in out
+
+
+def test_timeout_is_cleared_with_zero_not_an_unset_flag(ctx, monkeypatch):
+    """This menu rejects "!timeout"; the empty value for a duration is 0."""
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    fake = FakeExecutor()
+    monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
+
+    _run(m.mikrotik_update_address_list_entry(
+        ctx, family="ipv4", list_name="l", address="203.0.113.1", timeout=""))
+    cmd = _cmd(fake, " set ")
+    assert "timeout=0" in cmd
+    assert "!timeout" not in cmd

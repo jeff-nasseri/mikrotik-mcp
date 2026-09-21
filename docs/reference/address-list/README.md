@@ -74,6 +74,11 @@ Updates an entry located by its current list name and address.
   `comment`, `timeout`, `disabled` (optional). Pass `""` to clear `comment`
   or `timeout`.
 
+The change is confirmed on the device before success is reported: a refusal
+that RouterOS phrases without the words "failure" or "error" — a read-only
+account answers `not enough permissions (9)` — is reported as a failure rather
+than as a successful update.
+
 - Example:
   ```
   update_address_list_entry(family="ipv4", list_name="temp", address="203.0.113.9", new_list_name="trusted")
