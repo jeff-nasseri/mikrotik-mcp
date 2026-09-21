@@ -4,6 +4,8 @@ from typing import Optional
 
 import paramiko
 
+from .sensitive import redact_if_enabled
+
 logger = logging.getLogger(__name__)
 
 class MikroTikSSHClient:
@@ -60,7 +62,7 @@ class MikroTikSSHClient:
             )
             return True
         except Exception as e:
-            logger.error(f"Failed to connect to MikroTik: {e}")
+            logger.error("Failed to connect to MikroTik: %s", redact_if_enabled(str(e)))
             # A rejected login still leaves paramiko's transport running: it
             # keeps a thread and a socket, and paramiko holds a strong
             # reference to it, so it is never collected.  Close it here rather
@@ -88,7 +90,7 @@ class MikroTikSSHClient:
 
             return output
         except Exception as e:
-            logger.error(f"Error executing command: {e}")
+            logger.error("Error executing command: %s", redact_if_enabled(str(e)))
             raise
 
     def _open_sftp(self):

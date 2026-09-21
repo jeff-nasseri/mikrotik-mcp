@@ -5,6 +5,8 @@ import sys
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import ValidationError
 
+from mcp_mikrotik.sensitive import redact_if_enabled
+
 
 def _config_error_message(exc: ValidationError) -> str:
     """One readable line per problem, without echoing any input values."""
@@ -117,8 +119,8 @@ def main():
         logger.error(_config_error_message(e))
         sys.exit(1)
 
-    # Tool registration depends on read_only, including when it was supplied as
-    # a CLI flag. Import the application only after the final config is ready.
+    # Tool registration depends on catalogue policies, including CLI flags.
+    # Import the application only after the final config is ready.
     if mcp is None:
         from mcp_mikrotik.app import mcp as configured_mcp
 
@@ -161,7 +163,7 @@ def main():
     except KeyboardInterrupt:
         logger.info("MCP MikroTik server stopped by user")
     except Exception as e:
-        logger.error(f"Error running MCP MikroTik server: {e}")
+        logger.error("Error running MCP MikroTik server: %s", redact_if_enabled(str(e)))
         sys.exit(1)
 
 

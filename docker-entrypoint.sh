@@ -16,6 +16,7 @@ usage() {
     echo ""
     echo "Other:"
     echo "  --read-only           Expose only read-only tools"
+    echo "  --sensitive-hiding    Hide credentials and private key material"
     echo "  --transport TYPE      Transport: stdio, sse, streamable-http (default: stdio)"
     echo "  --help                Show this help message"
     echo ""
@@ -27,6 +28,7 @@ usage() {
     echo "  MIKROTIK_INVENTORY       Inventory as a YAML (or JSON) list of devices"
     echo "  MIKROTIK_INVENTORY_FILE  Path to a YAML file holding the inventory"
     echo "  MIKROTIK_READ_ONLY       Expose only read-only tools (default: false)"
+    echo "  MIKROTIK_SENSITIVE_HIDING Hide credentials and private key material (default: false)"
     echo "  MIKROTIK_MCP__TRANSPORT  Transport type (default: stdio)"
     echo ""
     echo "Examples:"
@@ -69,6 +71,10 @@ while [ $# -gt 0 ]; do
             MIKROTIK_READ_ONLY=true
             shift
             ;;
+        --sensitive-hiding)
+            MIKROTIK_SENSITIVE_HIDING=true
+            shift
+            ;;
         --transport)
             MIKROTIK_MCP__TRANSPORT="$2"
             shift 2
@@ -84,6 +90,7 @@ done
 
 export MIKROTIK_MCP__TRANSPORT
 [ -n "${MIKROTIK_READ_ONLY:-}" ] && export MIKROTIK_READ_ONLY
+[ -n "${MIKROTIK_SENSITIVE_HIDING:-}" ] && export MIKROTIK_SENSITIVE_HIDING
 
 # An inventory describes the whole fleet, so it takes precedence over the
 # single-device settings. Don't fall back to the 192.168.88.1 default in that

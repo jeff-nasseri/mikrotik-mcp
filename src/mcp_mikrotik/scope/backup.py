@@ -1,6 +1,7 @@
 from typing import Literal, Optional, List
 from ..app import mcp, READ, WRITE, DANGEROUS, annotate
 from ..connector import execute_mikrotik_command, download_file_sync, upload_file_sync
+from .. import config
 from mcp.server.mcpserver import Context
 import asyncio
 import base64
@@ -39,7 +40,6 @@ async def mikrotik_create_backup(
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     # Check if backup was successful
-    print(result)
     if "saved" in result or not result.strip():
         # Get file details
         file_cmd = f"/file print detail where name={name}.backup"
@@ -118,7 +118,7 @@ async def mikrotik_create_export(
     if compact:
         cmd += " compact"
 
-    if not hide_sensitive:
+    if not hide_sensitive and not config.mikrotik_config.sensitive_hiding:
         cmd += " show-sensitive"
 
     # Add file parameter for non-full exports
@@ -172,7 +172,7 @@ async def mikrotik_export_section(
 
     cmd = f"/{section} export"
 
-    if not hide_sensitive:
+    if not hide_sensitive and not config.mikrotik_config.sensitive_hiding:
         cmd += " show-sensitive"
 
     if compact:

@@ -53,6 +53,7 @@ mcp-server-mikrotik --mcp.transport streamable-http
 | `--key-filename` | SSH key filename | from config |
 | `--port` | SSH port | `22` |
 | `--read-only` | Expose only tools that do not modify RouterOS or its file store | `false` |
+| `--sensitive-hiding` | Redact credentials and private key material from client-visible output | `false` |
 | `--mcp.transport` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
 | `--mcp.host` | HTTP server listen address | `0.0.0.0` |
 | `--mcp.port` | HTTP server listen port | `8000` |
@@ -60,6 +61,15 @@ mcp-server-mikrotik --mcp.transport streamable-http
 
 `--read-only` limits the MCP tool catalogue only. Use a restricted RouterOS
 account for actual write protection.
+
+`--sensitive-hiding` redacts recognized passwords, passphrases, private and
+preshared keys, authentication and encryption keys, tokens, secrets, and SNMP
+communities from tool results, MCP notifications, exceptions, and server logs.
+It also omits `download_file` and `generate_wireguard_client_config`, whose
+payloads cannot be safely field-redacted, and prevents export tools from using
+RouterOS `show-sensitive`. Public keys, addresses, usernames, and SSIDs remain
+visible. Arbitrary unlabelled secrets in free-form log messages or comments
+cannot be identified reliably.
 
 HTTP-based transports (`sse`, `streamable-http`) expose a `GET /health` endpoint for health checks. This endpoint is **not available** in `stdio` mode.
 
@@ -148,6 +158,7 @@ In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
    | `MIKROTIK_PASSWORD` | SSH password | _(empty)_ |
     | `MIKROTIK_PORT` | SSH port | `22` |
     | `MIKROTIK_READ_ONLY` | Set to `true` to expose only tools that do not modify RouterOS or its file store | `false` |
+    | `MIKROTIK_SENSITIVE_HIDING` | Set to `true` to redact recognized credentials and private key material | `false` |
    | `MIKROTIK_INVENTORY` | Multiple devices, written inline in YAML (or its JSON subset). Takes precedence over `MIKROTIK_INVENTORY_FILE` and the four variables above. See [Inventory](../reference/inventory/README.md). | _(empty)_ |
    | `MIKROTIK_INVENTORY_FILE` | Path **inside the container** to a YAML file holding the inventory — mount it as a volume | _(empty)_ |
    | `MIKROTIK_MCP__TRANSPORT` | Transport type: `stdio`, `sse`, `streamable-http` | `stdio` |
