@@ -180,18 +180,28 @@ async def mikrotik_update_address_list_entry(
 
     Notes:
         Pass "" to clear comment or timeout.
+        A change is confirmed on the device before success is reported.
     """
     await ctx.info(f"Updating {family} address list entry: list={list_name}, address={address}")
 
-    updates = []
+    # This menu rejects the "!field" unset form the filter menus accept, so a
+    # cleared field is written as its empty value instead: comment="" and
+    # timeout=0. A cleared field cannot be asserted afterwards (`where
+    # comment=""` matches nothing even once cleared), so only set values go
+    # into `assertions`.
+    updates, assertions = [], []
     if new_list_name:
         updates.append(f'list="{new_list_name}"')
     if comment is not None:
-        updates.append("!comment" if comment == "" else f'comment="{comment}"')
+        updates.append(f'comment="{comment}"')
+        if comment:
+            assertions.append(f'comment="{comment}"')
     if timeout is not None:
-        updates.append("!timeout" if timeout == "" else f"timeout={timeout}")
+        updates.append("timeout=0" if timeout == "" else f"timeout={timeout}")
     if disabled is not None:
-        updates.append(f'disabled={"yes" if disabled else "no"}')
+        state = "yes" if disabled else "no"
+        updates.append(f"disabled={state}")
+        assertions.append(f"disabled={state}")
 
     if not updates:
         return "No updates specified."
@@ -203,10 +213,22 @@ async def mikrotik_update_address_list_entry(
     result = await execute_mikrotik_command(
         f"{_tree(family)} set [find {where}] " + " ".join(updates), ctx, device=device
     )
-    if "failure:" in result.lower() or "error" in result.lower():
+    # A successful set prints nothing. Every refusal prints something, and not
+    # all of them say "failure:" or "error" — a read-only account answers
+    # "not enough permissions (9)".
+    if result.strip():
         return f"Failed to update address list entry: {result}"
 
     lookup = _selector(family, new_list_name or list_name, address)
+    if assertions and await _count(
+        family, f"{lookup} " + " ".join(assertions), ctx, device
+    ) != "1":
+        return (
+            f"Failed to update address list entry: the device reported no error but "
+            f"the new value is not present on '{address}' in "
+            f"'{new_list_name or list_name}'."
+        )
+
     details = await execute_mikrotik_command(
         f"{_tree(family)} print detail where {lookup}", ctx, device=device
     )
@@ -235,8 +257,17 @@ async def mikrotik_remove_address_list_entry(
     result = await execute_mikrotik_command(
         f"{_tree(family)} remove [find {where}]", ctx, device=device
     )
-    if "failure:" in result.lower() or "error" in result.lower():
+    # As with set: a successful remove is silent, and a refusal may say neither
+    # "failure:" nor "error". Confirm the entry is actually gone — on a
+    # firewall list a false "removed" is worse than an error.
+    if result.strip():
         return f"Failed to remove address list entry: {result}"
+
+    if await _count(family, where, ctx, device) != "0":
+        return (
+            f"Failed to remove address list entry: the device reported no error but "
+            f"'{address}' is still present in '{list_name}'."
+        )
 
     return f"Address list entry '{address}' removed from '{list_name}'."
 
