@@ -477,3 +477,120 @@ def test_timeout_is_cleared_with_zero_not_an_unset_flag(ctx, monkeypatch):
     cmd = _cmd(fake, " set ")
     assert "timeout=0" in cmd
     assert "!timeout" not in cmd
+
+
+# ---------------------------------------------------------------------------
+# success paths — FakeExecutor's generic print output never contains
+# "address=", so these need an executor that answers like a real device
+# ---------------------------------------------------------------------------
+
+DETAIL = (
+    "Flags: X - disabled, D - dynamic \n"
+    " 0   ;;; note\n"
+    "     list=trusted address=203.0.113.0/24 creation-time=2026-09-21 12:00:00 \n"
+    "     dynamic=no"
+)
+
+
+def _device(detail=DETAIL, count="1", after_remove="0", write=""):
+    """Executor that answers the way RouterOS does on the happy path."""
+    state = {"removed": False}
+
+    async def run(command, _ctx, device=None):
+        if "count-only" in command:
+            return after_remove if state["removed"] else count
+        if command.startswith(("/ip firewall address-list remove",
+                               "/ipv6 firewall address-list remove")):
+            state["removed"] = True
+            return write
+        if " add " in command or " set " in command:
+            return write
+        return detail
+
+    return run
+
+
+def test_create_success_response(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", _device(), raising=True)
+
+    out = _run(m.mikrotik_create_address_list_entry(
+        ctx, family="ipv4", list_name="trusted", address="203.0.113.0/24"))
+    assert out.startswith("Address list entry created successfully:")
+    assert "list=trusted" in out
+
+
+def test_create_falls_back_when_the_entry_cannot_be_read_back(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command",
+                        _device(detail="Flags: X - disabled, D - dynamic"), raising=True)
+
+    out = _run(m.mikrotik_create_address_list_entry(
+        ctx, family="ipv4", list_name="trusted", address="203.0.113.0/24"))
+    assert out == "Address list entry '203.0.113.0/24' added to 'trusted'."
+
+
+def test_get_success_response(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", _device(), raising=True)
+
+    out = _run(m.mikrotik_get_address_list_entry(
+        ctx, family="ipv4", list_name="trusted", address="203.0.113.0/24"))
+    assert out.startswith("IPV4 ADDRESS LIST ENTRY:")
+    assert "list=trusted" in out
+
+
+def test_get_success_response_names_the_ipv6_family(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", _device(), raising=True)
+
+    out = _run(m.mikrotik_get_address_list_entry(
+        ctx, family="ipv6", list_name="trusted", address="2001:db8::5"))
+    assert out.startswith("IPV6 ADDRESS LIST ENTRY:")
+
+
+def test_update_success_response(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", _device(), raising=True)
+
+    out = _run(m.mikrotik_update_address_list_entry(
+        ctx, family="ipv4", list_name="trusted", address="203.0.113.0/24", comment="note"))
+    assert out.startswith("Address list entry updated successfully:")
+    assert "list=trusted" in out
+
+
+def test_enable_success_response(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", _device(), raising=True)
+
+    out = _run(m.mikrotik_enable_address_list_entry(
+        ctx, family="ipv4", list_name="trusted", address="203.0.113.0/24"))
+    assert out.startswith("Address list entry updated successfully:")
+
+
+def test_remove_success_response(ctx, monkeypatch):
+    """Present before the remove, absent after — the post-check must pass."""
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", _device(), raising=True)
+
+    out = _run(m.mikrotik_remove_address_list_entry(
+        ctx, family="ipv4", list_name="trusted", address="203.0.113.0/24"))
+    assert out == "Address list entry '203.0.113.0/24' removed from 'trusted'."
+
+
+def test_list_success_response_labels_the_family(ctx, monkeypatch):
+    from mcp_mikrotik.scope import firewall_address_list as m
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", _device(), raising=True)
+
+    assert _run(m.mikrotik_list_address_list_entries(ctx, family="ipv4")).startswith(
+        "IPV4 ADDRESS LIST ENTRIES:")
+    assert _run(m.mikrotik_list_address_list_entries(ctx, family="ipv6")).startswith(
+        "IPV6 ADDRESS LIST ENTRIES:")
