@@ -83,6 +83,7 @@ class MikrotikConfig(BaseSettings):
     port: int = 22
     key_filename: Optional[str] = None
     read_only: bool = False
+    sensitive_hiding: bool = False
     mcp: McpServerSettings = McpServerSettings()
 
     # ── Multi-device inventory ─────────────────────────────────────────────

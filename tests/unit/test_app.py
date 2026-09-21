@@ -8,6 +8,10 @@ import subprocess
 import sys
 from unittest.mock import MagicMock
 
+import pytest
+
+from mcp.server.mcpserver import Context
+
 
 FILE_CREATING_COMMAND = re.compile(r"(?:export|print)\s+file=|backup\s+save")
 
@@ -75,6 +79,72 @@ def test_read_only_server_registers_only_read_tools(monkeypatch):
     assert [tool.name for tool in tools] == ["read"]
     assert tools[0].annotations.title == "Read"
     assert tools[0].annotations.read_only_hint is True
+
+
+def test_sensitive_hiding_server_omits_unsafe_tools_and_redacts_output(monkeypatch, ctx):
+    from mcp_mikrotik import config
+    from mcp_mikrotik.app import READ, annotate
+    from mcp_mikrotik.config import MikrotikConfig
+    from mcp_mikrotik.configured_mcp_server import ConfiguredMCPServer
+
+    monkeypatch.setattr(config, "mikrotik_config", MikrotikConfig(sensitive_hiding=True))
+    server = ConfiguredMCPServer("sensitive-test")
+
+    @server.tool(name="safe", annotations=annotate(READ, "Safe"))
+    async def safe_tool(ctx: Context, password: str) -> str:
+        await ctx.info(f"Using {password}")
+        return f'password="{password}" public-key=visible'
+
+    @server.tool(name="download_file", annotations=annotate(READ, "Download"))
+    async def download_tool() -> str:
+        return "opaque"
+
+    @server.tool(name="generate_wireguard_client_config", annotations=annotate(READ, "WireGuard"))
+    async def wireguard_tool() -> str:
+        return "private"
+
+    tools = asyncio.run(server.list_tools())
+    assert [tool.name for tool in tools] == ["safe"]
+    assert set(tools[0].input_schema["properties"]) == {"password"}
+    assert asyncio.run(safe_tool(ctx, "hunter2")) == 'password="***" public-key=visible'
+    assert ctx.info.await_args.args == ("Using ***",)
+
+
+def test_sensitive_hiding_server_redacts_exceptions(monkeypatch):
+    from mcp_mikrotik import config
+    from mcp_mikrotik.app import READ, annotate
+    from mcp_mikrotik.config import MikrotikConfig
+    from mcp_mikrotik.configured_mcp_server import ConfiguredMCPServer
+
+    monkeypatch.setattr(config, "mikrotik_config", MikrotikConfig(sensitive_hiding=True))
+    server = ConfiguredMCPServer("sensitive-error-test")
+
+    @server.tool(name="failure", annotations=annotate(READ, "Failure"))
+    async def failure_tool(private_key: str) -> str:
+        raise ValueError(f"Rejected {private_key}")
+
+    with pytest.raises(RuntimeError, match=r"Rejected \*\*\*"):
+        asyncio.run(failure_tool("private-material"))
+
+
+def test_sensitive_hiding_redacts_sdk_validation_errors(monkeypatch):
+    from mcp_mikrotik import config
+    from mcp_mikrotik.app import READ, annotate
+    from mcp_mikrotik.config import MikrotikConfig
+    from mcp_mikrotik.configured_mcp_server import ConfiguredMCPServer
+
+    monkeypatch.setattr(config, "mikrotik_config", MikrotikConfig(sensitive_hiding=True))
+    server = ConfiguredMCPServer("sensitive-validation-test")
+
+    @server.tool(name="typed", annotations=annotate(READ, "Typed"))
+    async def typed_tool(password: str) -> str:
+        return password
+
+    with pytest.raises(Exception) as exc_info:
+        asyncio.run(server.call_tool("typed", {"password": ["TOPSECRET"]}))
+
+    assert "TOPSECRET" not in str(exc_info.value)
+    assert "***" in str(exc_info.value)
 
 
 def _file_creating_tool_names():
@@ -166,3 +236,42 @@ def test_read_only_env_registers_only_read_tools():
 
 def test_read_only_cli_registers_only_read_tools():
     _assert_read_only_catalogue(_read_only_catalogue("--read-only", env=os.environ.copy()))
+
+
+def _sensitive_catalogue(*args, env=None):
+    script = """
+import asyncio
+import json
+import sys
+
+if sys.argv[1:]:
+    from mcp_mikrotik import config
+    from mcp_mikrotik.config import MikrotikConfig
+    config.mikrotik_config = MikrotikConfig(_cli_parse_args=True)
+
+from mcp_mikrotik.app import mcp
+print(json.dumps([tool.name for tool in asyncio.run(mcp.list_tools())]))
+"""
+    command = [sys.executable, "-c", script, *args]
+    repo_root = Path(__file__).parents[2]
+    env = {
+        key: value for key, value in (env or os.environ).items()
+        if not key.startswith("MIKROTIK_")
+    } | {
+        "PYTHONPATH": os.pathsep.join(
+            filter(None, (str(repo_root / "src"), os.environ.get("PYTHONPATH")))
+        ),
+    }
+    if not args:
+        env["MIKROTIK_SENSITIVE_HIDING"] = "true"
+    result = subprocess.run(command, check=True, capture_output=True, cwd=repo_root, env=env, text=True)
+    return json.loads(result.stdout)
+
+
+@pytest.mark.parametrize("args", [(), ("--sensitive-hiding",)])
+def test_sensitive_hiding_env_and_cli_omit_unsafe_tools(args):
+    tools = _sensitive_catalogue(*args, env=os.environ.copy())
+    assert tools
+    assert "download_file" not in tools
+    assert "generate_wireguard_client_config" not in tools
+    assert "list_devices" in tools

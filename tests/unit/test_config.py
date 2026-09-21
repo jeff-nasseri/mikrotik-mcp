@@ -6,6 +6,7 @@ def test_config_defaults():
     assert cfg.port == 22
     assert cfg.username == "admin"
     assert cfg.read_only is False
+    assert cfg.sensitive_hiding is False
     assert cfg.mcp.transport == "stdio"
     assert cfg.mcp.host == "0.0.0.0"
     assert cfg.mcp.port == 8000
@@ -20,6 +21,7 @@ def test_config_env_overrides(monkeypatch):
     monkeypatch.setenv("MIKROTIK_USERNAME", "u")
     monkeypatch.setenv("MIKROTIK_PASSWORD", "p")
     monkeypatch.setenv("MIKROTIK_READ_ONLY", "true")
+    monkeypatch.setenv("MIKROTIK_SENSITIVE_HIDING", "true")
     monkeypatch.setenv("MIKROTIK_MCP__TRANSPORT", "sse")
     monkeypatch.setenv("MIKROTIK_MCP__HOST", "127.0.0.1")
     monkeypatch.setenv("MIKROTIK_MCP__PORT", "9000")
@@ -31,6 +33,7 @@ def test_config_env_overrides(monkeypatch):
     assert cfg.username == "u"
     assert cfg.password == "p"
     assert cfg.read_only is True
+    assert cfg.sensitive_hiding is True
     assert cfg.mcp.transport == "sse"
     assert cfg.mcp.host == "127.0.0.1"
     assert cfg.mcp.port == 9000

@@ -213,3 +213,26 @@ def test_execute_mikrotik_command_passes_resolved_device(ctx, monkeypatch):
     result = asyncio.run(connector.execute_mikrotik_command("/y", ctx, device="RouterB"))
     assert result == "B-out"
     assert b.commands == ["/y"] and a.commands == []
+
+
+def test_sensitive_hiding_redacts_notifications_and_logs_but_not_execution(ctx, monkeypatch, caplog):
+    from mcp_mikrotik import config
+    from mcp_mikrotik.config import MikrotikConfig
+
+    secret = "hunter2"
+    client = DummyClient(f'failure: password="{secret}"')
+    connector = _patch_inventory(monkeypatch, FakeInventory({"OnlyOne": client}))
+    monkeypatch.setattr(config, "mikrotik_config", MikrotikConfig(sensitive_hiding=True))
+
+    async def fake_to_thread(fn, *args, **kwargs):
+        return fn(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "to_thread", fake_to_thread)
+    command = f'/user add name="test" password="{secret}"'
+    with caplog.at_level("INFO"):
+        result = asyncio.run(connector.execute_mikrotik_command(command, ctx))
+
+    assert client.commands == [command]
+    assert result == f'failure: password="{secret}"'
+    assert secret not in ctx.info.await_args.args[0]
+    assert secret not in caplog.text

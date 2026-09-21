@@ -5,6 +5,7 @@ from typing import Optional
 from mcp.server.mcpserver import Context
 
 from .inventory import DeviceNotFoundError, get_inventory
+from .sensitive import redact_if_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,12 @@ def _execute_sync(command: str, device: Optional[str] = None) -> str:
     """
     inventory = get_inventory()
     target = inventory.resolve(device)
-    logger.info(f"Executing MikroTik command on '{target.title}': {command}")
+    logger.info("Executing MikroTik command on '%s': %s", target.title, redact_if_enabled(command))
 
     with inventory.session(target.title) as client:
         result = client.execute_command(command)
 
-    logger.info(f"Command result: {repr(result)}")
+    logger.info("Command result: %r", redact_if_enabled(result))
     return result
 
 
@@ -71,13 +72,13 @@ async def execute_mikrotik_command(
 
     safe_mgr = get_safe_mode_manager(target.title)
     if safe_mgr.is_active:
-        await ctx.info(f"Executing on '{target.title}' (safe mode): {command}")
+        await ctx.info(redact_if_enabled(f"Executing on '{target.title}' (safe mode): {command}"))
         try:
             result = await asyncio.to_thread(safe_mgr.execute, command)
         except Exception as e:
             result = f"Error executing command in safe mode session: {str(e)}"
     else:
-        await ctx.info(f"Executing on '{target.title}': {command}")
+        await ctx.info(redact_if_enabled(f"Executing on '{target.title}': {command}"))
         try:
             result = await asyncio.to_thread(_execute_sync, command, target.title)
         except ConnectionError as e:
@@ -85,7 +86,7 @@ async def execute_mikrotik_command(
         except Exception as e:
             result = f"Error executing command: {str(e)}"
 
-    logger.info(f"Command result: {repr(result)}")
+    logger.info("Command result: %r", redact_if_enabled(result))
     if result.startswith("Error"):
-        await ctx.error(result)
+        await ctx.error(redact_if_enabled(result))
     return result
