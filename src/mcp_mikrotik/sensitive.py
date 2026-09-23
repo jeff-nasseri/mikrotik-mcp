@@ -11,11 +11,12 @@ _SENSITIVE_KEY = (
 )
 _QUOTED_VALUE = re.compile(
     rf"(?i)(?P<prefix>(?<!\w)['\"]?{_SENSITIVE_KEY}['\"]?\s*(?:=|:)\s*)"
-    r"(?P<quote>['\"])(?:\\.|(?!\2).)*?(?P=quote)"
+    r"(?P<escape>\\?)(?P<quote>['\"])(?:\\.|(?!(?P=quote))[^\\\n])*?"
+    r"(?P=escape)(?P=quote)"
 )
 _BARE_VALUE = re.compile(
     rf"(?i)(?P<prefix>(?<!\w)['\"]?{_SENSITIVE_KEY}['\"]?\s*(?:=|:)\s*)"
-    r"(?P<value>[^'\"\s,;\]}]+)"
+    r"(?P<value>(?!\\['\"])[^'\"\s,;\]}]+)"
 )
 _PRIVATE_KEY_BLOCK = re.compile(
     r"-----BEGIN(?: [A-Z0-9]+)? PRIVATE KEY-----.*?"
@@ -37,7 +38,10 @@ def redact_sensitive_text(text: str, secrets: Iterable[str] = ()) -> str:
     """Redact recognizable credentials while preserving surrounding output."""
     redacted = _PRIVATE_KEY_BLOCK.sub(REDACTED, text)
     redacted = _QUOTED_VALUE.sub(
-        lambda match: f"{match.group('prefix')}{match.group('quote')}{REDACTED}{match.group('quote')}",
+        lambda match: (
+            f"{match.group('prefix')}{match.group('escape')}{match.group('quote')}"
+            f"{REDACTED}{match.group('escape')}{match.group('quote')}"
+        ),
         redacted,
     )
     redacted = _BARE_VALUE.sub(lambda match: f"{match.group('prefix')}{REDACTED}", redacted)
