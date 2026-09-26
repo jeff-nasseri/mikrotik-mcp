@@ -21,7 +21,8 @@
 #   5. Release: Create GitHub release with auto-generated tag
 #
 # Triggers:
-#   - Push to master branch
+#   - Push to master branch that changes a shipped file (see the paths
+#     guard below); docs-, test- and CI-only pushes do not release
 #
 # Requirements:
 #   - GitVersion.yml configuration file in repository root
@@ -34,6 +35,23 @@ on:
   push:
     branches:
       - master
+    # Deployment guard: a push releases only when it changes something that is
+    # shipped -- the package (src, pyproject.toml, requirements.txt), the Docker
+    # image (Dockerfile, .dockerignore, docker-entrypoint.sh) or the MCP
+    # registry listing (server.json). A push touching only docs, README, tests,
+    # examples or CI config is skipped entirely, so no version, tag, PyPI
+    # upload or image is produced for it.
+    #
+    # Keep this list identical in publish.yml and docker-publish.yml: the image
+    # version must always match a PyPI release, so either both run or neither.
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker-entrypoint.sh'
+      - 'server.json'
 
 jobs:
   version:

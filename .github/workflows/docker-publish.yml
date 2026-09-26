@@ -15,7 +15,8 @@
 #   GITHUB_TOKEN — and GitHub does NOT trigger workflows from token-created
 #   tags, so a `tags: ['v*']` trigger would never fire.
 #
-# Tagging strategy (every push to master):
+# Tagging strategy (every push to master that changes a shipped file -- see
+# the paths guard below):
 #   :X.Y.Z      e.g. :0.10.1   (majorMinorPatch — matches the vX.Y.Z git tag)
 #   :X.Y        e.g. :0.10      (floating minor)
 #   :latest                     (newest release)
@@ -34,6 +35,23 @@ on:
   push:
     branches:
       - master
+    # Deployment guard: a push releases only when it changes something that is
+    # shipped -- the package (src, pyproject.toml, requirements.txt), the Docker
+    # image (Dockerfile, .dockerignore, docker-entrypoint.sh) or the MCP
+    # registry listing (server.json). A push touching only docs, README, tests,
+    # examples or CI config is skipped entirely, so no version, tag, PyPI
+    # upload or image is produced for it.
+    #
+    # Keep this list identical in publish.yml and docker-publish.yml: the image
+    # version must always match a PyPI release, so either both run or neither.
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker-entrypoint.sh'
+      - 'server.json'
 
 jobs:
   docker:
