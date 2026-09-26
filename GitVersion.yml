@@ -10,7 +10,9 @@
 # Bump rules (conventional commits):
 #   feat:                               → Minor bump  0.x.0
 #   fix | chore | refactor | perf | …  → Patch bump  0.0.x
-#   docs: | doc: | documentation:      → No bump     (pipeline still runs, PyPI skips duplicate)
+#   docs: | doc: | documentation:      → No bump     (a docs-only push does not run the release
+#                                                     pipeline at all: see the paths guard in
+#                                                     publish.yml and docker-publish.yml)
 #   untyped message                    → Patch bump  (fallback via branch increment)
 #   +semver: breaking  (footer)        → Major bump  (EMERGENCY — major frozen at 0)
 
