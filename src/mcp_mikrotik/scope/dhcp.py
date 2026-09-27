@@ -3,9 +3,8 @@ from typing import List, Literal, Optional
 
 from mcp.server.mcpserver import Context
 
-from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ..app import DESTRUCTIVE, READ, WRITE, WRITE_IDEMPOTENT, annotate, mcp
 from ..connector import execute_mikrotik_command
-
 
 _DURATION_RE = re.compile(r"(?:\d+[wdhms])+")
 
@@ -96,7 +95,6 @@ async def mikrotik_list_dhcp_servers(
 
     return f"DHCP SERVERS:\n\n{result}"
 
-
 @mcp.tool(name="list_dhcp_leases", annotations=annotate(READ, "List DHCP Leases"))
 async def mikrotik_list_dhcp_leases(
     ctx: Context,
@@ -111,7 +109,14 @@ async def mikrotik_list_dhcp_leases(
     class_id_filter: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Lists detailed IPv4 DHCP leases, optionally filtering active lease fields."""
+    """Lists detailed IPv4 DHCP leases, optionally filtering active lease fields.
+
+    Notes:
+        Address and identity filters are substring matches. Server, status, and
+        lease time filters are exact matches against RouterOS `lease-time`.
+    """
+    await ctx.info("Listing detailed IPv4 DHCP leases")
+
     if last_seen_within and not _DURATION_RE.fullmatch(last_seen_within):
         return "Invalid last_seen_within duration. Use values such as '30m', '1h30m', or '1d'."
 
@@ -134,6 +139,7 @@ async def mikrotik_list_dhcp_leases(
             filters.append(f'{field}="{value}"')
     if last_seen_within:
         filters.append(f"last-seen<={last_seen_within}")
+        filters.append('last-seen!="never"')
 
     cmd = "/ip dhcp-server lease print detail"
     if filters:
@@ -143,7 +149,6 @@ async def mikrotik_list_dhcp_leases(
     if not result or not result.strip():
         return "No DHCP leases found matching the criteria."
     return f"DHCP LEASES:\n\n{result}"
-
 
 @mcp.tool(name="list_dhcpv6_bindings", annotations=annotate(READ, "List DHCPv6 Bindings"))
 async def mikrotik_list_dhcpv6_bindings(
@@ -157,7 +162,14 @@ async def mikrotik_list_dhcpv6_bindings(
     last_seen_within: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Lists detailed DHCPv6 bindings."""
+    """Lists detailed DHCPv6 bindings.
+
+    Notes:
+        Address and DUID filters are substring matches. IAID, server, status,
+        and lease time filters are exact matches; lease time maps to `life-time`.
+    """
+    await ctx.info("Listing detailed DHCPv6 bindings")
+
     if last_seen_within and not _DURATION_RE.fullmatch(last_seen_within):
         return "Invalid last_seen_within duration. Use values such as '30m', '1h30m', or '1d'."
 
@@ -175,6 +187,7 @@ async def mikrotik_list_dhcpv6_bindings(
             filters.append(f'{field}="{value}"')
     if last_seen_within:
         filters.append(f"last-seen<={last_seen_within}")
+        filters.append('last-seen!="never"')
 
     cmd = "/ipv6 dhcp-server binding print detail"
     if filters:

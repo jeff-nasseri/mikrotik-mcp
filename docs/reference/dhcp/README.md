@@ -49,6 +49,9 @@ Lists raw detailed IPv4 DHCP leases. Identity filters use the active lease field
   - `last_seen_within` (optional): Include leases seen within a duration such as `1h` or `24h`
   - `hostname_filter` (optional): Filter active hostname
   - `class_id_filter` (optional): Filter active class ID
+- Notes:
+  - Address and identity filters use substring matching; server, status, and lease time use exact matching.
+  - `lease_time_filter` matches the RouterOS `lease-time` field.
 - Example:
   ```
   mikrotik_list_dhcp_leases(status_filter="bound", last_seen_within="24h")
@@ -64,6 +67,9 @@ Lists raw detailed DHCPv6 bindings.
   - `status_filter` (optional): Filter binding status
   - `lease_time_filter` (optional): Filter configured `life-time`
   - `last_seen_within` (optional): Include bindings seen within a duration such as `1h` or `24h`
+- Notes:
+  - Address and DUID filters use substring matching; IAID, server, status, and lease time use exact matching.
+  - `lease_time_filter` matches the RouterOS `life-time` field.
 - Example:
   ```
   mikrotik_list_dhcpv6_bindings(status_filter="bound", last_seen_within="1h")

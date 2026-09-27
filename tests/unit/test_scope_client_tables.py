@@ -29,7 +29,8 @@ def test_dhcp_lease_commands_and_device(ctx, monkeypatch):
         '/ip dhcp-server lease print detail where active-address~"192.0.2" '
         'active-mac-address~"AA:BB" active-client-id~"client" '
         'active-host-name~"laptop" active-class-id~"vendor" '
-        'active-server="lan" status="bound" lease-time="1d" last-seen<=1h'
+        'active-server="lan" status="bound" lease-time="1d" last-seen<=1h '
+        'last-seen!="never"'
     )
 
 
@@ -50,7 +51,7 @@ def test_dhcpv6_binding_commands(ctx, monkeypatch):
     assert fake.commands[-1] == (
         '/ipv6 dhcp-server binding print detail where address~"2001:db8" '
         'duid~"0001" iaid="7" server="v6" status="bound" life-time="3d" '
-        'last-seen<=24h'
+        'last-seen<=24h last-seen!="never"'
     )
 
 
@@ -72,8 +73,14 @@ def test_neighbor_commands_and_filters(ctx, monkeypatch):
     fake = FakeExecutor()
     monkeypatch.setattr(neighbors, "execute_mikrotik_command", fake, raising=True)
 
-    _run(neighbors.mikrotik_list_arp_entries(ctx))
-    assert fake.commands[-1] == "/ip arp print detail"
+    _run(neighbors.mikrotik_list_arp_entries(
+        ctx, address_filter="192.0.2", mac_filter="AA:BB",
+        interface_filter="bridge", status_filter="reachable",
+    ))
+    assert fake.commands[-1] == (
+        '/ip arp print detail where address~"192.0.2" mac-address~"AA:BB" '
+        'interface="bridge" status="reachable"'
+    )
 
     out = _run(neighbors.mikrotik_list_ipv6_neighbors(
         ctx, address_filter="fe80", mac_filter="AA:BB",
@@ -85,6 +92,15 @@ def test_neighbor_commands_and_filters(ctx, monkeypatch):
     )
     assert fake.devices[-1] == "edge"
     assert out.startswith("IPV6 NEIGHBORS:")
+
+
+def test_client_table_tools_are_read_only():
+    from mcp_mikrotik.app import mcp
+
+    names = {"list_dhcp_leases", "list_dhcpv6_bindings", "list_arp_entries", "list_ipv6_neighbors"}
+    tools = {tool.name: tool for tool in _run(mcp.list_tools()) if tool.name in names}
+    assert tools.keys() == names
+    assert all(tool.annotations.read_only_hint is True for tool in tools.values())
 
 
 def test_empty_results(ctx, monkeypatch):
