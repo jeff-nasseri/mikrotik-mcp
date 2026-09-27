@@ -2,7 +2,7 @@ from typing import Optional
 
 from mcp.server.mcpserver import Context
 
-from ..app import mcp, READ, annotate
+from ..app import READ, annotate, mcp
 from ..connector import execute_mikrotik_command
 
 
@@ -44,7 +44,13 @@ async def mikrotik_list_arp_entries(
     status_filter: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Lists detailed IPv4 ARP entries."""
+    """Lists detailed IPv4 ARP entries.
+
+    Notes:
+        Address and MAC filters are substring matches. Interface and status
+        filters are exact matches.
+    """
+    await ctx.info("Listing detailed IPv4 ARP entries")
     return await _list_neighbors(
         ctx, "/ip arp print detail", "ARP ENTRIES",
         "No ARP entries found matching the criteria.",
@@ -61,7 +67,13 @@ async def mikrotik_list_ipv6_neighbors(
     status_filter: Optional[str] = None,
     device: Optional[str] = None
 ) -> str:
-    """Lists detailed IPv6 neighbor-discovery entries."""
+    """Lists detailed IPv6 neighbor-discovery entries.
+
+    Notes:
+        Address and MAC filters are substring matches. Interface and status
+        filters are exact matches.
+    """
+    await ctx.info("Listing detailed IPv6 neighbor-discovery entries")
     return await _list_neighbors(
         ctx, "/ipv6 neighbor print detail", "IPV6 NEIGHBORS",
         "No IPv6 neighbors found matching the criteria.",
