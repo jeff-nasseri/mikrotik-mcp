@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 
 from mcp.server.mcpserver import Context
 
-from ..app import DESTRUCTIVE, READ, WRITE, WRITE_IDEMPOTENT, annotate, mcp
+from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 from ..connector import execute_mikrotik_command
 
 _DURATION_RE = re.compile(r"(?:\d+[wdhms])+")
@@ -146,7 +146,9 @@ async def mikrotik_list_dhcp_leases(
         cmd += " where " + " ".join(filters)
 
     result = await execute_mikrotik_command(cmd, ctx, device=device)
-    if not result or not result.strip():
+    # `print detail` returns the Flags legend (non-empty) even when no row
+    # matches, so we check for real entry data instead of non-emptiness.
+    if not result or "address=" not in result:
         return "No DHCP leases found matching the criteria."
     return f"DHCP LEASES:\n\n{result}"
 
@@ -194,7 +196,7 @@ async def mikrotik_list_dhcpv6_bindings(
         cmd += " where " + " ".join(filters)
 
     result = await execute_mikrotik_command(cmd, ctx, device=device)
-    if not result or not result.strip():
+    if not result or "address=" not in result:
         return "No DHCPv6 bindings found matching the criteria."
     return f"DHCPV6 BINDINGS:\n\n{result}"
 

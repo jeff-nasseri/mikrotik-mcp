@@ -2,7 +2,7 @@ from typing import Optional
 
 from mcp.server.mcpserver import Context
 
-from ..app import READ, annotate, mcp
+from ..app import mcp, READ, annotate
 from ..connector import execute_mikrotik_command
 
 
@@ -30,7 +30,9 @@ async def _list_neighbors(
         command += " where " + " ".join(filters)
 
     result = await execute_mikrotik_command(command, ctx, device=device)
-    if not result or not result.strip():
+    # `print detail` returns the Flags legend (non-empty) even when no row
+    # matches, so we check for real entry data instead of non-emptiness.
+    if not result or "address=" not in result:
         return empty_message
     return f"{heading}:\n\n{result}"
 
