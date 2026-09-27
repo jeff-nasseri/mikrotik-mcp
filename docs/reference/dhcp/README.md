@@ -37,6 +37,38 @@ Gets detailed information about a specific DHCP server.
   mikrotik_get_dhcp_server(name="dhcp-vlan100")
   ```
 
+## `mikrotik_list_dhcp_leases`
+Lists raw detailed IPv4 DHCP leases. Identity filters use the active lease fields.
+- Parameters:
+  - `address_filter` (optional): Filter active address
+  - `mac_filter` (optional): Filter active MAC address
+  - `client_id_filter` (optional): Filter active client ID
+  - `server_filter` (optional): Filter active DHCP server
+  - `status_filter` (optional): Filter lease status
+  - `lease_time_filter` (optional): Filter configured lease time
+  - `last_seen_within` (optional): Include leases seen within a duration such as `1h` or `24h`
+  - `hostname_filter` (optional): Filter active hostname
+  - `class_id_filter` (optional): Filter active class ID
+- Example:
+  ```
+  mikrotik_list_dhcp_leases(status_filter="bound", last_seen_within="24h")
+  ```
+
+## `mikrotik_list_dhcpv6_bindings`
+Lists raw detailed DHCPv6 bindings.
+- Parameters:
+  - `address_filter` (optional): Filter assigned address or prefix
+  - `duid_filter` (optional): Filter DUID
+  - `iaid_filter` (optional): Filter IAID
+  - `server_filter` (optional): Filter DHCPv6 server
+  - `status_filter` (optional): Filter binding status
+  - `lease_time_filter` (optional): Filter configured `life-time`
+  - `last_seen_within` (optional): Include bindings seen within a duration such as `1h` or `24h`
+- Example:
+  ```
+  mikrotik_list_dhcpv6_bindings(status_filter="bound", last_seen_within="1h")
+  ```
+
 ## `mikrotik_create_dhcp_network`
 Creates a DHCP network configuration.
 - Parameters:

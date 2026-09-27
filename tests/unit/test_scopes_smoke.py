@@ -18,6 +18,7 @@ SCOPE_MODULES = [
     "ipv6_firewall_filter",
     "ip_pool",
     "logs",
+    "neighbors",
     "poe",
     "queue",
     "routes",

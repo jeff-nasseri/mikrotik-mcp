@@ -1,9 +1,13 @@
+import re
 from typing import List, Literal, Optional
 
 from mcp.server.mcpserver import Context
 
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 from ..connector import execute_mikrotik_command
+
+
+_DURATION_RE = re.compile(r"(?:\d+[wdhms])+")
 
 
 @mcp.tool(name="create_dhcp_server", annotations=annotate(WRITE, "Create DHCP Server"))
@@ -91,6 +95,95 @@ async def mikrotik_list_dhcp_servers(
         return "No DHCP servers found matching the criteria."
 
     return f"DHCP SERVERS:\n\n{result}"
+
+
+@mcp.tool(name="list_dhcp_leases", annotations=annotate(READ, "List DHCP Leases"))
+async def mikrotik_list_dhcp_leases(
+    ctx: Context,
+    address_filter: Optional[str] = None,
+    mac_filter: Optional[str] = None,
+    client_id_filter: Optional[str] = None,
+    server_filter: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    lease_time_filter: Optional[str] = None,
+    last_seen_within: Optional[str] = None,
+    hostname_filter: Optional[str] = None,
+    class_id_filter: Optional[str] = None,
+    device: Optional[str] = None
+) -> str:
+    """Lists detailed IPv4 DHCP leases, optionally filtering active lease fields."""
+    if last_seen_within and not _DURATION_RE.fullmatch(last_seen_within):
+        return "Invalid last_seen_within duration. Use values such as '30m', '1h30m', or '1d'."
+
+    filters = []
+    for value, field in (
+        (address_filter, "active-address"),
+        (mac_filter, "active-mac-address"),
+        (client_id_filter, "active-client-id"),
+        (hostname_filter, "active-host-name"),
+        (class_id_filter, "active-class-id"),
+    ):
+        if value:
+            filters.append(f'{field}~"{value}"')
+    for value, field in (
+        (server_filter, "active-server"),
+        (status_filter, "status"),
+        (lease_time_filter, "lease-time"),
+    ):
+        if value:
+            filters.append(f'{field}="{value}"')
+    if last_seen_within:
+        filters.append(f"last-seen<={last_seen_within}")
+
+    cmd = "/ip dhcp-server lease print detail"
+    if filters:
+        cmd += " where " + " ".join(filters)
+
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
+    if not result or not result.strip():
+        return "No DHCP leases found matching the criteria."
+    return f"DHCP LEASES:\n\n{result}"
+
+
+@mcp.tool(name="list_dhcpv6_bindings", annotations=annotate(READ, "List DHCPv6 Bindings"))
+async def mikrotik_list_dhcpv6_bindings(
+    ctx: Context,
+    address_filter: Optional[str] = None,
+    duid_filter: Optional[str] = None,
+    iaid_filter: Optional[str] = None,
+    server_filter: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    lease_time_filter: Optional[str] = None,
+    last_seen_within: Optional[str] = None,
+    device: Optional[str] = None
+) -> str:
+    """Lists detailed DHCPv6 bindings."""
+    if last_seen_within and not _DURATION_RE.fullmatch(last_seen_within):
+        return "Invalid last_seen_within duration. Use values such as '30m', '1h30m', or '1d'."
+
+    filters = []
+    for value, field in ((address_filter, "address"), (duid_filter, "duid")):
+        if value:
+            filters.append(f'{field}~"{value}"')
+    for value, field in (
+        (iaid_filter, "iaid"),
+        (server_filter, "server"),
+        (status_filter, "status"),
+        (lease_time_filter, "life-time"),
+    ):
+        if value:
+            filters.append(f'{field}="{value}"')
+    if last_seen_within:
+        filters.append(f"last-seen<={last_seen_within}")
+
+    cmd = "/ipv6 dhcp-server binding print detail"
+    if filters:
+        cmd += " where " + " ".join(filters)
+
+    result = await execute_mikrotik_command(cmd, ctx, device=device)
+    if not result or not result.strip():
+        return "No DHCPv6 bindings found matching the criteria."
+    return f"DHCPV6 BINDINGS:\n\n{result}"
 
 @mcp.tool(name="get_dhcp_server", annotations=annotate(READ, "Get DHCP Server"))
 async def mikrotik_get_dhcp_server(ctx: Context, name: str, device: Optional[str] = None) -> str:
