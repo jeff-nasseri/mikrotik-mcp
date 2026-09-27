@@ -12,6 +12,7 @@ Complete reference documentation for all MikroTik MCP tools.
 - **[IP Address](ip-address/README.md)** - IPv4 Address Management
 - **[IPv6 Address](ipv6-address/README.md)** - IPv6 Address Management
 - **[DHCP](dhcp/README.md)** - DHCP Server Management
+- **[Neighbors](neighbors/README.md)** - ARP and IPv6 Neighbor Discovery
 - **[NAT](nat/README.md)** - NAT Rules Management
 - **[IP Pool](ip-pool/README.md)** - IP Pool Management
 - **[Backup](backup/README.md)** - Backup and Export Management
