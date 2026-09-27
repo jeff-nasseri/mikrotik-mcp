@@ -288,15 +288,11 @@ async def mikrotik_remove_dns_static(ctx: Context, entry_id: str, device: Option
     """Removes a static DNS entry."""
     await ctx.info(f"Removing static DNS entry: entry_id={entry_id}")
 
-    check_cmd = f"/ip dns static print count-only where .id={entry_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
-
-    if count.strip() == "0":
-        return f"Static DNS entry with ID '{entry_id}' not found."
-
     cmd = f"/ip dns static remove {entry_id}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
+    if "no such item" in result.lower():
+        return f"Static DNS entry with ID '{entry_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove static DNS entry: {result}"
 

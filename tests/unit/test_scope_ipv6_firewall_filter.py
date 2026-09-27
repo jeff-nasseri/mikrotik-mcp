@@ -10,7 +10,7 @@ def _run(coro):
 
 
 def _set_cmd(fake):
-    """The `set` command, ignoring the existence pre-check that precedes it."""
+    """Return the `set` command."""
     return next(c for c in fake.commands if " set " in c)
 
 
@@ -224,7 +224,7 @@ def test_remove_missing_rule(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
     async def absent(command, _ctx, device=None):
-        return "0"
+        return "no such item (4)"
 
     monkeypatch.setattr(m, "execute_mikrotik_command", absent, raising=True)
 
@@ -239,7 +239,7 @@ def test_remove_existing_rule(ctx, monkeypatch):
     monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
 
     _run(m.mikrotik_remove_ipv6_filter_rule(ctx, rule_id="*1"))
-    assert fake.commands[-1] == "/ipv6 firewall filter remove [find .id=*1]"
+    assert fake.commands[-1] == "/ipv6 firewall filter remove *1"
 
 
 def test_move_rule(ctx, monkeypatch):
@@ -395,8 +395,6 @@ def test_remove_failure_path(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
     async def exists_then_fails(command, _ctx, device=None):
-        if "count-only" in command:
-            return "1"
         return "failure: cannot remove builtin"
 
     monkeypatch.setattr(m, "execute_mikrotik_command", exists_then_fails, raising=True)
@@ -409,7 +407,7 @@ def test_move_missing_rule(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
     async def absent(command, _ctx, device=None):
-        return "0"
+        return "no such item (4)"
 
     monkeypatch.setattr(m, "execute_mikrotik_command", absent, raising=True)
 
@@ -460,8 +458,6 @@ def test_update_missing_rule_is_not_reported_as_success(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
     async def absent(command, _ctx, device=None):
-        if "count-only" in command:
-            return "0"
         return "no such item (4)"
 
     monkeypatch.setattr(m, "execute_mikrotik_command", absent, raising=True)
@@ -476,8 +472,6 @@ def test_disable_on_missing_rule_does_not_claim_success(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
     async def absent(command, _ctx, device=None):
-        if "count-only" in command:
-            return "0"
         return "no such item (4)"
 
     monkeypatch.setattr(m, "execute_mikrotik_command", absent, raising=True)
