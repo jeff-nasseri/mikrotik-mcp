@@ -304,17 +304,11 @@ async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str, device: Optional[
     """
     await ctx.info(f"Removing NAT rule: rule_id={rule_id}")
 
-    # First check if the rule exists
-    check_cmd = f"/ip firewall nat print count-only where .id={rule_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
-
-    if count.strip() == "0":
-        return f"NAT rule with ID '{rule_id}' not found."
-
-    # Remove the rule
     cmd = f"/ip firewall nat remove {rule_id}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
+    if "no such item" in result.lower():
+        return f"NAT rule with ID '{rule_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove NAT rule: {result}"
 
@@ -330,17 +324,11 @@ async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int, d
     """
     await ctx.info(f"Moving NAT rule: rule_id={rule_id} to position {destination}")
 
-    # Check if the rule exists
-    check_cmd = f"/ip firewall nat print count-only where .id={rule_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
-
-    if count.strip() == "0":
-        return f"NAT rule with ID '{rule_id}' not found."
-
-    # Move the rule
     cmd = f"/ip firewall nat move {rule_id} destination={destination}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
+    if "no such item" in result.lower():
+        return f"NAT rule with ID '{rule_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to move NAT rule: {result}"
 

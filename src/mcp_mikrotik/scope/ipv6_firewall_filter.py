@@ -305,18 +305,11 @@ async def mikrotik_update_ipv6_filter_rule(
     if not updates:
         return "No updates specified."
 
-    # RouterOS answers a bad id with "no such item", which contains neither
-    # "failure:" nor "error" — so check the rule exists first, as remove and
-    # move do, and confirm afterwards on real content, as get does.
-    check = await execute_mikrotik_command(
-        f'/ipv6 firewall filter print count-only where .id={rule_id}', ctx, device=device
-    )
-    if check.strip() == "0":
-        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
-
     cmd = f'/ipv6 firewall filter set {rule_id} ' + " ".join(updates)
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
+    if "no such item" in result.lower():
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to update IPv6 firewall filter rule: {result}"
 
@@ -341,16 +334,12 @@ async def mikrotik_remove_ipv6_filter_rule(
     """
     await ctx.info(f"Removing IPv6 firewall filter rule: rule_id={rule_id}")
 
-    check_cmd = f'/ipv6 firewall filter print count-only where .id={rule_id}'
-    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
-
-    if count.strip() == "0":
-        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
-
     result = await execute_mikrotik_command(
-        f"/ipv6 firewall filter remove [find .id={rule_id}]", ctx, device=device
+        f"/ipv6 firewall filter remove {rule_id}", ctx, device=device
     )
 
+    if "no such item" in result.lower():
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove IPv6 firewall filter rule: {result}"
 
@@ -370,16 +359,12 @@ async def mikrotik_move_ipv6_filter_rule(
     """
     await ctx.info(f"Moving IPv6 firewall filter rule: rule_id={rule_id} to position {destination}")
 
-    check_cmd = f'/ipv6 firewall filter print count-only where .id={rule_id}'
-    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
-
-    if count.strip() == "0":
-        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
-
     result = await execute_mikrotik_command(
         f"/ipv6 firewall filter move {rule_id} destination={destination}", ctx, device=device
     )
 
+    if "no such item" in result.lower():
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to move IPv6 firewall filter rule: {result}"
 

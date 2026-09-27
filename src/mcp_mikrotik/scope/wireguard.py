@@ -367,15 +367,11 @@ async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str, device: Opt
     """
     await ctx.info(f"Removing WireGuard peer: peer_id={peer_id}")
 
-    check_cmd = f"/interface wireguard peers print count-only where .id={peer_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
-
-    if count.strip() == "0":
-        return f"WireGuard peer with ID '{peer_id}' not found."
-
     cmd = f"/interface wireguard peers remove {peer_id}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
+    if "no such item" in result.lower():
+        return f"WireGuard peer with ID '{peer_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove WireGuard peer: {result}"
 

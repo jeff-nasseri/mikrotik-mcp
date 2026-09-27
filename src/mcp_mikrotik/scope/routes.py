@@ -225,15 +225,11 @@ async def mikrotik_remove_route(ctx: Context, route_id: str, device: Optional[st
     """
     await ctx.info(f"Removing route: route_id={route_id}")
 
-    check_cmd = f"/ip route print count-only where .id={route_id}"
-    count = await execute_mikrotik_command(check_cmd, ctx, device=device)
-
-    if count.strip() == "0":
-        return f"Route with ID '{route_id}' not found."
-
     cmd = f"/ip route remove {route_id}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
+    if "no such item" in result.lower():
+        return f"Route with ID '{route_id}' not found."
     if "failure:" in result.lower() or "error" in result.lower():
         return f"Failed to remove route: {result}"
 
