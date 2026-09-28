@@ -9,6 +9,7 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/jeff-nasseri/mikrotik-mcp/publish.yml?branch=master&label=build&style=flat-square&color=%23007ACC)](https://github.com/jeff-nasseri/mikrotik-mcp/actions/workflows/publish.yml)
 [![Tests](https://img.shields.io/github/actions/workflow/status/jeff-nasseri/mikrotik-mcp/publish.yml?branch=master&label=tests&style=flat-square&color=%2300C853)](https://github.com/jeff-nasseri/mikrotik-mcp/actions/workflows/publish.yml)
 [![MIT License](https://img.shields.io/github/license/jeff-nasseri/mikrotik-mcp?style=flat-square&color=%23FF6B35)](https://github.com/jeff-nasseri/mikrotik-mcp/blob/master/LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/kmVSpstbNU)
 
 ## Overview
 
@@ -71,6 +72,12 @@ review and idea.
 Contributions of every kind are welcome: code, bug reports, documentation and
 reviews all move the project forward. Start with the
 [Contributing Guide](docs/contributing.md).
+
+## Community
+
+Got a question, an idea, or something you'd like to talk through? Join us on
+[Discord](https://discord.gg/kmVSpstbNU). Users and contributors are both
+welcome, whether you're connecting your first router or working on a PR.
 
 ## License
 
