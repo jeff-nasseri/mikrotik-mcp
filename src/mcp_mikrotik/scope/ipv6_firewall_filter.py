@@ -3,6 +3,7 @@ from typing import Literal, Optional
 from ..connector import execute_mikrotik_command
 from mcp.server.mcpserver import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ._selectors import resolve_item_id, item_count, item_at_position
 
 
 @mcp.tool(name="create_ipv6_filter_rule", annotations=annotate(WRITE, "Create IPv6 Filter Rule"))
@@ -202,8 +203,7 @@ async def mikrotik_get_ipv6_filter_rule(
     """Gets detailed information about a specific IPv6 firewall filter rule.
 
     Notes:
-        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
-            by `print` are per-session and do not resolve here.
+        rule_id: a RouterOS internal id ("*1") or a print position ("0").
     """
     await ctx.info(f"Getting IPv6 firewall filter rule details: rule_id={rule_id}")
 
@@ -251,8 +251,7 @@ async def mikrotik_update_ipv6_filter_rule(
     """Updates an existing IPv6 firewall filter rule on the MikroTik device.
 
     Notes:
-        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
-            by `print` are per-session and do not resolve here.
+        rule_id: a RouterOS internal id ("*1") or a print position ("0").
         Pass "" to clear an optional field (e.g. src_address="").
     """
     await ctx.info(f"Updating IPv6 firewall filter rule: rule_id={rule_id}")
@@ -305,16 +304,20 @@ async def mikrotik_update_ipv6_filter_rule(
     if not updates:
         return "No updates specified."
 
-    cmd = f'/ipv6 firewall filter set {rule_id} ' + " ".join(updates)
+    menu = "/ipv6 firewall filter"
+    resolved = await resolve_item_id(menu, rule_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
+    cmd = f'{menu} set {resolved} ' + " ".join(updates)
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "no such item" in result.lower():
         return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to update IPv6 firewall filter rule: {result}"
 
     details = await execute_mikrotik_command(
-        f'/ipv6 firewall filter print detail where .id={rule_id}', ctx, device=device
+        f'{menu} print detail where .id={resolved}', ctx, device=device
     )
     if "chain=" not in details:
         return f"Failed to update IPv6 firewall filter rule: {result or details}"
@@ -329,19 +332,24 @@ async def mikrotik_remove_ipv6_filter_rule(
     """Removes an IPv6 firewall filter rule from the MikroTik device.
 
     Notes:
-        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
-            by `print` are per-session and do not resolve here.
+        rule_id: a RouterOS internal id ("*1") or a print position ("0").
     """
     await ctx.info(f"Removing IPv6 firewall filter rule: rule_id={rule_id}")
 
-    result = await execute_mikrotik_command(
-        f"/ipv6 firewall filter remove {rule_id}", ctx, device=device
-    )
+    menu = "/ipv6 firewall filter"
+    resolved = await resolve_item_id(menu, rule_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "1":
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
+    result = await execute_mikrotik_command(f"{menu} remove {resolved}", ctx, device=device)
 
     if "no such item" in result.lower():
         return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to remove IPv6 firewall filter rule: {result}"
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "0":
+        return f"Failed to remove IPv6 firewall filter rule: rule '{rule_id}' is still present."
 
     return f"IPv6 firewall filter rule with ID '{rule_id}' removed successfully."
 
@@ -353,20 +361,25 @@ async def mikrotik_move_ipv6_filter_rule(
     """Moves an IPv6 firewall filter rule to a different position in the chain.
 
     Notes:
-        rule_id: a RouterOS internal id, e.g. "*1". The positional numbers shown
-            by `print` are per-session and do not resolve here.
+        rule_id: a RouterOS internal id ("*1") or a print position ("0").
         destination: 0-based target position index
     """
     await ctx.info(f"Moving IPv6 firewall filter rule: rule_id={rule_id} to position {destination}")
 
-    result = await execute_mikrotik_command(
-        f"/ipv6 firewall filter move {rule_id} destination={destination}", ctx, device=device
-    )
+    menu = "/ipv6 firewall filter"
+    resolved = await resolve_item_id(menu, rule_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "1":
+        return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
+    result = await execute_mikrotik_command(f"{menu} move {resolved} destination={destination}", ctx, device=device)
 
     if "no such item" in result.lower():
         return f"IPv6 firewall filter rule with ID '{rule_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to move IPv6 firewall filter rule: {result}"
+    if await item_at_position(menu, destination, ctx, device, execute_mikrotik_command) != resolved:
+        return f"Failed to move IPv6 firewall filter rule: rule '{rule_id}' is not at position {destination}."
 
     return f"IPv6 firewall filter rule with ID '{rule_id}' moved to position {destination}."
 

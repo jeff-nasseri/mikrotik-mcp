@@ -2,6 +2,7 @@ from typing import Optional, List
 from ..connector import execute_mikrotik_command
 from mcp.server.mcpserver import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ._selectors import resolve_item_id, item_count
 
 @mcp.tool(name="add_route", annotations=annotate(WRITE, "Add Route"))
 async def mikrotik_add_route(
@@ -225,13 +226,21 @@ async def mikrotik_remove_route(ctx: Context, route_id: str, device: Optional[st
     """
     await ctx.info(f"Removing route: route_id={route_id}")
 
-    cmd = f"/ip route remove {route_id}"
+    menu = "/ip route"
+    resolved = await resolve_item_id(menu, route_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"Route with ID '{route_id}' not found."
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "1":
+        return f"Route with ID '{route_id}' not found."
+    cmd = f"{menu} remove {resolved}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "no such item" in result.lower():
         return f"Route with ID '{route_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to remove route: {result}"
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "0":
+        return f"Failed to remove route: route '{route_id}' is still present."
 
     return f"Route with ID '{route_id}' removed successfully."
 

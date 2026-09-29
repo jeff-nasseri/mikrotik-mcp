@@ -235,21 +235,39 @@ def test_remove_missing_rule(ctx, monkeypatch):
 def test_remove_existing_rule(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
-    fake = FakeExecutor()
-    monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
+    commands = []
 
-    _run(m.mikrotik_remove_ipv6_filter_rule(ctx, rule_id="*1"))
-    assert fake.commands[-1] == "/ipv6 firewall filter remove *1"
+    async def execute(command, _ctx, device=None):
+        commands.append(command)
+        if "count-only" in command:
+            return "0" if any(" remove " in c for c in commands) else "1"
+        return ""
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", execute, raising=True)
+
+    out = _run(m.mikrotik_remove_ipv6_filter_rule(ctx, rule_id="*1"))
+    assert "/ipv6 firewall filter remove *1" in commands
+    assert "removed successfully" in out
 
 
 def test_move_rule(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
-    fake = FakeExecutor()
-    monkeypatch.setattr(m, "execute_mikrotik_command", fake, raising=True)
+    commands = []
 
-    _run(m.mikrotik_move_ipv6_filter_rule(ctx, rule_id="*1", destination=3))
-    assert fake.commands[-1] == "/ipv6 firewall filter move *1 destination=3"
+    async def execute(command, _ctx, device=None):
+        commands.append(command)
+        if "count-only" in command:
+            return "1"
+        if command.startswith(":put [:pick"):
+            return "*1"
+        return ""
+
+    monkeypatch.setattr(m, "execute_mikrotik_command", execute, raising=True)
+
+    out = _run(m.mikrotik_move_ipv6_filter_rule(ctx, rule_id="*1", destination=3))
+    assert "/ipv6 firewall filter move *1 destination=3" in commands
+    assert "moved to position 3" in out
 
 
 # ---------------------------------------------------------------------------
@@ -395,6 +413,8 @@ def test_remove_failure_path(ctx, monkeypatch):
     from mcp_mikrotik.scope import ipv6_firewall_filter as m
 
     async def exists_then_fails(command, _ctx, device=None):
+        if "count-only" in command:
+            return "1"
         return "failure: cannot remove builtin"
 
     monkeypatch.setattr(m, "execute_mikrotik_command", exists_then_fails, raising=True)
