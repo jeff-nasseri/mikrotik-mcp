@@ -1,32 +1,11 @@
-import re
 from typing import Literal, Optional, List
 from mcp.server.mcpserver import Context
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, DANGEROUS, annotate
 from ..connector import execute_mikrotik_command
-
-# RouterOS internal item id, e.g. *A or *1F.
-_ID_RE = re.compile(r"\*[0-9A-Fa-f]+")
-
+from ._selectors import _ID_RE, resolve_item_id
 
 async def _resolve_filter_rule_id(rule_id: str, ctx: Context, device: Optional[str]) -> Optional[str]:
-    """Resolve a positional print number to the internal *hex rule ID; pass *hex IDs through."""
-    rule_id = rule_id.strip()
-    if rule_id.startswith("*"):
-        return rule_id
-    if not rule_id.isdigit():
-        return None
-    # `[find]` with no where clause returns the rules in the same order plain
-    # `print` numbers them, so index N is the number the list output showed.
-    # Resolving through `find` rather than handing the number to the command
-    # is what makes this safe: a bare number is looked up in a number map the
-    # device rebuilds on each unfiltered `print` and shares between sessions,
-    # so it can miss, or land on a different rule, now that every command
-    # runs on its own connection. `[find]` and *hex ids carry no such state.
-    result = await execute_mikrotik_command(
-        f":put [:pick [/ip firewall filter find] {int(rule_id)}]", ctx, device=device
-    )
-    resolved = result.strip()
-    return resolved if _ID_RE.fullmatch(resolved) else None
+    return await resolve_item_id("/ip firewall filter", rule_id, ctx, device, execute_mikrotik_command)
 
 
 @mcp.tool(name="create_filter_rule", annotations=annotate(WRITE, "Create Firewall Filter Rule"))

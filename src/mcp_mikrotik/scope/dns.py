@@ -4,6 +4,7 @@ from mcp.server.mcpserver import Context
 
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ._selectors import resolve_item_id, item_count
 
 @mcp.tool(name="set_dns_servers", annotations=annotate(WRITE, "Set DNS Servers"))
 async def mikrotik_set_dns_servers(
@@ -288,13 +289,21 @@ async def mikrotik_remove_dns_static(ctx: Context, entry_id: str, device: Option
     """Removes a static DNS entry."""
     await ctx.info(f"Removing static DNS entry: entry_id={entry_id}")
 
-    cmd = f"/ip dns static remove {entry_id}"
+    menu = "/ip dns static"
+    resolved = await resolve_item_id(menu, entry_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"Static DNS entry with ID '{entry_id}' not found."
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "1":
+        return f"Static DNS entry with ID '{entry_id}' not found."
+    cmd = f"{menu} remove {resolved}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "no such item" in result.lower():
         return f"Static DNS entry with ID '{entry_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to remove static DNS entry: {result}"
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "0":
+        return f"Failed to remove static DNS entry: entry '{entry_id}' is still present."
 
     return f"Static DNS entry with ID '{entry_id}' removed successfully."
 

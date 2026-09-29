@@ -3,6 +3,7 @@ from typing import Optional
 from mcp.server.mcpserver import Context
 
 from ..connector import execute_mikrotik_command
+from ._selectors import resolve_item_id, item_count
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
 
 
@@ -367,13 +368,21 @@ async def mikrotik_remove_wireguard_peer(ctx: Context, peer_id: str, device: Opt
     """
     await ctx.info(f"Removing WireGuard peer: peer_id={peer_id}")
 
-    cmd = f"/interface wireguard peers remove {peer_id}"
+    menu = "/interface wireguard peers"
+    resolved = await resolve_item_id(menu, peer_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"WireGuard peer with ID '{peer_id}' not found."
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "1":
+        return f"WireGuard peer with ID '{peer_id}' not found."
+    cmd = f"{menu} remove {resolved}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "no such item" in result.lower():
         return f"WireGuard peer with ID '{peer_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to remove WireGuard peer: {result}"
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "0":
+        return f"Failed to remove WireGuard peer: peer '{peer_id}' is still present."
 
     return f"WireGuard peer '{peer_id}' removed successfully."
 

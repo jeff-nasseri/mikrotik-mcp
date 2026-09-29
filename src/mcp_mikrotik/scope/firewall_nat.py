@@ -2,6 +2,7 @@ from typing import Literal, Optional
 from mcp.server.mcpserver import Context
 from ..connector import execute_mikrotik_command
 from ..app import mcp, READ, WRITE, WRITE_IDEMPOTENT, DESTRUCTIVE, annotate
+from ._selectors import resolve_item_id, item_count, item_at_position
 
 @mcp.tool(name="create_nat_rule", annotations=annotate(WRITE, "Create NAT Rule"))
 async def mikrotik_create_nat_rule(
@@ -304,13 +305,21 @@ async def mikrotik_remove_nat_rule(ctx: Context, rule_id: str, device: Optional[
     """
     await ctx.info(f"Removing NAT rule: rule_id={rule_id}")
 
-    cmd = f"/ip firewall nat remove {rule_id}"
+    menu = "/ip firewall nat"
+    resolved = await resolve_item_id(menu, rule_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"NAT rule with ID '{rule_id}' not found."
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "1":
+        return f"NAT rule with ID '{rule_id}' not found."
+    cmd = f"{menu} remove {resolved}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "no such item" in result.lower():
         return f"NAT rule with ID '{rule_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to remove NAT rule: {result}"
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "0":
+        return f"Failed to remove NAT rule: rule '{rule_id}' is still present."
 
     return f"NAT rule with ID '{rule_id}' removed successfully."
 
@@ -324,13 +333,21 @@ async def mikrotik_move_nat_rule(ctx: Context, rule_id: str, destination: int, d
     """
     await ctx.info(f"Moving NAT rule: rule_id={rule_id} to position {destination}")
 
-    cmd = f"/ip firewall nat move {rule_id} destination={destination}"
+    menu = "/ip firewall nat"
+    resolved = await resolve_item_id(menu, rule_id, ctx, device, execute_mikrotik_command)
+    if resolved is None:
+        return f"NAT rule with ID '{rule_id}' not found."
+    if await item_count(menu, resolved, ctx, device, execute_mikrotik_command) != "1":
+        return f"NAT rule with ID '{rule_id}' not found."
+    cmd = f"{menu} move {resolved} destination={destination}"
     result = await execute_mikrotik_command(cmd, ctx, device=device)
 
     if "no such item" in result.lower():
         return f"NAT rule with ID '{rule_id}' not found."
-    if "failure:" in result.lower() or "error" in result.lower():
+    if result.strip():
         return f"Failed to move NAT rule: {result}"
+    if await item_at_position(menu, destination, ctx, device, execute_mikrotik_command) != resolved:
+        return f"Failed to move NAT rule: rule '{rule_id}' is not at position {destination}."
 
     return f"NAT rule with ID '{rule_id}' moved to position {destination}."
 
