@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.jeff-nasseri/mikrotik-mcp",
+  "name": "io.github.wiresage/mikrotik-mcp",
   "description": "MCP server for MikroTik routers: firewall, NAT, routing, DHCP, DNS, WireGuard and more via SSH.",
   "repository": {
-    "url": "https://github.com/jeff-nasseri/mikrotik-mcp",
+    "url": "https://github.com/wiresage/mikrotik-mcp",
     "source": "github"
   },
   "version": "0.14.1.0",

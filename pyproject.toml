@@ -35,9 +35,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jeff-nasseri/mikrotik-mcp"
-Issues = "https://github.com/jeff-nasseri/mikrotik-mcp/issues"
-Repository = "https://github.com/jeff-nasseri/mikrotik-mcp"
+Homepage = "https://github.com/wiresage/mikrotik-mcp"
+Issues = "https://github.com/wiresage/mikrotik-mcp/issues"
+Repository = "https://github.com/wiresage/mikrotik-mcp"
 
 [project.scripts]
 mcp-server-mikrotik = "mcp_mikrotik.server:main"

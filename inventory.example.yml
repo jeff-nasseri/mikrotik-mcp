@@ -9,7 +9,7 @@
 #   docker run --rm -i \
 #     -v "$PWD/inventory.yml:/config/inventory.yml:ro" \
 #     -e MIKROTIK_INVENTORY_FILE=/config/inventory.yml \
-#     ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+#     ghcr.io/wiresage/mikrotik-mcp:latest
 #
 # Each entry is one device. `title` is the identifier the LLM passes as the
 # `device` argument of every tool; it must be unique (matching is

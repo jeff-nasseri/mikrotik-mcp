@@ -5,7 +5,7 @@
 MikroTik MCP is listed on the [MCP Registry](https://registry.modelcontextprotocol.io) — a community-driven catalog of MCP servers. Registry-aware clients (Claude Desktop, VS Code, Cursor) can install it in one command without manual config file editing.
 
 ```bash
-claude mcp add io.github.jeff-nasseri/mikrotik-mcp
+claude mcp add io.github.wiresage/mikrotik-mcp
 ```
 
 The client fetches the server metadata from the registry, installs `mcp-server-mikrotik` from PyPI, and prompts you for the required environment variables (`MIKROTIK_HOST`, `MIKROTIK_USERNAME`, `MIKROTIK_PASSWORD`).
@@ -23,7 +23,7 @@ The client fetches the server metadata from the registry, installs `mcp-server-m
 
 ```bash
 # Clone the repository
-git clone https://github.com/jeff-nasseri/mikrotik-mcp.git
+git clone https://github.com/wiresage/mikrotik-mcp.git
 cd mikrotik-mcp
 
 # Create virtual environment
@@ -84,10 +84,10 @@ can pull it directly instead of building from source:
 
 ```bash
 # Latest release
-docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+docker pull ghcr.io/wiresage/mikrotik-mcp:latest
 
 # A specific version (matches the PyPI / git tag version)
-docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:0.10.1
+docker pull ghcr.io/wiresage/mikrotik-mcp:0.10.1
 ```
 
 | Tag | Points to |
@@ -97,14 +97,19 @@ docker pull ghcr.io/jeff-nasseri/mikrotik-mcp:0.10.1
 | `X.Y` | The latest patch of a minor line (e.g. `0.10`) |
 | `sha-<short>` | A specific commit |
 
-In the examples below, substitute `ghcr.io/jeff-nasseri/mikrotik-mcp:latest` for
+> **The image moved to the `wiresage` organization.** Releases from the move onwards are
+> published only to `ghcr.io/wiresage/mikrotik-mcp`. The old path
+> `ghcr.io/jeff-nasseri/mikrotik-mcp` stops receiving updates and keeps serving its last
+> version, so switch any `docker pull`, compose file or deployment that still uses it.
+
+In the examples below, substitute `ghcr.io/wiresage/mikrotik-mcp:latest` for
 `mikrotik-mcp` to use the prebuilt image instead of a locally built one.
 
 ### Build from source
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/jeff-nasseri/mikrotik-mcp.git
+   git clone https://github.com/wiresage/mikrotik-mcp.git
    cd mikrotik-mcp
    ```
 
@@ -184,7 +189,7 @@ to the process's stdin/stdout, not for a standalone background service.
 ```yaml
 services:
   mikrotik-mcp:
-    image: ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+    image: ghcr.io/wiresage/mikrotik-mcp:latest
     container_name: mikrotik-mcp
     restart: unless-stopped
     ports:
@@ -236,7 +241,7 @@ With `docker run`:
 docker run --rm -i \
   -v "$PWD/inventory.yaml:/config/inventory.yaml:ro" \
   -e MIKROTIK_INVENTORY_FILE=/config/inventory.yaml \
-  ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+  ghcr.io/wiresage/mikrotik-mcp:latest
 ```
 
 With Docker Compose:
@@ -244,7 +249,7 @@ With Docker Compose:
 ```yaml
 services:
   mikrotik-mcp:
-    image: ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+    image: ghcr.io/wiresage/mikrotik-mcp:latest
     container_name: mikrotik-mcp
     restart: unless-stopped
     ports:
