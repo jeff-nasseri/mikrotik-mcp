@@ -67,6 +67,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check server.json names this repository
+        # Stops a release from a repository server.json does not name, before
+        # anything is built or published (see the script for why).
+        run: python3 .github/scripts/check_repository_owner.py
+
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v0.10.2
         with:

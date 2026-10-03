@@ -8,7 +8,10 @@ that updates one of them without the others, instead of in the release run.
 """
 
 import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -73,3 +76,41 @@ def test_documented_image_path_is_the_one_the_workflow_publishes(relative):
         text = re.sub(r"> \*\*The image moved.*?\n\n", "", text, flags=re.S)
     for path in re.findall(r"ghcr\.io/([a-z0-9._-]+/[a-z0-9._-]+)", text.lower()):
         assert path == slug, f"{relative} documents ghcr.io/{path}, the workflow publishes ghcr.io/{slug}"
+
+
+# ---------------------------------------------------------------------------
+# the release guard: server.json must name the repository the workflow runs in
+# ---------------------------------------------------------------------------
+
+GUARD = ROOT / ".github" / "scripts" / "check_repository_owner.py"
+
+
+def _run_guard(repository: str) -> subprocess.CompletedProcess:
+    env = {**os.environ, "GITHUB_REPOSITORY": repository}
+    return subprocess.run(
+        [sys.executable, str(GUARD)], cwd=ROOT, env=env, capture_output=True, text=True
+    )
+
+
+def test_guard_passes_in_the_repository_server_json_names():
+    slug = _repo_slug(_server_json()["repository"]["url"])
+    assert _run_guard(slug).returncode == 0
+    assert _run_guard(slug.upper()).returncode == 0  # GitHub owners are case-insensitive
+
+
+def test_guard_stops_a_release_from_any_other_repository():
+    """server.json merged before a transfer, or in a fork, must not reach PyPI."""
+    result = _run_guard("someone-else/mikrotik-mcp")
+    assert result.returncode == 1
+    assert "server.json names" in result.stdout
+    assert _run_guard("").returncode == 1
+
+
+@pytest.mark.parametrize("workflow", ["publish.yml", "docker-publish.yml"])
+def test_both_release_workflows_run_the_guard_first(workflow):
+    text = _read(f".github/workflows/{workflow}")
+    assert text.count("check_repository_owner.py") == 1
+    first_job = text.split("\njobs:\n", 1)[1]
+    # the guard sits right after the first checkout, before GitVersion or any build
+    assert first_job.index("actions/checkout") < first_job.index("check_repository_owner.py")
+    assert first_job.index("check_repository_owner.py") < first_job.index("- name: Install GitVersion")
