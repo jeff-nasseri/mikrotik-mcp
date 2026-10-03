@@ -9,7 +9,7 @@ MikroTik MCP provides programmatic access to MikroTik RouterOS devices through S
 
 If you discover a security vulnerability in MikroTik MCP, please report it by:
 
-**Creating a security issue at:** https://github.com/jeff-nasseri/mikrotik-mcp/issues
+**Creating a security issue at:** https://github.com/wiresage/mikrotik-mcp/issues
 
 When reporting a security issue, please include:
 
@@ -183,7 +183,7 @@ This project aims to align with:
 ## Contact
 
 For security-related questions or concerns, please open an issue at:
-https://github.com/jeff-nasseri/mikrotik-mcp/issues
+https://github.com/wiresage/mikrotik-mcp/issues
 
 ---
 

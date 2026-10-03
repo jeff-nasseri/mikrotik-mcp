@@ -11,7 +11,7 @@ can change the drawing in the same commit.
 
 | Diagram | What it shows |
 |---|---|
-| [`Inventory.drawio`](Inventory.drawio) | The multi-device inventory architecture (issue [#44](https://github.com/jeff-nasseri/mikrotik-mcp/issues/44)): the LLM calls MCP tools, each tool passes a device `title` to the connector, the Inventory resolves the title to that device's SSH client, and the command runs on the selected router. Tool D is `list_devices`, which lets the LLM discover the fleet. |
+| [`Inventory.drawio`](Inventory.drawio) | The multi-device inventory architecture (issue [#44](https://github.com/wiresage/mikrotik-mcp/issues/44)): the LLM calls MCP tools, each tool passes a device `title` to the connector, the Inventory resolves the title to that device's SSH client, and the command runs on the selected router. Tool D is `list_devices`, which lets the LLM discover the fleet. |
 
 ## Viewing and editing
 

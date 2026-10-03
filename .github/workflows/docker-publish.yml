@@ -23,7 +23,7 @@
 #   :sha-<short>                (exact commit, for traceability)
 #
 # Registry:
-#   ghcr.io/jeff-nasseri/mikrotik-mcp
+#   ghcr.io/wiresage/mikrotik-mcp
 #
 # Authentication:
 #   Uses the built-in GITHUB_TOKEN (no extra secret required). The token needs

@@ -4,7 +4,7 @@
 > [Managing a Whole MikroTik Fleet from One MCP Server](https://medium.com/@sir.jeff.nasseri/managing-a-whole-mikrotik-fleet-from-one-mcp-server-60245de07073)
 > by [@jeff-nasseri](https://medium.com/@sir.jeff.nasseri)
 
-For a long time, [mikrotik-mcp](https://github.com/jeff-nasseri/mikrotik-mcp) could talk to exactly one router. You gave it a host, a username and a password, and your AI assistant could manage that single device over SSH. That was fine for a home lab, but the moment you have a second router (a branch office, a datacenter box, a test bench), you had to run a second server instance with its own configuration.
+For a long time, [mikrotik-mcp](https://github.com/wiresage/mikrotik-mcp) could talk to exactly one router. You gave it a host, a username and a password, and your AI assistant could manage that single device over SSH. That was fine for a home lab, but the moment you have a second router (a branch office, a datacenter box, a test bench), you had to run a second server instance with its own configuration.
 
 Not anymore. mikrotik-mcp now supports a device **inventory**: one server, one configuration file, and as many MikroTik devices as you want. The LLM discovers the fleet on its own, targets devices by name, and gets a helpful error (not silent misbehavior) when it points at a device that does not exist.
 
@@ -31,7 +31,7 @@ The inventory is a plain YAML list. Each entry is one device. Network engineers 
   region: DE
 ```
 
-There is a ready-to-copy template in the repository root: [`inventory.example.yml`](https://github.com/jeff-nasseri/mikrotik-mcp/blob/master/inventory.example.yml).
+There is a ready-to-copy template in the repository root: [`inventory.example.yml`](https://github.com/wiresage/mikrotik-mcp/blob/master/inventory.example.yml).
 
 Only two fields are required:
 
@@ -106,7 +106,7 @@ If you run mikrotik-mcp from the Docker image, the inventory file lives on your 
 docker run --rm -i \
   -v "$PWD/inventory.yaml:/config/inventory.yaml:ro" \
   -e MIKROTIK_INVENTORY_FILE=/config/inventory.yaml \
-  ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+  ghcr.io/wiresage/mikrotik-mcp:latest
 ```
 
 Or with Docker Compose, for a long-running setup:
@@ -114,7 +114,7 @@ Or with Docker Compose, for a long-running setup:
 ```yaml
 services:
   mikrotik-mcp:
-    image: ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+    image: ghcr.io/wiresage/mikrotik-mcp:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -176,4 +176,4 @@ That last one deserves a note: MikroTik safe mode means the changes are held in 
 
 The inventory turns mikrotik-mcp from a single-router tool into a fleet tool: one YAML file, one server, and natural-language control over every MikroTik device you own. Point `MIKROTIK_INVENTORY_FILE` at your inventory, ask "which devices do you manage?", and go from there.
 
-The project lives at [github.com/jeff-nasseri/mikrotik-mcp](https://github.com/jeff-nasseri/mikrotik-mcp). Issues and pull requests are welcome, and if you try it against your own fleet, I would love to hear how it goes.
+The project lives at [github.com/wiresage/mikrotik-mcp](https://github.com/wiresage/mikrotik-mcp). Issues and pull requests are welcome, and if you try it against your own fleet, I would love to hear how it goes.

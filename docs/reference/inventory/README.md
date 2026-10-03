@@ -140,7 +140,7 @@ only see what is mounted in. The image ships `/config` as the mount point:
 docker run --rm -i \
   -v "$PWD/inventory.yaml:/config/inventory.yaml:ro" \
   -e MIKROTIK_INVENTORY_FILE=/config/inventory.yaml \
-  ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+  ghcr.io/wiresage/mikrotik-mcp:latest
 ```
 
 Or with Compose:
@@ -148,7 +148,7 @@ Or with Compose:
 ```yaml
 services:
   mikrotik-mcp:
-    image: ghcr.io/jeff-nasseri/mikrotik-mcp:latest
+    image: ghcr.io/wiresage/mikrotik-mcp:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
