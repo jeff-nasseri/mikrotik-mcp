@@ -67,7 +67,9 @@ jobs:
 
       - name: Check server.json names this repository
         # Stops a release from a repository server.json does not name, before
-        # anything is built or published (see the script for why).
+        # anything is built or published (see the script for why). Skipped in
+        # forks, which release nothing here and keep their previous behaviour.
+        if: ${{ !github.event.repository.fork }}
         run: python3 .github/scripts/check_repository_owner.py
 
       - name: Install GitVersion

@@ -6,6 +6,9 @@ server.json names another owner (for example when it is merged before a
 repository transfer is finished), a release publishes to PyPI and only then
 fails at the registry. Running this first stops the release before anything
 is built or published.
+
+Forks are not checked: the workflows skip this step there, so a fork behaves
+as it did before the guard existed.
 """
 
 import json
@@ -14,10 +17,25 @@ import sys
 from urllib.parse import urlparse
 
 
+def named_repository() -> str:
+    """The owner/repo that server.json says this project lives in."""
+    with open("server.json", encoding="utf-8") as handle:
+        url = json.load(handle)["repository"]["url"]
+    path = urlparse(url).path.strip("/")
+    return path[: -len(".git")] if path.endswith(".git") else path
+
+
 def main() -> int:
     here = os.environ.get("GITHUB_REPOSITORY", "")
-    with open("server.json", encoding="utf-8") as handle:
-        named = urlparse(json.load(handle)["repository"]["url"]).path.strip("/")
+    if not here:
+        print("::error::GITHUB_REPOSITORY is not set. This script checks a workflow run.")
+        return 1
+
+    try:
+        named = named_repository()
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"::error::server.json has no readable repository.url ({error!r}).")
+        return 1
 
     if named.lower() != here.lower():
         print(

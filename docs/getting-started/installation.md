@@ -10,6 +10,10 @@ claude mcp add io.github.wiresage/mikrotik-mcp
 
 The client fetches the server metadata from the registry, installs `mcp-server-mikrotik` from PyPI, and prompts you for the required environment variables (`MIKROTIK_HOST`, `MIKROTIK_USERNAME`, `MIKROTIK_PASSWORD`).
 
+> **Renamed:** the registry entry moved with the repository to `io.github.wiresage/mikrotik-mcp`.
+> The previous entry `io.github.jeff-nasseri/mikrotik-mcp` receives no new versions, so install
+> under the new name to keep getting updates.
+
 > **PyPI install only:** If your client does not support registry-based install, use one of the manual methods below.
 
 ---
@@ -87,14 +91,14 @@ can pull it directly instead of building from source:
 docker pull ghcr.io/wiresage/mikrotik-mcp:latest
 
 # A specific version (matches the PyPI / git tag version)
-docker pull ghcr.io/wiresage/mikrotik-mcp:0.10.1
+docker pull ghcr.io/wiresage/mikrotik-mcp:<version>
 ```
 
 | Tag | Points to |
 |-----|-----------|
 | `latest` | The most recent release |
-| `X.Y.Z` | A specific released version (e.g. `0.10.1`), aligned with the PyPI release |
-| `X.Y` | The latest patch of a minor line (e.g. `0.10`) |
+| `X.Y.Z` | A specific released version, aligned with the PyPI release |
+| `X.Y` | The latest patch of a minor line |
 | `sha-<short>` | A specific commit |
 
 > **The image moved to the `wiresage` organization.** Releases from the move onwards are
