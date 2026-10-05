@@ -69,7 +69,7 @@ def _files_naming_an_image():
         *ROOT.glob("*.md"), *ROOT.glob("*.yml"), *ROOT.glob("*.yaml"),
         *(ROOT / "docs").rglob("*.md"), *(ROOT / ".github" / "workflows").glob("*.yml"),
     ]
-    return [path for path in candidates if "ghcr.io/" in path.read_text(encoding="utf-8").lower()]
+    return [path for path in candidates if re.search(r"ghcr\.io/", path.read_text(encoding="utf-8"), re.I)]
 
 
 def test_documented_image_path_is_the_one_the_workflow_publishes():
