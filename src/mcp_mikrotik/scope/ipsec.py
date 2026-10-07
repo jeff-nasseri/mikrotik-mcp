@@ -51,16 +51,31 @@ async def mikrotik_get_ipsec_installed_sa(
 ) -> str:
     """Lists the installed IPsec security associations (child/phase 2 SAs).
 
-    This is the only authoritative view of whether a tunnel passes traffic.
-    Read the Flags legend in the output:
+    The Flags legend is the point of this view. On RouterOS 7 it reads:
 
-        A - ACTIVE        the SA is installed
-        S - SEEN-TRAFFIC  the SA has actually carried packets
+        S - SEEN-TRAFFIC  the SA has carried packets
+        H - HW-AEAD       the cipher is running in hardware
+        E - ESP
 
-    An inbound SA without `S` means nothing is arriving over it, however
-    healthy the peer looks. A remote end reporting the connection as up, or
-    its own byte counters growing, does not contradict this: those count
+    `S` is the only field that separates an SA carrying traffic from one that
+    is merely installed. A remote end reporting the connection as up, or its
+    own byte counters growing, does not contradict a missing `S`: those count
     what the far side sent, not what arrived.
+
+    Two things this does NOT tell you, both easy to get wrong:
+
+    - **A missing `S` can mean idle, not broken.** An SA nothing has used
+      looks exactly like one that is failing, and RouterOS withholds
+      `addtime` and `expires-in` until traffic appears, which makes it look
+      half installed. Put traffic over the selector before concluding
+      anything.
+
+    - **Per-SA counters do not map onto policies once a peer has several
+      child SAs.** Traffic picks among them, so one SA can carry the outbound
+      side of two policies while another sits frozen at the counter it had
+      minutes after install. Pairing SAs by hand — by install time, by
+      address, by lifetime — invents a structure that is not there. Watch
+      which counters move under traffic you control instead.
 
     Notes:
         Address filters are exact matches on the SA endpoints, which are the
