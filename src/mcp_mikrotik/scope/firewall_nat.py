@@ -141,15 +141,15 @@ async def mikrotik_list_nat_rules(
     # Add filters
     filters = []
     if chain_filter:
-        filters.append(f"chain={chain_filter}")
+        filters.append(f'chain="{chain_filter}"')
     if action_filter:
-        filters.append(f"action={action_filter}")
+        filters.append(f'action="{action_filter}"')
     if src_address_filter:
         filters.append(f'src-address~"{src_address_filter}"')
     if dst_address_filter:
         filters.append(f'dst-address~"{dst_address_filter}"')
     if protocol_filter:
-        filters.append(f"protocol={protocol_filter}")
+        filters.append(f'protocol="{protocol_filter}"')
     if interface_filter:
         filters.append(f'(in-interface~"{interface_filter}" or out-interface~"{interface_filter}")')
     if disabled_only:
